@@ -14,19 +14,10 @@ namespace { // some internal namespace
 
 static const std::complex<double> I(0.0, 1.0);
 
-// struct for Look-up table in create_gamma and get_operator. To read as
-// "in column i the row[i]-element is non-zero and its value is value[i]"
-// As Gamma matrices are 4x4 matrices, row and value are 4-vectors
-
-struct lookup {
-  int row[4];
-  int value[4];
-  };
-
 // Look-up table for gamma matrices. For every Gamma structure (currently 0-15)
 // the four non-zero values are specified.
 
-static void create_gamma (struct lookup* const gamma, const int i) {
+static void create_gamma (struct lookup* gamma, const int i) {
   try {
     switch(i) {
     case 0: // gamma_0
@@ -298,17 +289,10 @@ BasicOperator::BasicOperator () {
         * quarks[0].number_of_dilution_E * quarks[0].number_of_dilution_D;
     const int verbose = global_data->get_verbose();
     // creating gamma matrices
-//    gamma = new Eigen::SparseMatrix<std::complex<double> >[20];
-//    for(int i = 0; i < 20; ++i){
-//      (gamma[i]).resize(4, 4); // TODO: Might not be necessary. CHECK!
-//      create_gamma(gamma, i);
-//    }
-//    if(verbose) {
-//      std::cout << "gamma 0:\n" << gamma[0] << std::endl;
-//      std::cout << "gamma 1:\n" << gamma[1] << std::endl;
-//      std::cout << "gamma 2:\n" << gamma[2] << std::endl;
-//      std::cout << "gamma 3:\n" << gamma[3] << std::endl;
-//    }
+    gamma = new struct lookup[16];
+    for(int i = 0; i < 16; ++i){
+      create_gamma(gamma, i);
+    }
     // Initializing memory for eigen vectors
     // momentum creation
     momentum = new std::complex<double>*[number_of_max_mom];
@@ -316,15 +300,19 @@ BasicOperator::BasicOperator () {
       momentum[p] = new std::complex<double>[Lx * Ly * Lz];
     create_momenta(momentum);
     // memory for the perambulator, random vector and basic operator
-    contraction = new Eigen::MatrixXcd*[number_of_rnd_vec];
+    contraction =         new Eigen::MatrixXcd*[number_of_rnd_vec];
+    contraction_dagger =  new Eigen::MatrixXcd*[number_of_rnd_vec];
     for(int i = 0; i < number_of_rnd_vec; ++i){
-      contraction[i] = new Eigen::MatrixXcd[4];
-      for(int col = 0; col < 4; ++col){
+      contraction[i] =        new Eigen::MatrixXcd[16];
+      contraction_dagger[i] = new Eigen::MatrixXcd[16];
+      for(int entry = 0; entry < 16; ++entry){
         // D_u^-1 = perambulator * basicoperator. Columns are always
         // the same, only permuted and multiplied with +-i or -1 by
         // gamma matrices. contraction holds the for columns
-        contraction[i][col] = Eigen::MatrixXcd::Zero(
-            4 * number_of_eigen_vec, number_of_eigen_vec);
+        contraction[i][entry] =         Eigen::MatrixXcd::Zero(
+            number_of_eigen_vec, number_of_eigen_vec);
+        contraction_dagger[i][entry] =  Eigen::MatrixXcd::Zero(
+            number_of_eigen_vec, number_of_eigen_vec);
       }
     }
   }
@@ -376,8 +364,7 @@ void BasicOperator::init_operator (const int t_source, const int t_sink, ReadWri
         // propagator D_u^-1 = perambulator(tsource, tsink) * basicoperator(tsink)
         // calculate columns of D_u^-1. gamma structure can be implented by
         // reordering columns and multiplying them with constants
-        contraction[rnd_i][col].block(row * number_of_eigen_vec, 0, 
-            number_of_eigen_vec, number_of_eigen_vec) =
+        contraction[rnd_i][col + 4 * row] =
         rewr->perambulator[rnd_i].block(4 * number_of_eigen_vec * t_source + 
               number_of_eigen_vec * row,
             quarks[0].number_of_dilution_E * quarks[0].number_of_dilution_D * 
@@ -386,6 +373,15 @@ void BasicOperator::init_operator (const int t_source, const int t_sink, ReadWri
             number_of_eigen_vec,
             quarks[0].number_of_dilution_E) *
         rewr->basicoperator[rnd_i][t_sink][col];
+
+        // by gamma_5 trick Propagator matrix is daggered and the offdiagonal
+        // 2x2 blocks get multiplied my -1. The if-statement is the shortest
+        // criterium I managed to think of for the offdiagonal blocks
+        contraction_dagger[rnd_i][row + 4 * col] =
+        (contraction[rnd_i][col + 4 * row]).adjoint();
+        if( ((row + col) == 3) || (abs(row - col) > 1) ){
+          contraction_dagger[rnd_i][row + 4 * col] *= -1;
+        }
       }
 
   t = clock() - t;
@@ -410,25 +406,23 @@ void BasicOperator::get_operator (Eigen::MatrixXcd*& op_1){
 
   int dirac = 5;
 
-  switch(dirac) {
-    
-    case 5:
       // case gamma_5: diag(1,1,-1,-1)
       // no reordering of columns, but two factors -1
-      (op_1[rnd_i]).block(0, 0,                       4 * number_of_eigen_vec, 
-          number_of_eigen_vec) = contraction[rnd_i][0];
-      (op_1[rnd_i]).block(0, 1 * number_of_eigen_vec, 4 * number_of_eigen_vec, 
-          number_of_eigen_vec) = contraction[rnd_i][1];
-      (op_1[rnd_i]).block(0, 2 * number_of_eigen_vec, 4 * number_of_eigen_vec, 
-          number_of_eigen_vec) = -1 * contraction[rnd_i][2];
-      (op_1[rnd_i]).block(0, 3 * number_of_eigen_vec, 4 * number_of_eigen_vec, 
-          number_of_eigen_vec) = -1 * contraction[rnd_i][3];
-      break;
-
-    default:
-      printf("Gamma structure %d not found\n", dirac);
-      exit(0);
-    } 
+      for(int i = 0; i < 4; i++){
+      (op_1[rnd_i]).block(i * number_of_eigen_vec, (gamma[dirac].row[0]) * 
+          number_of_eigen_vec, number_of_eigen_vec, number_of_eigen_vec) = 
+          gamma[dirac].value[0] * contraction[rnd_i][0 + 4 * i];
+      (op_1[rnd_i]).block(i * number_of_eigen_vec, (gamma[dirac].row[1]) * 
+          number_of_eigen_vec, number_of_eigen_vec, number_of_eigen_vec) = 
+          gamma[dirac].value[1] * contraction[rnd_i][1 + 4 * i];
+      (op_1[rnd_i]).block(i * number_of_eigen_vec, (gamma[dirac].row[2]) * 
+          number_of_eigen_vec, number_of_eigen_vec, number_of_eigen_vec) = 
+          gamma[dirac].value[2] * contraction[rnd_i][2 + 4 * i];
+      (op_1[rnd_i]).block(i * number_of_eigen_vec, (gamma[dirac].row[3]) * 
+          number_of_eigen_vec, number_of_eigen_vec, number_of_eigen_vec) = 
+          gamma[dirac].value[3] * contraction[rnd_i][3 + 4 * i];
+      }
+    
   }
 }
 
@@ -447,43 +441,25 @@ void BasicOperator::get_operator_g5 (Eigen::MatrixXcd*& op_1){
 
     int dirac = 5;
 
-    switch(dirac) {
-      
-      case 5:
       // like in get_operator(), but with additional gamma_5 trick
       // D_d^-1 = gamma_5 D_u^-1^dagger gamma_5
       // .adjoint and filing rows rather than columns account for dagger, 
       // the changed minussigns give additional gamma_5
 
-#if 0
-      (op_1[rnd_i]).block(0                      , 0, number_of_eigen_vec, 
-          4 * number_of_eigen_vec) = (contraction[rnd_i][0]).transpose();
-      (op_1[rnd_i]).block(1 * number_of_eigen_vec, 0, number_of_eigen_vec, 
-          4 * number_of_eigen_vec) = (contraction[rnd_i][1]).transpose();
-      (op_1[rnd_i]).block(2 * number_of_eigen_vec, 0, number_of_eigen_vec, 
-          4 * number_of_eigen_vec) = (contraction[rnd_i][2]).transpose();
-      (op_1[rnd_i]).block(3 * number_of_eigen_vec, 0, number_of_eigen_vec, 
-          4 * number_of_eigen_vec) = (contraction[rnd_i][3]).transpose();
-#endif
-
-      (op_1[rnd_i]).block(0                      , 0, number_of_eigen_vec, 
-          4 * number_of_eigen_vec) = (contraction[rnd_i][0]).adjoint();
-      (op_1[rnd_i]).block(1 * number_of_eigen_vec, 0, number_of_eigen_vec, 
-          4 * number_of_eigen_vec) = (contraction[rnd_i][1]).adjoint();
-      (op_1[rnd_i]).block(2 * number_of_eigen_vec, 0, number_of_eigen_vec, 
-          4 * number_of_eigen_vec) = (contraction[rnd_i][2]).adjoint();
-      (op_1[rnd_i]).block(3 * number_of_eigen_vec, 0, number_of_eigen_vec, 
-          4 * number_of_eigen_vec) = (contraction[rnd_i][3]).adjoint();
-
-      (op_1[rnd_i]).block(2 * number_of_eigen_vec, 0, 2 * number_of_eigen_vec, 
-          4 * number_of_eigen_vec) *= -1;
-      
-      break;
-
-    default:
-      printf("Gamma structure %d not found\n", dirac);
-      exit(0);
-    } 
+      for(int i = 0; i < 4; i++){
+      (op_1[rnd_i]).block(i * number_of_eigen_vec, gamma[dirac].row[0] * 
+          number_of_eigen_vec, number_of_eigen_vec, number_of_eigen_vec) = 
+          gamma[dirac].value[0] * contraction_dagger[rnd_i][0 + 4 * i];
+      (op_1[rnd_i]).block(i * number_of_eigen_vec, gamma[dirac].row[1] * 
+          number_of_eigen_vec, number_of_eigen_vec, number_of_eigen_vec) = 
+          gamma[dirac].value[1] * contraction_dagger[rnd_i][1 + 4 * i];
+      (op_1[rnd_i]).block(i * number_of_eigen_vec, gamma[dirac].row[2] * 
+          number_of_eigen_vec, number_of_eigen_vec, number_of_eigen_vec) = 
+          gamma[dirac].value[2] * contraction_dagger[rnd_i][2 + 4 * i];
+      (op_1[rnd_i]).block(i * number_of_eigen_vec, gamma[dirac].row[3] * 
+          number_of_eigen_vec, number_of_eigen_vec, number_of_eigen_vec) = 
+          gamma[dirac].value[3] * contraction_dagger[rnd_i][3 + 4 * i];
+      }
 
   }
 

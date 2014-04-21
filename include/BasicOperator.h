@@ -26,6 +26,15 @@
 #include "propagator_io.h"
 #include "quark.h"
 
+// struct for Look-up table in create_gamma and get_operator. To read as
+// "in column i the row[i]-element is non-zero and its value is value[i]"
+// As Gamma matrices are 4x4 matrices, row and value are 4-vectors
+
+struct lookup {
+  int row[4];
+  std::complex<double> value[4];
+  };
+
 class BasicOperator {
 
 public:
@@ -38,8 +47,10 @@ public:
 
 
 protected:
+//  void create_gamma(struct lookup* gamma, const int dirac);
   Eigen::MatrixXcd** contraction;
-	Eigen::SparseMatrix<std::complex<double> >* gamma;
+  Eigen::MatrixXcd** contraction_dagger;
+  struct lookup*  gamma;
 	std::complex<double>** momentum;
 };
 
