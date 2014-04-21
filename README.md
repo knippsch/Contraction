@@ -16,6 +16,7 @@ in Basicoperator.cpp:
 - introduced a struct for lookup tables
 - changed create_gamma() into a lookup table
 - re-implemented all 16 Dirac structures (not tested yet)
+- implemented char as switch between interlace and block time dilution
 
 in ReadWrite.cpp:
 - introduced new class ReadWrite to handle the file input
@@ -24,8 +25,10 @@ in ReadWrite.cpp:
 
 
 TODO: implement 4-pt functions in init_operator() and LapHs.cpp
-TODO: implement more flexible solution for dilution scheme
 TODO: implement momenta and check dispersion relation
 
 TODO: implement disconnected diagramms
 TODO: IMPLEMENT RHO MESON
+
+
+

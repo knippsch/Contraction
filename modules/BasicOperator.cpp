@@ -207,7 +207,7 @@ static void create_gamma (struct lookup* gamma, const int i) {
       gamma[13].value[3] = 1;
       break;
     default:
-      printf("Dirac component %d not found\n", i);
+      printf("Dirac component %d not found in BasicOperator::create_gamma\n", i);
       exit(0);
     }
   }
@@ -350,14 +350,30 @@ BasicOperator::~BasicOperator () {
 
 // initializes contractions[col] with columns of D_u^-1
 
-void BasicOperator::init_operator (const int t_source, const int t_sink, ReadWrite* rewr){
+void BasicOperator::init_operator (const int t_source, const int t_sink, 
+    ReadWrite* rewr, const char dilution){
 
   clock_t t = clock();
   const int number_of_eigen_vec = global_data->get_number_of_eigen_vec();
   const std::vector<quark> quarks = global_data->get_quarks();
   const int number_of_rnd_vec = quarks[0].number_of_rnd_vec;
+  int t_sink_dil;
 
   //TODO parallelization should be possible
+
+  switch(dilution) {
+
+    case 'i':
+      t_sink_dil = t_sink % quarks[0].number_of_dilution_T;
+      break;
+    case 'b':
+      t_sink_dil = t_sink / quarks[0].number_of_dilution_T;
+      break;
+    default:
+      std::cout << "Time dilution scheme not found in BasicOperator::\
+        init_operator" << std::endl;
+      exit(0);
+    }
 
   for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i)
     for(int col = 0; col < 4; ++col)
@@ -368,10 +384,9 @@ void BasicOperator::init_operator (const int t_source, const int t_sink, ReadWri
         contraction[rnd_i][col].block(row * number_of_eigen_vec, 0,
             number_of_eigen_vec, number_of_eigen_vec) =
         rewr->perambulator[rnd_i].block(4 * number_of_eigen_vec * t_source + 
-              number_of_eigen_vec * row,
+            number_of_eigen_vec * row,
             quarks[0].number_of_dilution_E * quarks[0].number_of_dilution_D * 
-            (t_sink % quarks[0].number_of_dilution_T) + 
-              quarks[0].number_of_dilution_E * col,
+            t_sink_dil + quarks[0].number_of_dilution_E * col,
             number_of_eigen_vec,
             quarks[0].number_of_dilution_E) *
         rewr->basicoperator[rnd_i][t_sink][col];
