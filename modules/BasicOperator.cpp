@@ -303,16 +303,16 @@ BasicOperator::BasicOperator () {
     contraction =         new Eigen::MatrixXcd*[number_of_rnd_vec];
     contraction_dagger =  new Eigen::MatrixXcd*[number_of_rnd_vec];
     for(int i = 0; i < number_of_rnd_vec; ++i){
-      contraction[i] =        new Eigen::MatrixXcd[16];
-      contraction_dagger[i] = new Eigen::MatrixXcd[16];
-      for(int entry = 0; entry < 16; ++entry){
+      contraction[i] =        new Eigen::MatrixXcd[4];
+      contraction_dagger[i] = new Eigen::MatrixXcd[4];
+      for(int blocknr = 0; blocknr < 4; ++blocknr){
         // D_u^-1 = perambulator * basicoperator. Columns are always
         // the same, only permuted and multiplied with +-i or -1 by
         // gamma matrices. contraction holds the for columns
-        contraction[i][entry] =         Eigen::MatrixXcd::Zero(
-            number_of_eigen_vec, number_of_eigen_vec);
-        contraction_dagger[i][entry] =  Eigen::MatrixXcd::Zero(
-            number_of_eigen_vec, number_of_eigen_vec);
+        contraction[i][blocknr] =         Eigen::MatrixXcd::Zero(
+            4 * number_of_eigen_vec, number_of_eigen_vec);
+        contraction_dagger[i][blocknr] =  Eigen::MatrixXcd::Zero(
+            4 * number_of_eigen_vec, number_of_eigen_vec);
       }
     }
   }
@@ -333,6 +333,7 @@ BasicOperator::~BasicOperator () {
 
     delete[] gamma;
     delete[] contraction;
+    delete[] contraction_dagger;
     delete[] momentum;
 
     gamma = NULL;
@@ -364,7 +365,8 @@ void BasicOperator::init_operator (const int t_source, const int t_sink, ReadWri
         // propagator D_u^-1 = perambulator(tsource, tsink) * basicoperator(tsink)
         // calculate columns of D_u^-1. gamma structure can be implented by
         // reordering columns and multiplying them with constants
-        contraction[rnd_i][col + 4 * row] =
+        contraction[rnd_i][col].block(row * number_of_eigen_vec, 0,
+            number_of_eigen_vec, number_of_eigen_vec) =
         rewr->perambulator[rnd_i].block(4 * number_of_eigen_vec * t_source + 
               number_of_eigen_vec * row,
             quarks[0].number_of_dilution_E * quarks[0].number_of_dilution_D * 
@@ -377,10 +379,13 @@ void BasicOperator::init_operator (const int t_source, const int t_sink, ReadWri
         // by gamma_5 trick Propagator matrix is daggered and the offdiagonal
         // 2x2 blocks get multiplied my -1. The if-statement is the shortest
         // criterium I managed to think of for the offdiagonal blocks
-        contraction_dagger[rnd_i][row + 4 * col] =
-        (contraction[rnd_i][col + 4 * row]).adjoint();
+        contraction_dagger[rnd_i][row].block(col * number_of_eigen_vec, 0,
+            number_of_eigen_vec, number_of_eigen_vec) =
+        (contraction[rnd_i][col].block(row * number_of_eigen_vec, 0,
+            number_of_eigen_vec, number_of_eigen_vec)).adjoint();
         if( ((row + col) == 3) || (abs(row - col) > 1) ){
-          contraction_dagger[rnd_i][row + 4 * col] *= -1;
+          contraction_dagger[rnd_i][row].block(col * number_of_eigen_vec, 0,
+              number_of_eigen_vec, number_of_eigen_vec) *= -1;
         }
       }
 
@@ -408,6 +413,23 @@ void BasicOperator::get_operator (Eigen::MatrixXcd*& op_1){
 
       // case gamma_5: diag(1,1,-1,-1)
       // no reordering of columns, but two factors -1
+      op_1[rnd_i].block(0, gamma[dirac].row[0] * number_of_eigen_vec,
+          4 * number_of_eigen_vec, number_of_eigen_vec) =
+      gamma[dirac].value[0] * contraction[rnd_i][0];
+
+      op_1[rnd_i].block(0, gamma[dirac].row[1] * number_of_eigen_vec,
+          4 * number_of_eigen_vec, number_of_eigen_vec) =
+      gamma[dirac].value[1] * contraction[rnd_i][1];
+
+      op_1[rnd_i].block(0, gamma[dirac].row[2] * number_of_eigen_vec,
+          4 * number_of_eigen_vec, number_of_eigen_vec) =
+      gamma[dirac].value[2] * contraction[rnd_i][2];
+
+      op_1[rnd_i].block(0, gamma[dirac].row[3] * number_of_eigen_vec,
+          4 * number_of_eigen_vec, number_of_eigen_vec) =
+      gamma[dirac].value[3] * contraction[rnd_i][3];
+
+#if 0
       for(int i = 0; i < 4; i++){
       (op_1[rnd_i]).block(i * number_of_eigen_vec, (gamma[dirac].row[0]) * 
           number_of_eigen_vec, number_of_eigen_vec, number_of_eigen_vec) = 
@@ -422,6 +444,7 @@ void BasicOperator::get_operator (Eigen::MatrixXcd*& op_1){
           number_of_eigen_vec, number_of_eigen_vec, number_of_eigen_vec) = 
           gamma[dirac].value[3] * contraction[rnd_i][3 + 4 * i];
       }
+#endif
     
   }
 }
@@ -445,7 +468,23 @@ void BasicOperator::get_operator_g5 (Eigen::MatrixXcd*& op_1){
       // D_d^-1 = gamma_5 D_u^-1^dagger gamma_5
       // .adjoint and filing rows rather than columns account for dagger, 
       // the changed minussigns give additional gamma_5
+      op_1[rnd_i].block(0, gamma[dirac].row[0] * number_of_eigen_vec,
+          4 * number_of_eigen_vec, number_of_eigen_vec) =
+      gamma[dirac].value[0] * contraction_dagger[rnd_i][0];
 
+      op_1[rnd_i].block(0, gamma[dirac].row[1] * number_of_eigen_vec,
+          4 * number_of_eigen_vec, number_of_eigen_vec) =
+      gamma[dirac].value[1] * contraction_dagger[rnd_i][1];
+
+      op_1[rnd_i].block(0, gamma[dirac].row[2] * number_of_eigen_vec,
+          4 * number_of_eigen_vec, number_of_eigen_vec) =
+      gamma[dirac].value[2] * contraction_dagger[rnd_i][2];
+
+      op_1[rnd_i].block(0, gamma[dirac].row[3] * number_of_eigen_vec,
+          4 * number_of_eigen_vec, number_of_eigen_vec) =
+      gamma[dirac].value[3] * contraction_dagger[rnd_i][3];
+
+#if 0
       for(int i = 0; i < 4; i++){
       (op_1[rnd_i]).block(i * number_of_eigen_vec, gamma[dirac].row[0] * 
           number_of_eigen_vec, number_of_eigen_vec, number_of_eigen_vec) = 
@@ -460,6 +499,7 @@ void BasicOperator::get_operator_g5 (Eigen::MatrixXcd*& op_1){
           number_of_eigen_vec, number_of_eigen_vec, number_of_eigen_vec) = 
           gamma[dirac].value[3] * contraction_dagger[rnd_i][3 + 4 * i];
       }
+#endif
 
   }
 
