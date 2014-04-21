@@ -29,3 +29,6 @@ TODO: implement momenta and check dispersion relation
 
 TODO: implement disconnected diagramms
 TODO: IMPLEMENT RHO MESON
+
+
+
