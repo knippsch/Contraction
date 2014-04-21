@@ -14,130 +14,206 @@ namespace { // some internal namespace
 
 static const std::complex<double> I(0.0, 1.0);
 
-static void create_gamma (
-    Eigen::SparseMatrix<std::complex<double> >* const gamma, const int i) {
+// struct for Look-up table in create_gamma and get_operator. To read as
+// "in column i the row[i]-element is non-zero and its value is value[i]"
+// As Gamma matrices are 4x4 matrices, row and value are 4-vectors
 
-  try{
+struct lookup {
+  int row[4];
+  int value[4];
+  };
+
+// Look-up table for gamma matrices. For every Gamma structure (currently 0-15)
+// the four non-zero values are specified.
+
+static void create_gamma (struct lookup* const gamma, const int i) {
+  try {
     switch(i) {
-    case 0: // gamm_0 (time component)
-      gamma[0].insert(0, 2) = -1.;
-      gamma[0].insert(1, 3) = -1.;
-      gamma[0].insert(2, 0) = -1.;
-      gamma[0].insert(3, 1) = -1.;
+    case 0: // gamma_0
+      gamma[0].row[0] = 2;
+      gamma[0].value[0] = -1;
+      gamma[0].row[1] = 3;
+      gamma[0].value[1] = -1;
+      gamma[0].row[2] = 0;
+      gamma[0].value[2] = -1;
+      gamma[0].row[3] = 1;
+      gamma[0].value[3] = -1;
       break;
+
     case 1: // gamma_1
-      gamma[1].insert(0, 3) = -I;
-      gamma[1].insert(1, 2) = -I;
-      gamma[1].insert(2, 1) = I;
-      gamma[1].insert(3, 0) = I;
+      gamma[1].row[0] = 3;
+      gamma[1].value[0] = I;
+      gamma[1].row[1] = 2;
+      gamma[1].value[1] = I;
+      gamma[1].row[2] = 1;
+      gamma[1].value[2] = -I;
+      gamma[1].row[3] = 0;
+      gamma[1].value[3] = -I;
       break;
+
     case 2: // gamma_2
-      gamma[2].insert(0, 3) = -1.;
-      gamma[2].insert(1, 2) = 1.;
-      gamma[2].insert(2, 1) = 1.;
-      gamma[2].insert(3, 0) = -1.;
+      gamma[2].row[0] = 3;
+      gamma[2].value[0] = -1;
+      gamma[2].row[1] = 2;
+      gamma[2].value[1] = 1;
+      gamma[2].row[2] = 1;
+      gamma[2].value[2] = 1;
+      gamma[2].row[3] = 0;
+      gamma[2].value[3] = -1;
       break;
+
     case 3: // gamma_3
-      gamma[3].insert(0, 2) = -I;
-      gamma[3].insert(1, 3) = I;
-      gamma[3].insert(2, 0) = I;
-      gamma[3].insert(3, 1) = -I;
+      gamma[3].row[0] = 2;
+      gamma[3].value[0] = I;
+      gamma[3].row[1] = 3;
+      gamma[3].value[1] = -I;
+      gamma[3].row[2] = 0;
+      gamma[3].value[2] = -I;
+      gamma[3].row[3] = 1;
+      gamma[3].value[3] = I;
       break;
+
     case 4: // unity
-      gamma[4].insert(0, 0) = 1.;
-      gamma[4].insert(1, 1) = 1.;
-      gamma[4].insert(2, 2) = 1.;
-      gamma[4].insert(3, 3) = 1.;
+      gamma[4].row[0] = 0;
+      gamma[4].value[0] = 1;
+      gamma[4].row[1] = 1;
+      gamma[4].value[1] = 1;
+      gamma[4].row[2] = 2;
+      gamma[4].value[2] = 1;
+      gamma[4].row[3] = 3;
+      gamma[4].value[3] = 1;
       break;
+
     case 5: // gamma_5
-      gamma[5].insert(0, 0) = 1.;
-      gamma[5].insert(1, 1) = 1.;
-      gamma[5].insert(2, 2) = -1.;
-      gamma[5].insert(3, 3) = -1.;
+      gamma[5].row[0] = 0;
+      gamma[5].value[0] = 1;
+      gamma[5].row[1] = 1;
+      gamma[5].value[1] = 1;
+      gamma[5].row[2] = 2;
+      gamma[5].value[2] = -1;
+      gamma[5].row[3] = 3;
+      gamma[5].value[3] = -1;
       break;
-    case 6: // gamma_0 gamma_5
-      gamma[6].insert(0, 2) = 1.;
-      gamma[6].insert(1, 3) = 1.;
-      gamma[6].insert(2, 0) = -1.;
-      gamma[6].insert(3, 1) = -1.;
+
+    case 6: // gamma_0 * gamma_5
+      gamma[6].row[0] = 2;
+      gamma[6].value[0] = -1;
+      gamma[6].row[1] = 3;
+      gamma[6].value[1] = -1;
+      gamma[6].row[2] = 0;
+      gamma[6].value[2] = 1;
+      gamma[6].row[3] = 1;
+      gamma[6].value[3] = 1;
       break;
-    case 7: // gamma_1 gamma_5
-      gamma[7].insert(0, 3) = I;
-      gamma[7].insert(1, 2) = I;
-      gamma[7].insert(2, 1) = I;
-      gamma[7].insert(3, 0) = I;
+
+    case 7: // gamma_1 * gamma_5
+      gamma[7].row[0] = 3;
+      gamma[7].value[0] = I;
+      gamma[7].row[1] = 2;
+      gamma[7].value[1] = I;
+      gamma[7].row[2] = 1;
+      gamma[7].value[2] = I;
+      gamma[7].row[3] = 0;
+      gamma[7].value[3] = I;
       break;
-    case 8: // gamma_2 gamma_5
-      gamma[8].insert(3, 0) = 1.;
-      gamma[8].insert(2, 1) = -1.;
-      gamma[8].insert(1, 2) = 1.;
-      gamma[8].insert(0, 3) = -1.;
+
+    case 8: // gamma_2 * gamma_5
+      gamma[8].row[0] = 3;
+      gamma[8].value[0] = -1;
+      gamma[8].row[1] = 2;
+      gamma[8].value[1] = 1;
+      gamma[8].row[2] = 1;
+      gamma[8].value[2] = -1;
+      gamma[8].row[3] = 0;
+      gamma[8].value[3] = 1;
       break;
-    case 9: // gamma_3 gamma_5
-      gamma[9].insert(0, 2) = I;
-      gamma[9].insert(1, 3) = -I;
-      gamma[9].insert(2, 0) = I;
-      gamma[9].insert(3, 1) = -I;
+
+    case 9: // gamma_3 * gamma_5
+      gamma[9].row[0] = 2;
+      gamma[9].value[0] = I;
+      gamma[9].row[1] = 3;
+      gamma[9].value[1] = -I;
+      gamma[9].row[2] = 0;
+      gamma[9].value[2] = I;
+      gamma[9].row[3] = 1;
+      gamma[9].value[3] = -I;
       break;
-    case 10: // gamma_0 gamma_1
-      gamma[10].insert(0, 1) = -I;
-      gamma[10].insert(1, 0) = -I;
-      gamma[10].insert(2, 3) = I;
-      gamma[10].insert(3, 2) = I;
+
+    case 10: // gamma_0 * gamma_1
+      gamma[10].row[0] = 1;
+      gamma[10].value[0] = -I;
+      gamma[10].row[1] = 0;
+      gamma[10].value[1] = -I;
+      gamma[10].row[2] = 3;
+      gamma[10].value[2] = I;
+      gamma[10].row[3] = 2;
+      gamma[10].value[3] = I;
       break;
-    case 11: // gamma_0 gamma_2
-      gamma[11].insert(0, 1) = -1.;
-      gamma[11].insert(1, 0) = 1.;
-      gamma[11].insert(2, 3) = 1.;
-      gamma[11].insert(3, 2) = -1.;
+
+    case 11: // gamma_0 * gamma_2
+      gamma[10].row[0] = 1;
+      gamma[10].value[0] = 1;
+      gamma[10].row[1] = 0;
+      gamma[10].value[1] = -1;
+      gamma[10].row[2] = 3;
+      gamma[10].value[2] = -1;
+      gamma[10].row[3] = 2;
+      gamma[10].value[3] = 1;
       break;
-    case 12: // gamma_0 gamma_3
-      gamma[12].insert(0, 0) = -I;
-      gamma[12].insert(1, 1) = I;
-      gamma[12].insert(2, 2) = I;
-      gamma[12].insert(3, 3) = -I;
+
+    case 12: // gamma_0 * gamma_3
+      gamma[12].row[0] = 0;
+      gamma[12].value[0] = -I;
+      gamma[12].row[1] = 1;
+      gamma[12].value[1] = I;
+      gamma[12].row[2] = 2;
+      gamma[12].value[2] = I;
+      gamma[12].row[3] = 3;
+      gamma[12].value[3] = -I;
       break;
-    case 13: // gamma_1 gamma_2
-      gamma[13].insert(0, 0) = I;
-      gamma[13].insert(1, 1) = -I;
-      gamma[13].insert(2, 2) = I;
-      gamma[13].insert(3, 3) = -I;
+
+    case 13: // gamma_1 * gamma_2
+      gamma[13].row[0] = 0;
+      gamma[13].value[0] = I;
+      gamma[13].row[1] = 1;
+      gamma[13].value[1] = -I;
+      gamma[13].row[2] = 2;
+      gamma[13].value[2] = I;
+      gamma[13].row[3] = 3;
+      gamma[13].value[3] = -I;
       break;
-    case 14: // gamma_1 gamma_3
-      gamma[14].insert(0, 1) = -1.;
-      gamma[14].insert(1, 0) = 1.;
-      gamma[14].insert(2, 3) = -1.;
-      gamma[14].insert(3, 2) = 1.;
+
+    case 14: // gamma_1 * gamma_3
+      gamma[14].row[0] = 1;
+      gamma[14].value[0] = 1;
+      gamma[14].row[1] = 0;
+      gamma[14].value[1] = -1;
+      gamma[14].row[2] = 3;
+      gamma[14].value[2] = 1;
+      gamma[14].row[3] = 2;
+      gamma[14].value[3] = -1;
       break;
-    case 15: // gamma_2 gamma_3
-      gamma[15].insert(0, 1) = I;
-      gamma[15].insert(1, 0) = I;
-      gamma[15].insert(2, 3) = I;
-      gamma[15].insert(3, 2) = I;
+
+    case 15: // gamma_2 * gamma_3
+      gamma[15].row[0] = 1;
+      gamma[15].value[0] = I;
+      gamma[15].row[1] = 0;
+      gamma[15].value[1] = I;
+      gamma[15].row[2] = 3;
+      gamma[15].value[2] = I;
+      gamma[15].row[3] = 2;
+      gamma[15].value[3] = I;
       break;
-    case 16: // gamma_2 gamma_0 gamma_5
-      gamma[16].insert(0, 1) = 1.;
-      gamma[16].insert(1, 0) = -1.;
-      gamma[16].insert(2, 3) = 1.;
-      gamma[16].insert(3, 2) = -1.;
-      break;
-    case 17: // nothing yet
-      gamma[17].insert(0, 0) = 1.;
-      gamma[17].insert(1, 1) = 1.;
-      gamma[17].insert(2, 2) = 1.;
-      gamma[17].insert(3, 3) = 1.;
-      break;
-    case 18: // nothing yet
-      gamma[18].insert(0, 0) = 1.;
-      gamma[18].insert(1, 1) = 1.;
-      gamma[18].insert(2, 2) = 1.;
-      gamma[18].insert(3, 3) = 1.;
-      break;
-    case 19: // nothing yet
-      gamma[19].insert(0, 0) = 1.;
-      gamma[19].insert(1, 1) = 1.;
-      gamma[19].insert(2, 2) = 1.;
-      gamma[19].insert(3, 3) = 1.;
+
+    case 16: // gamma_2 * gamma_0 * gamma_5
+      gamma[13].row[0] = 1;
+      gamma[13].value[0] = -1;
+      gamma[13].row[1] = 0;
+      gamma[13].value[1] = 1;
+      gamma[13].row[2] = 3;
+      gamma[13].value[2] = -1;
+      gamma[13].row[3] = 2;
+      gamma[13].value[3] = 1;
       break;
     default:
       printf("Dirac component %d not found\n", i);

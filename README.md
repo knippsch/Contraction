@@ -16,7 +16,9 @@ in Basicoperator.cpp:
 TODO: write I/O class to modularize read_eigenvectors_from_file(), 
       read_perambulators_from_file() and read_rnd_vec_from_file() 
       Check.
-TODO: EXPLAIN DEVIATION
+      make it subclass of basicoperator
+TODO: EXPLAIN DEVIATION 
+      Check.
 TODO: implement better solution for init_operator() regarding 4-pt functions
 TODO: implement lookup-table for get_operator
 TODO: implement more flexible solution for dilution scheme
