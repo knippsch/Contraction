@@ -67,6 +67,7 @@ int main (int ac, char* av[]) {
 //        4 * number_of_eigen_vec, 4 * number_of_eigen_vec);
 //  }
 
+
 	Eigen::MatrixXcd op_D_tsource = Eigen::MatrixXcd::Zero(
 			quarks[0].number_of_dilution_E * quarks[0].number_of_dilution_D,
 			4 * number_of_eigen_vec);
@@ -184,7 +185,8 @@ int main (int ac, char* av[]) {
 
         // initialize contraction[rnd_i] = perambulator * basicoperator
         // = D_u^-1
-        basic->init_operator(t_source, t_sink, rewr);
+        // choose 'i' for interlace or 'b' for block time dilution scheme
+        basic->init_operator(t_source, t_sink, rewr, 'i');
         // "multiply contraction[rnd_i] with gamma structure"
         // contraction[rnd_i] are the columns of D_u^-1 which get
         // reordered by gamma multiplication. No actuall multiplication
