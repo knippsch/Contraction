@@ -194,16 +194,19 @@ int main (int ac, char* av[]) {
         // initialize contraction[rnd_i] = perambulator * basicoperator
         // = D_u^-1
         // choose 'i' for interlace or 'b' for block time dilution scheme
-        basic->init_operator(t_source, t_sink, rewr, 'i');
+        basic->init_operator(t_source, t_sink, rewr, 'b');
+
         // "multiply contraction[rnd_i] with gamma structure"
         // contraction[rnd_i] are the columns of D_u^-1 which get
         // reordered by gamma multiplication. No actuall multiplication
         // is carried out
-        // TODO: implement dirac argument for get_operator
+          //std::cout << "get operator for " << t_source << ", " << t_sink << std::endl;
         basic->get_operator(op_1);
+
         // same as get_operator but with gamma_5 trick. D_u^-1 is
         // daggered and multipied with gamma_5 from left and right
         basic->get_operator_g5(op_2);
+          //std::cout << "Success \n\n" << std::endl;
         
         clock_t t2 = clock(); 
 
@@ -274,11 +277,11 @@ int main (int ac, char* av[]) {
 				int t_source_1 = (t_source + 1) % Lt;
 				int t_sink_1 = (t_sink + 1) % Lt;
 
-        basic->init_operator(t_source_1, t_sink_1, rewr, 'i');
+        basic->init_operator(t_source_1, t_sink_1, rewr, 'b');
         basic->get_operator(op_1);
         basic->get_operator_g5(op_2);
 
-        basic->init_operator(t_source, t_sink, rewr, 'i');
+        basic->init_operator(t_source, t_sink, rewr, 'b');
         basic->get_operator(op_3);
         basic->get_operator_g5(op_4);
 
