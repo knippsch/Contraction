@@ -132,15 +132,23 @@ int main (int ac, char* av[]) {
 	const double norm1 = Lt * norm;
 
   // Memory for propagation matrices (is that a word?) from t_source to t_sink
-  // and vice versa
-  Eigen::MatrixXcd* op_tsource_tsink = new Eigen::MatrixXcd[number_of_rnd_vec];
-  Eigen::MatrixXcd* op_tsink_tsource = new Eigen::MatrixXcd[number_of_rnd_vec];
-  for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i){
-    op_tsource_tsink[rnd_i] = Eigen::MatrixXcd(4 * number_of_eigen_vec, 
+  // (op_1) and vice versa (op_2)
+  // additional t_source to t_sink (op_3) and t_sink to t_source (op_4) for
+  // 4-point functions
+  Eigen::MatrixXcd* op_1 = new Eigen::MatrixXcd[number_of_rnd_vec];
+  Eigen::MatrixXcd* op_2 = new Eigen::MatrixXcd[number_of_rnd_vec];
+  Eigen::MatrixXcd* op_3 = new Eigen::MatrixXcd[number_of_rnd_vec];
+  Eigen::MatrixXcd* op_4 = new Eigen::MatrixXcd[number_of_rnd_vec];
+ for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i){
+    op_1[rnd_i] = Eigen::MatrixXcd(4 * number_of_eigen_vec, 
         4 * number_of_eigen_vec);
-    op_tsink_tsource[rnd_i] = Eigen::MatrixXcd(4 * number_of_eigen_vec, 
+    op_2[rnd_i] = Eigen::MatrixXcd(4 * number_of_eigen_vec, 
         4 * number_of_eigen_vec);
-  }
+    op_3[rnd_i] = Eigen::MatrixXcd(4 * number_of_eigen_vec, 
+        4 * number_of_eigen_vec);
+    op_4[rnd_i] = Eigen::MatrixXcd(4 * number_of_eigen_vec, 
+        4 * number_of_eigen_vec);
+ }
 
 	// ***************************************************************************
 	// ***************************************************************************
@@ -192,10 +200,10 @@ int main (int ac, char* av[]) {
         // reordered by gamma multiplication. No actuall multiplication
         // is carried out
         // TODO: implement dirac argument for get_operator
-        basic->get_operator(op_tsource_tsink);
+        basic->get_operator(op_1);
         // same as get_operator but with gamma_5 trick. D_u^-1 is
         // daggered and multipied with gamma_5 from left and right
-        basic->get_operator_g5(op_tsink_tsource);
+        basic->get_operator_g5(op_2);
         
         clock_t t2 = clock(); 
 
@@ -207,7 +215,7 @@ int main (int ac, char* av[]) {
                 // C2 = tr(D_d^-1 Gamma D_u^-1 Gamma)
                 // TODO: find signflip of imaginary part
                 C2_mes[p][dirac][abs((t_sink - t_source - Lt) % Lt)] += 
-                  (op_tsink_tsource[rnd2] * op_tsource_tsink[rnd1]).trace();
+                  (op_2[rnd2] * op_1[rnd1]).trace();
               }
             }
           } 
@@ -216,52 +224,9 @@ int main (int ac, char* av[]) {
         t += clock() - t2;
         t2 = 0;
 
-
-#if 0
-				//std::cout << t_source << "\t" << t_sink << std::endl;
-
-				for(int rnd1 = 0; rnd1 < number_of_rnd_vec; ++rnd1){
-
-					peram_1 = (basic->perambulator[rnd1]).block(
-							4 * number_of_eigen_vec * t_source,
-							quarks[0].number_of_dilution_D * quarks[0].number_of_dilution_E
-									* ( t_sink % quarks[0].number_of_dilution_T),		// changed for block interlace dilution
-							4 * number_of_eigen_vec,
-							quarks[0].number_of_dilution_D * quarks[0].number_of_dilution_E);
-
-					op_D_tsource =
-							(peram_1 * basic->basicoperator[rnd1][t_sink][5]).adjoint();
-
-					for(int rnd2 = rnd1 + 1; rnd2 < number_of_rnd_vec; ++rnd2){
-
-						peram_2 = (basic->perambulator[rnd2]).block(
-								4 * number_of_eigen_vec * t_source,
-								quarks[0].number_of_dilution_D * quarks[0].number_of_dilution_E
-										* ( t_sink % quarks[0].number_of_dilution_T),		// changed for block interlace dilution
-								4 * number_of_eigen_vec,
-								quarks[0].number_of_dilution_D
-										* quarks[0].number_of_dilution_E);
-
-
-						for(int p = 0; p < number_of_max_mom; ++p){
-							for(int dirac = 5; dirac < 6; ++dirac){
-								// building the operator in eigenvector and Dirac space
-								op_D_tsink = peram_2
-										* basic->basicoperator[rnd2][t_sink][dirac];
-								op_D_tsource_1 = basic->mul_r_gamma(op_D_tsource,
-										op_D_tsource.rows(), op_D_tsource.cols(), dirac, 3);
-								// building correlation function
-								C2_mes[p][dirac][abs((t_sink - t_source - Lt) % Lt)] +=
-										(op_D_tsource_1 * op_D_tsink).trace();
-
-							}
-						}
-					}
-				}
-#endif
-
 			}
 		}
+
 		double norm3 = Lt * number_of_rnd_vec * (number_of_rnd_vec - 1) * 0.5;
 		for(int t = 0; t < Lt; ++t)
 			for(int p = 0; p < number_of_max_mom; ++p)
@@ -293,7 +258,6 @@ int main (int ac, char* av[]) {
 		printf("\t\tSUCCESS - %.1f seconds\n", ((float) time)/CLOCKS_PER_SEC);
     printf("\t\tCorrelation Function overhead - %.1f seconds\n", ((float) t)/CLOCKS_PER_SEC);
 
-#if 0
 		// *************************************************************************
 		// FOUR PT CONTRACTION 1 ***************************************************
 		// setting the correlation function to zero
@@ -310,6 +274,64 @@ int main (int ac, char* av[]) {
 				int t_source_1 = (t_source + 1) % Lt;
 				int t_sink_1 = (t_sink + 1) % Lt;
 
+        basic->init_operator(t_source_1, t_sink_1, rewr, 'i');
+        basic->get_operator(op_1);
+        basic->get_operator_g5(op_2);
+
+        basic->init_operator(t_source, t_sink, rewr, 'i');
+        basic->get_operator(op_3);
+        basic->get_operator_g5(op_4);
+
+				for(int rnd1 = 0; rnd1 < number_of_rnd_vec; ++rnd1){
+          // first u quark: t_source_1 -> t_sink_1
+				  for(int rnd3 = rnd1 + 1; rnd3 < number_of_rnd_vec; ++rnd3){
+            // first d quark: t_sink_1 -> t_source_1
+				    for(int rnd2 = 0; rnd2 < number_of_rnd_vec; ++rnd2){			
+              // second u quark: t_source -> t_sink
+      				if((rnd2 != rnd1) && (rnd2 != rnd3)){
+					      for(int rnd4 = rnd2 + 1; rnd4 < number_of_rnd_vec; ++rnd4){
+                  // second d quark: t_sink -> t_source
+						      if((rnd4 != rnd1) && (rnd4 != rnd3)){
+							      C2_mes[0][5][abs((t_sink - t_source - Lt) % Lt)] += 
+                    (std::real((op_2[rnd3] * op_1[rnd1]).trace())) * 
+                        (std::real((op_4[rnd4] * op_3[rnd2]).trace()));
+						      }
+					      }
+              }
+            }
+          }
+        }
+
+      }
+    }
+
+    for(int t = 0; t < Lt; ++t)
+			C2_mes[0][5][t] /= norm1;
+
+		printf("\n");
+
+		sprintf(outfile, "./C4_1_conf%04d.dat", config_i);
+		if((fp = fopen(outfile, "wb")) == NULL)
+			std::cout << "fail to open outputfile" << std::endl;
+		fwrite((double*) C2_mes[0][5], sizeof(double), 2 * Lt, fp);
+		fclose(fp);
+
+		for(int dirac = 5; dirac < 6; ++dirac){
+			printf("\tdirac = %02d\n", dirac);
+			printf(
+					"\t t\tRe(C2_con)\tIm(C2_con)\n\t----------------------------------\n");
+			for(int t1 = 0; t1 < Lt; ++t1){
+				printf("\t%02d\t%.5e\t%.5e\n", t1, real(C2_mes[0][dirac][t1]),
+						imag(C2_mes[0][dirac][t1]));
+			}
+			printf("\n");
+		}
+		printf("\n");
+
+    time = clock() - time;
+		printf("\t\tSUCCESS - %.1f seconds\n", ((float) time)/CLOCKS_PER_SEC);
+
+#if 0
 				for(int rnd1 = 0; rnd1 < number_of_rnd_vec; ++rnd1){
 					// first u quark: t_source_1 -> t_sink_1
 					peram_1 = (basic->perambulator[rnd1]).block(
@@ -384,33 +406,6 @@ int main (int ac, char* av[]) {
 
 			}
 		}
-
-		for(int t = 0; t < Lt; ++t)
-			C2_mes[0][5][t] /= norm1;
-		printf("\n");
-
-//#if 0
-		sprintf(outfile, "./C4_1_conf%04d.dat", config_i);
-		if((fp = fopen(outfile, "wb")) == NULL)
-			std::cout << "fail to open outputfile" << std::endl;
-		fwrite((double*) C2_mes[0][5], sizeof(double), 2 * Lt, fp);
-		fclose(fp);
-//#endif
-
-		for(int dirac = 5; dirac < 6; ++dirac){
-			printf("\tdirac = %02d\n", dirac);
-			printf(
-					"\t t\tRe(C2_con)\tIm(C2_con)\n\t----------------------------------\n");
-			for(int t1 = 0; t1 < Lt; ++t1){
-				printf("\t%02d\t%.5e\t%.5e\n", t1, real(C2_mes[0][dirac][t1]),
-						imag(C2_mes[0][dirac][t1]));
-			}
-			printf("\n");
-		}
-		printf("\n");
-
-    time = clock() - time;
-		printf("\t\tSUCCESS - %.1f seconds\n", ((float) time)/CLOCKS_PER_SEC);
 
 		// *************************************************************************
 		// FOUR PT CONTRACTION 2 ***************************************************
