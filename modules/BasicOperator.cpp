@@ -390,7 +390,7 @@ void BasicOperator::init_operator (const int t_source, const int t_sink,
             number_of_eigen_vec,
             quarks[0].number_of_dilution_E) *
         rewr->basicoperator[rnd_i][t_sink][col];
-
+        
         // by gamma_5 trick Propagator matrix is daggered and the offdiagonal
         // 2x2 blocks get multiplied my -1. The if-statement is the shortest
         // criterium I managed to think of for the offdiagonal blocks

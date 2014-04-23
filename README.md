@@ -1,10 +1,12 @@
 Markus new contraction code 2014
 
+in LapHs.cpp
 - modularized building the propagator and Gamma structure into
   ../modules/Basicoperator.cpp
   new Initialization of class new class ReadWrite (see below)
   introduced init_operator() to set up D_u^-1
   introduced get_operator() to implement gamma_5 trick and gamma structure
+- implemented C2 and C4_1
 
 in Basicoperator.cpp:
 - changed layout of perambulator and basicoperator to reflect blockdiagonal
@@ -22,9 +24,12 @@ in ReadWrite.cpp:
 - introduced new class ReadWrite to handle the file input
 - shifted read_eigenvectors_from_file(), read_perambulators_from_file() and 
   read_rnd_vec_from_file() into ReadWrite.cpp
+- changed file layout to Bastians 2014 perambulator code output structure
 
 
 TODO: implement 4-pt functions in init_operator() and LapHs.cpp
+TODO: implement switchable solution for interlace and block time dilution
+      in ReadWrite.cpp
 TODO: implement momenta and check dispersion relation
 
 TODO: implement disconnected diagramms

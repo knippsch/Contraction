@@ -18,7 +18,7 @@ ReadWrite::ReadWrite () {
     const std::vector<quark> quarks = global_data->get_quarks();
     const int number_of_eigen_vec = global_data->get_number_of_eigen_vec();
     const int number_of_rnd_vec = quarks[0].number_of_rnd_vec;
-    const int number_of_inversions = quarks[0].number_of_dilution_T
+    const int number_of_inversions = (Lt / quarks[0].number_of_dilution_T)
         * quarks[0].number_of_dilution_E * quarks[0].number_of_dilution_D;
     V = new Eigen::MatrixXcd[Lt];
     for(int t = 0; t < Lt; ++t)
@@ -77,7 +77,7 @@ ReadWrite::~ReadWrite() {
 
 void ReadWrite::build_source_matrix () {
 
-    clock_t t = clock();
+    clock_t t2 = clock();
     printf("\tbuild source matrix:");
     fflush(stdout);
 
@@ -136,8 +136,8 @@ void ReadWrite::build_source_matrix () {
 //        (basicoperator[rnd_i][t][4]).noalias() = source.adjoint() * V_mat;
       } // loop over time ends here
     }
-    t = clock() - t;
-    printf("\t\tSUCCESS - %.1f seconds\n", ((float) t)/CLOCKS_PER_SEC);
+    t2 = clock() - t2;
+    printf("\t\tSUCCESS - %.1f seconds\n", ((float) t2)/CLOCKS_PER_SEC);
   }
 
 /******************************************************************************/
@@ -208,7 +208,7 @@ void ReadWrite::read_perambulators_from_file (const int config_i) {
     const int number_of_eigen_vec = global_data->get_number_of_eigen_vec();
     const std::vector<quark> quarks = global_data->get_quarks();
     const int number_of_rnd_vec = quarks[0].number_of_rnd_vec;
-    const int number_of_inversions = quarks[0].number_of_dilution_T
+    const int number_of_inversions = (Lt / quarks[0].number_of_dilution_T)
         * quarks[0].number_of_dilution_E * quarks[0].number_of_dilution_D;
     const int size_perambulator_entry = number_of_inversions * Lt * 4
         * number_of_eigen_vec;
@@ -216,20 +216,32 @@ void ReadWrite::read_perambulators_from_file (const int config_i) {
     // memory for reading perambulators
     std::complex<double>* perambulator_read =
         new std::complex<double>[size_perambulator_entry];
+    char temp[9];
 
-    // data path
-    std::string filename = global_data->get_path_perambulators() + "/"
-        + global_data->get_name_perambulators();
+    if(verbose){
+      printf("reading perambulators from files:\n");
+    }
+    else{
+      printf("\treading perambulators:");
+    }
 
-    if(verbose) printf("reading perambulators from files:\n");
-    else printf("\treading perambulators:");
     for(int rnd_vec_i = 0; rnd_vec_i < number_of_rnd_vec; ++rnd_vec_i){
+      // data path
+      sprintf(temp, "cnfg%d/rnd_vec_%01d/", config_i, rnd_vec_i);
+      std::string filename = global_data->get_path_perambulators() + "/"
+          + temp;
+
       //TODO: name is hard-coded at the moment
       sprintf(infile,
-          "%s.dil%02d.u.Tso%03d.Dso%01d.Vso%03d.Tsi%03d.Dsi%01d.Vsi%03d.%04d",
-          filename.c_str(), rnd_vec_i, quarks[0].number_of_dilution_T,
-          quarks[0].number_of_dilution_D, quarks[0].number_of_dilution_E, Lt, 4,
-          number_of_eigen_vec, config_i);
+          "%sperambulator.rndvecnb%02d.u.TsoB0024.VsoI0006.DsoF4.TsiF0048."
+          "SsiF13824.DsiF4.CsiF3.smeared1.%05d", filename.c_str(), rnd_vec_i, 
+          config_i);
+
+//         "%s.dil%02d.u.Tso%03d.Dso%01d.Vso%03d.Tsi%03d.Dsi%01d.Vsi%03d.%04d",
+//          filename.c_str(), rnd_vec_i, quarks[0].number_of_dilution_T,
+//          quarks[0].number_of_dilution_D, quarks[0].number_of_dilution_E, Lt, 4,
+//          number_of_eigen_vec, config_i);
+
       if((fp = fopen(infile, "rb")) == NULL){
         std::cout << "failed to open file: " << infile << "\n" << std::endl;
         exit(0);
@@ -248,7 +260,7 @@ void ReadWrite::read_perambulators_from_file (const int config_i) {
       for(int t1 = 0; t1 < Lt; ++t1)
         for(int ev1 = 0; ev1 < number_of_eigen_vec; ++ev1)
           for(int dirac1 = 0; dirac1 < 4; ++dirac1)
-            for(int t2 = 0; t2 < quarks[0].number_of_dilution_T; ++t2)
+            for(int t2 = 0; t2 < (Lt / quarks[0].number_of_dilution_T); ++t2)
               for(int ev2 = 0; ev2 < quarks[0].number_of_dilution_E; ++ev2)
                 for(int dirac2 = 0; dirac2 < quarks[0].number_of_dilution_D; 
                     ++dirac2){
@@ -295,17 +307,30 @@ void ReadWrite::read_rnd_vectors_from_file (const int config_i) {
     // memory for reading random vectors
     std::complex<double>* rnd_vec_read =
         new std::complex<double>[rnd_vec_length];
-    std::string filename = global_data->get_path_perambulators()
-        + "/randomvector";
+    char temp[9];
 
-    if(verbose) printf("reading random vectors from files:\n");
-    else printf("\treading random vectors:");
+    if(verbose){
+      printf("reading random vectors from files:\n");
+    }
+    else{
+      printf("\treading random vectors:");
+    }
+
     int check_read_in = 0;
 
     for(int rnd_vec_i = 0; rnd_vec_i < number_of_rnd_vec; ++rnd_vec_i){
+      // data path
+      sprintf(temp, "cnfg%d/rnd_vec_%01d/", config_i, rnd_vec_i);
+      std::string filename = global_data->get_path_perambulators()
+				+ "/" + temp;
+
       // read random vector
-      sprintf(infile, "%s.%03d.u.Ti.%04d", filename.c_str(), rnd_vec_i,
-          config_i);
+      sprintf(infile, "%srandomvector.rndvecnb%02d.u.nbev0120.%04d", 
+          filename.c_str(), rnd_vec_i, config_i);
+
+//      sprintf(infile, "%s.%03d.u.Ti.%04d", filename.c_str(), rnd_vec_i,
+//          config_i);
+
       if(verbose) printf("\tread file: %s\n", infile);
       if((fp = fopen(infile, "rb")) == NULL){
         std::cout << "failed to open file: " << infile << "\n" << std::endl;
@@ -313,6 +338,7 @@ void ReadWrite::read_rnd_vectors_from_file (const int config_i) {
       }
       check_read_in += fread(rnd_vec_read, sizeof(std::complex<double>),
           rnd_vec_length, fp);
+
       // copy into matrix structure
       for(int row_i = 0; row_i < rnd_vec_length; ++row_i){
         rnd_vec[rnd_vec_i](row_i) = rnd_vec_read[row_i];
