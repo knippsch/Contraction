@@ -29,7 +29,8 @@ int main (int ac, char* av[]) {
 	GlobalData* global_data = GlobalData::Instance();
 	global_data->read_parameters(ac, av);
 
-	Eigen::setNbThreads(4);
+	Eigen::setNbThreads(1);
+  omp_set_num_threads(1);
 
 	// global variables from input file needed in main function
 	const int Lt = global_data->get_Lt();
@@ -196,36 +197,31 @@ int main (int ac, char* av[]) {
         // choose 'i' for interlace or 'b' for block time dilution scheme
         basic->init_operator(t_source, t_sink, rewr, 'b');
 
-        // "multiply contraction[rnd_i] with gamma structure"
-        // contraction[rnd_i] are the columns of D_u^-1 which get
-        // reordered by gamma multiplication. No actuall multiplication
-        // is carried out
-          //std::cout << "get operator for " << t_source << ", " << t_sink << std::endl;
-        basic->get_operator(op_1);
+        for(int dirac = 0; dirac < 16; ++dirac){
 
-        // same as get_operator but with gamma_5 trick. D_u^-1 is
-        // daggered and multipied with gamma_5 from left and right
-        basic->get_operator_g5(op_2);
-          //std::cout << "Success \n\n" << std::endl;
-        
-        clock_t t2 = clock(); 
+          // "multiply contraction[rnd_i] with gamma structure"
+          // contraction[rnd_i] are the columns of D_u^-1 which get
+          // reordered by gamma multiplication. No actuall multiplication
+          // is carried out
+          basic->get_operator(op_1, dirac);
 
-        for(int rnd1 = 0; rnd1 < number_of_rnd_vec; ++rnd1){
-          for(int rnd2 = rnd1 + 1; rnd2 < number_of_rnd_vec; ++rnd2){
-            for(int p = 0; p < number_of_max_mom; ++p){
-              for(int dirac = 5; dirac < 6; ++dirac){
+          // same as get_operator but with gamma_5 trick. D_u^-1 is
+          // daggered and multipied with gamma_5 from left and right
+          basic->get_operator_g5(op_2, dirac);
+
+
+          for(int rnd1 = 0; rnd1 < number_of_rnd_vec; ++rnd1){
+            for(int rnd2 = rnd1 + 1; rnd2 < number_of_rnd_vec; ++rnd2){
+              for(int p = 0; p < number_of_max_mom; ++p){
                 // building Correlation function get quite intuitive
                 // C2 = tr(D_d^-1 Gamma D_u^-1 Gamma)
                 // TODO: find signflip of imaginary part
                 C2_mes[p][dirac][abs((t_sink - t_source - Lt) % Lt)] += 
-                  (op_2[rnd2] * op_1[rnd1]).trace();
+                    (op_2[rnd2] * op_1[rnd1]).trace();
               }
             }
-          } 
+          }   
         }
-
-        t += clock() - t2;
-        t2 = 0;
 
 			}
 		}
@@ -233,19 +229,19 @@ int main (int ac, char* av[]) {
 		double norm3 = Lt * number_of_rnd_vec * (number_of_rnd_vec - 1) * 0.5;
 		for(int t = 0; t < Lt; ++t)
 			for(int p = 0; p < number_of_max_mom; ++p)
-				for(int dirac = 5; dirac < 6; ++dirac)
+				for(int dirac = 0; dirac < 16; ++dirac)
 					C2_mes[p][dirac][t] /= norm3;
 		// writing the correlation function to disk
 		sprintf(outfile, "./C2_pi+-_conf%04d.dat", config_i);
 		if((fp = fopen(outfile, "wb")) == NULL)
 			std::cout << "fail to open outputfile" << std::endl;
 		for(int p = 0; p < number_of_max_mom; ++p)
-			for(int dirac = 5; dirac < 6; ++dirac)
+			for(int dirac = 0; dirac < 16; ++dirac)
 				fwrite((double*) C2_mes[p][dirac], sizeof(double), 2 * Lt, fp);
 		fclose(fp);
 
 		printf("\n");
-		for(int dirac = 5; dirac < 6; ++dirac){
+		for(int dirac = 0; dirac < 16; ++dirac){
 			printf("\tdirac = %02d\n", dirac);
 			printf(
 					"\t t\tRe(C2_con)\tIm(C2_con)\n\t----------------------------------\n");
@@ -259,7 +255,8 @@ int main (int ac, char* av[]) {
 
     time = clock() - time;
 		printf("\t\tSUCCESS - %.1f seconds\n", ((float) time)/CLOCKS_PER_SEC);
-    printf("\t\tCorrelation Function overhead - %.1f seconds\n", ((float) t)/CLOCKS_PER_SEC);
+
+#if 0
 
 		// *************************************************************************
 		// FOUR PT CONTRACTION 1 ***************************************************
@@ -285,19 +282,34 @@ int main (int ac, char* av[]) {
         basic->get_operator(op_3);
         basic->get_operator_g5(op_4);
 
-				for(int rnd1 = 0; rnd1 < number_of_rnd_vec; ++rnd1){
+        // first trace
+        for(int rnd1 = 0; rnd1 < number_of_rnd_vec; ++rnd1){
           // first u quark: t_source_1 -> t_sink_1
-				  for(int rnd3 = rnd1 + 1; rnd3 < number_of_rnd_vec; ++rnd3){
+          for(int rnd3 = rnd1 + 1; rnd3 < number_of_rnd_vec; ++rnd3){
             // first d quark: t_sink_1 -> t_source_1
+            part1[rnd1][rnd3] = std::real((op_2[rnd3] * op_1[rnd1]).trace());
+          }
+        }
+
+        // second trace
+        for(int rnd2 = 0; rnd2 < number_of_rnd_vec; ++rnd2){			
+          // second u quark: t_source -> t_sink
+          for(int rnd4 = rnd2 + 1; rnd4 < number_of_rnd_vec; ++rnd4){
+            // second d quark: t_sink -> t_source
+            part2[rnd2][rnd4] = std::real((op_4[rnd4] * op_3[rnd2]).trace());
+          }
+        }
+
+        // complete diagramm
+        // every quark line must have its own random vec
+				for(int rnd1 = 0; rnd1 < number_of_rnd_vec; ++rnd1){
+				  for(int rnd3 = rnd1 + 1; rnd3 < number_of_rnd_vec; ++rnd3){
 				    for(int rnd2 = 0; rnd2 < number_of_rnd_vec; ++rnd2){			
-              // second u quark: t_source -> t_sink
       				if((rnd2 != rnd1) && (rnd2 != rnd3)){
 					      for(int rnd4 = rnd2 + 1; rnd4 < number_of_rnd_vec; ++rnd4){
-                  // second d quark: t_sink -> t_source
 						      if((rnd4 != rnd1) && (rnd4 != rnd3)){
 							      C2_mes[0][5][abs((t_sink - t_source - Lt) % Lt)] += 
-                    (std::real((op_2[rnd3] * op_1[rnd1]).trace())) * 
-                        (std::real((op_4[rnd4] * op_3[rnd2]).trace()));
+                        part1[rnd1][rnd3] * part2[rnd2][rnd4];
 						      }
 					      }
               }
@@ -333,6 +345,8 @@ int main (int ac, char* av[]) {
 
     time = clock() - time;
 		printf("\t\tSUCCESS - %.1f seconds\n", ((float) time)/CLOCKS_PER_SEC);
+
+#endif
 
 #if 0
 				for(int rnd1 = 0; rnd1 < number_of_rnd_vec; ++rnd1){

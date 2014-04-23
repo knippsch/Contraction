@@ -414,35 +414,30 @@ void BasicOperator::init_operator (const int t_source, const int t_sink,
 
 // returns D_u^-1 Gamma
 
-void BasicOperator::get_operator (Eigen::MatrixXcd*& op_1){
+void BasicOperator::get_operator (Eigen::MatrixXcd*& op_1, const int dirac){
   const int number_of_eigen_vec = global_data->get_number_of_eigen_vec();
   const std::vector<quark> quarks = global_data->get_quarks();
   const int number_of_rnd_vec = quarks[0].number_of_rnd_vec;
 
   for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i){
 
-  //TODO dirac has to be parameter in function header -> choose dirac structure
-  //TODO implement other dirac structures
+    // case gamma_5: diag(1,1,-1,-1)
+    // no reordering of columns, but two factors -1
+    op_1[rnd_i].block(0, gamma[dirac].row[0] * number_of_eigen_vec,
+        4 * number_of_eigen_vec, number_of_eigen_vec) =
+    gamma[dirac].value[0] * contraction[rnd_i][0];
 
-  int dirac = 5;
+    op_1[rnd_i].block(0, gamma[dirac].row[1] * number_of_eigen_vec,
+        4 * number_of_eigen_vec, number_of_eigen_vec) =
+    gamma[dirac].value[1] * contraction[rnd_i][1];
 
-      // case gamma_5: diag(1,1,-1,-1)
-      // no reordering of columns, but two factors -1
-      op_1[rnd_i].block(0, gamma[dirac].row[0] * number_of_eigen_vec,
-          4 * number_of_eigen_vec, number_of_eigen_vec) =
-      gamma[dirac].value[0] * contraction[rnd_i][0];
+    op_1[rnd_i].block(0, gamma[dirac].row[2] * number_of_eigen_vec,
+        4 * number_of_eigen_vec, number_of_eigen_vec) =
+    gamma[dirac].value[2] * contraction[rnd_i][2];
 
-      op_1[rnd_i].block(0, gamma[dirac].row[1] * number_of_eigen_vec,
-          4 * number_of_eigen_vec, number_of_eigen_vec) =
-      gamma[dirac].value[1] * contraction[rnd_i][1];
-
-      op_1[rnd_i].block(0, gamma[dirac].row[2] * number_of_eigen_vec,
-          4 * number_of_eigen_vec, number_of_eigen_vec) =
-      gamma[dirac].value[2] * contraction[rnd_i][2];
-
-      op_1[rnd_i].block(0, gamma[dirac].row[3] * number_of_eigen_vec,
-          4 * number_of_eigen_vec, number_of_eigen_vec) =
-      gamma[dirac].value[3] * contraction[rnd_i][3];
+    op_1[rnd_i].block(0, gamma[dirac].row[3] * number_of_eigen_vec,
+        4 * number_of_eigen_vec, number_of_eigen_vec) =
+    gamma[dirac].value[3] * contraction[rnd_i][3];
 
 #if 0
       for(int i = 0; i < 4; i++){
@@ -470,14 +465,12 @@ void BasicOperator::get_operator (Eigen::MatrixXcd*& op_1){
 
 //returns D_d^-1 Gamma
 
-void BasicOperator::get_operator_g5 (Eigen::MatrixXcd*& op_1){
+void BasicOperator::get_operator_g5 (Eigen::MatrixXcd*& op_1, const int dirac){
   const int number_of_eigen_vec = global_data->get_number_of_eigen_vec();
   const std::vector<quark> quarks = global_data->get_quarks();
   const int number_of_rnd_vec = quarks[0].number_of_rnd_vec;
 
   for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i){
-
-    int dirac = 5;
 
       // like in get_operator(), but with additional gamma_5 trick
       // D_d^-1 = gamma_5 D_u^-1^dagger gamma_5
