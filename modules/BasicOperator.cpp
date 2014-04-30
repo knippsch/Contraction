@@ -219,51 +219,6 @@ static void create_gamma (struct lookup* gamma, const int i) {
 
 /******************************************************************************/
 /******************************************************************************/
-/******************************************************************************/
-
-static void create_momenta (std::complex<double>** momentum) {
-
-  try{
-    const int Lx = global_data->get_Lx();
-    const int Ly = global_data->get_Ly();
-    const int Lz = global_data->get_Lz();
-    const int max_mom_in_one_dir = global_data->get_max_mom_in_one_dir();
-    // helper variables for momenta
-    const double px = 2. * M_PI / (double) Lx;
-    const double py = 2. * M_PI / (double) Ly;
-    const double pz = 2. * M_PI / (double) Lz;
-    int p = 0;
-    // running over all momentum components
-    for(int ipx = -max_mom_in_one_dir; ipx <= max_mom_in_one_dir; ++ipx){
-      for(int ipy = -max_mom_in_one_dir; ipy <= max_mom_in_one_dir; ++ipy){
-        for(int ipz = -max_mom_in_one_dir; ipz <= max_mom_in_one_dir; ++ipz){
-          // running over all lattice points
-          for(int x = 0; x < Lx; ++x){
-            const int xH = x * Ly * Lz; // helper variable
-            const int ipxH = ipx * px * x; // helper variable
-            for(int y = 0; y < Ly; ++y){
-              const int xHyH = xH + y * Lz; // helper variable
-              const int ipxHipzH = ipxH + ipy * py * y; // helper variable
-              for(int z = 0; z < Lz; ++z){
-                //ipz=1;
-                momentum[p][xHyH + z] = exp(-I * (ipxHipzH + ipz * pz * z));
-                //std::cout << "mom = " << momentum[p][xHyH + z] << std::endl;
-              }
-            }
-          }
-          ++p;
-        }
-      }
-    }
-  }
-  catch(std::exception& e){
-    std::cout << e.what() << "in: BasicOperator::create_momenta\n";
-    exit(0);
-  }
-}
-
-/******************************************************************************/
-/******************************************************************************/
 } // internal namespace ends here
 
 /******************************************************************************/
@@ -277,28 +232,14 @@ BasicOperator::BasicOperator () {
     // TODO: Look at Lx, Ly, Lz, dim_row, number_of_max_mom, verbose
     // necassary for momenta?
     const int Lt = global_data->get_Lt();
-    const int Lx = global_data->get_Lx();
-    const int Ly = global_data->get_Ly();
-    const int Lz = global_data->get_Lz();
-    const int dim_row = global_data->get_dim_row();
     const int number_of_eigen_vec = global_data->get_number_of_eigen_vec();
-    const int number_of_max_mom = global_data->get_number_of_max_mom();
     const std::vector<quark> quarks = global_data->get_quarks();
     const int number_of_rnd_vec = quarks[0].number_of_rnd_vec;
-    const int number_of_inversions = quarks[0].number_of_dilution_T
-        * quarks[0].number_of_dilution_E * quarks[0].number_of_dilution_D;
-    const int verbose = global_data->get_verbose();
     // creating gamma matrices
     gamma = new struct lookup[16];
     for(int i = 0; i < 16; ++i){
       create_gamma(gamma, i);
     }
-    // Initializing memory for eigen vectors
-    // momentum creation
-    momentum = new std::complex<double>*[number_of_max_mom];
-    for(int p = 0; p < number_of_max_mom; ++p)
-      momentum[p] = new std::complex<double>[Lx * Ly * Lz];
-    create_momenta(momentum);
     // memory for the perambulator, random vector and basic operator
     contraction =         new Eigen::MatrixXcd*[number_of_rnd_vec];
     contraction_dagger =  new Eigen::MatrixXcd*[number_of_rnd_vec];
@@ -334,7 +275,6 @@ BasicOperator::~BasicOperator () {
     delete[] gamma;
     delete[] contraction;
     delete[] contraction_dagger;
-    delete[] momentum;
 
     gamma = NULL;
   }
@@ -385,10 +325,10 @@ void BasicOperator::init_operator (const int t_source, const int t_sink,
             number_of_eigen_vec, number_of_eigen_vec) =
         rewr->perambulator[rnd_i].block(4 * number_of_eigen_vec * t_source + 
             number_of_eigen_vec * row,
-            quarks[0].number_of_dilution_E * quarks[0].number_of_dilution_D * 
-            t_sink_dil + quarks[0].number_of_dilution_E * col,
+            (quarks[0].number_of_dilution_E) * quarks[0].number_of_dilution_D * 
+            t_sink_dil + (quarks[0].number_of_dilution_E) * col,
             number_of_eigen_vec,
-            quarks[0].number_of_dilution_E) *
+            (quarks[0].number_of_dilution_E)) *
         rewr->basicoperator[rnd_i][t_sink][col];
         
         // by gamma_5 trick Propagator matrix is daggered and the offdiagonal

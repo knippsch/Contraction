@@ -5,6 +5,55 @@
 // Definition of a pointer on global data
 static GlobalData * const global_data = GlobalData::Instance();
 
+namespace { // some internal namespace
+
+static const std::complex<double> I(0.0, 1.0);
+
+static void create_momenta (std::complex<double>** momentum) {
+
+  try{
+    const int Lx = global_data->get_Lx();
+    const int Ly = global_data->get_Ly();
+    const int Lz = global_data->get_Lz();
+    const int max_mom_in_one_dir = global_data->get_max_mom_in_one_dir();
+    // helper variables for momenta
+    const double px = 2. * M_PI / (double) Lx;
+    const double py = 2. * M_PI / (double) Ly;
+    const double pz = 2. * M_PI / (double) Lz;
+    int p = 0;
+    // running over all momentum components
+    for(int ipx = -max_mom_in_one_dir; ipx <= max_mom_in_one_dir; ++ipx){
+      for(int ipy = -max_mom_in_one_dir; ipy <= max_mom_in_one_dir; ++ipy){
+        for(int ipz = -max_mom_in_one_dir; ipz <= max_mom_in_one_dir; ++ipz){
+          // running over all lattice points
+          for(int x = 0; x < Lx; ++x){
+            const int xH = x * Ly * Lz; // helper variable
+            const int ipxH = ipx * px * x; // helper variable
+            for(int y = 0; y < Ly; ++y){
+              const int xHyH = xH + y * Lz; // helper variable
+              const int ipxHipzH = ipxH + ipy * py * y; // helper variable
+              for(int z = 0; z < Lz; ++z){
+                //ipz=1;
+                momentum[p][xHyH + z] = exp(-I * (ipxHipzH + ipz * pz * z));
+                //std::cout << "mom = " << momentum[p][xHyH + z] << std::endl;
+              }
+            }
+          }
+          ++p;
+        }
+      }
+    }
+  }
+  catch(std::exception& e){
+    std::cout << e.what() << "in: BasicOperator::create_momenta\n";
+    exit(0);
+  }
+}
+
+/******************************************************************************/
+/******************************************************************************/
+} // internal namespace ends here
+
 /******************************************************************************/
 /******************************************************************************/
 // constructor ****************************************************************/
@@ -14,16 +63,27 @@ static GlobalData * const global_data = GlobalData::Instance();
 ReadWrite::ReadWrite () {
   try{
     const int Lt = global_data->get_Lt();
+    const int Lx = global_data->get_Lx();
+    const int Ly = global_data->get_Ly();
+    const int Lz = global_data->get_Lz();
     const int dim_row = global_data->get_dim_row();
     const std::vector<quark> quarks = global_data->get_quarks();
+    const int number_of_max_mom = global_data->get_number_of_max_mom();
     const int number_of_eigen_vec = global_data->get_number_of_eigen_vec();
     const int number_of_rnd_vec = quarks[0].number_of_rnd_vec;
     const int number_of_inversions = (Lt / quarks[0].number_of_dilution_T)
         * quarks[0].number_of_dilution_E * quarks[0].number_of_dilution_D;
+
     V = new Eigen::MatrixXcd[Lt];
     for(int t = 0; t < Lt; ++t)
       V[t] = Eigen::MatrixXcd::Zero(dim_row, number_of_eigen_vec);
-// memory for the perambulator, random vector and basic operator
+    // Initializing memory for eigen vectors
+    // momentum creation
+    momentum = new std::complex<double>*[number_of_max_mom];
+    for(int p = 0; p < number_of_max_mom; ++p)
+      momentum[p] = new std::complex<double>[Lx * Ly * Lz];
+    create_momenta(momentum);
+    // memory for the perambulator, random vector and basic operator
     perambulator = new Eigen::MatrixXcd[number_of_rnd_vec];
     rnd_vec = new Eigen::VectorXcd[number_of_rnd_vec];
     basicoperator = new Eigen::MatrixXcd**[number_of_rnd_vec];
@@ -63,6 +123,7 @@ ReadWrite::~ReadWrite() {
     delete[] basicoperator;
     delete[] rnd_vec;
     delete[] V;
+    delete[] momentum;
 
     V = NULL;
   }
@@ -83,8 +144,8 @@ void ReadWrite::build_source_matrix () {
 
     const int Lt = global_data->get_Lt();
     const int number_of_eigen_vec = global_data->get_number_of_eigen_vec();
-    const int Vs = global_data->get_Lx() * global_data->get_Ly()
-        * global_data->get_Lz();
+    //const int Vs = global_data->get_Lx() * global_data->get_Ly()
+    //    * global_data->get_Lz();
     const std::vector<quark> quarks = global_data->get_quarks();
     const int number_of_rnd_vec = quarks[0].number_of_rnd_vec;
 
@@ -124,21 +185,23 @@ void ReadWrite::build_source_matrix () {
 //        }
         // creating basic operator
 
-      for(int vec_i = 0; vec_i < number_of_eigen_vec; ++vec_i)
-        for(int blocknr = 0; blocknr < 4; ++blocknr)
+      for(int blocknr = 0; blocknr < 4; ++blocknr) {
+        for(int vec_i = 0; vec_i < number_of_eigen_vec; ++vec_i) {
           // blocknr is identical with dirac. basicoperator blockdiagonal in diracspace
           // thus, one can "sort" by dirac index
-          ((basicoperator[rnd_i][t][blocknr]))(
-                  vec_i % quarks[0].number_of_dilution_E, 
-                  vec_i) = 
-                  std::conj(rnd_vec[rnd_i](blocknr + vec_i * 4 + 4 * number_of_eigen_vec * t));
+          ((basicoperator[rnd_i][t][blocknr]))
+              (vec_i % quarks[0].number_of_dilution_E, vec_i) += 
+              std::conj(rnd_vec[rnd_i](blocknr + vec_i * 4 + 
+              4 * number_of_eigen_vec * t));
+        }
+      }
 
-//        (basicoperator[rnd_i][t][4]).noalias() = source.adjoint() * V_mat;
-      } // loop over time ends here
-    }
-    t2 = clock() - t2;
-    printf("\t\tSUCCESS - %.1f seconds\n", ((float) t2)/CLOCKS_PER_SEC);
+    // (basicoperator[rnd_i][t][4]).noalias() = source.adjoint() * V_mat;
+    } // loop over time ends here
   }
+  t2 = clock() - t2;
+  printf("\t\tSUCCESS - %.1f seconds\n", ((float) t2)/CLOCKS_PER_SEC);
+}
 
 /******************************************************************************/
 /******************************************************************************/
