@@ -358,7 +358,7 @@ int main (int ac, char* av[]) {
 					C2_mes[p][dirac][t1] = std::complex<double>(0.0, 0.0);
 
 		for(int t_source = 0; t_source < Lt; ++t_source){
-			for(int t_sink = 0; t_sink < Lt; ++t_sink){
+			for(int t_sink = 0; t_sink < Lt-1; ++t_sink){
 
 				int t_source_1 = (t_source + 1) % Lt;
 				int t_sink_1 = (t_sink + 1) % Lt;
@@ -438,6 +438,7 @@ int main (int ac, char* av[]) {
     time = clock() - time;
 		printf("\t\tSUCCESS - %.1f seconds\n", ((float) time)/CLOCKS_PER_SEC);
 
+#endif
 
 		// *************************************************************************
 		// FOUR PT CONTRACTION 3 ***************************************************
@@ -457,16 +458,66 @@ int main (int ac, char* av[]) {
 				int t_source_1 = (t_source + 1) % Lt;
 				int t_sink_1 = (t_sink + 1) % Lt;
 
+#if 0
         basic->init_operator(t_source, t_sink, rewr, 'b');
         basic->get_operator(op_1, 5);
 
-        basic->init_operator(t_source_1, t_sink, rewr, 'b');
+        basic->init_operator(t_source, t_sink_1, rewr, 'b');
         basic->get_operator_g5(op_2, 5);
 
         basic->init_operator(t_source_1, t_sink_1, rewr, 'b');
         basic->get_operator(op_3, 5);
 
+        basic->init_operator(t_source_1, t_sink, rewr, 'b');
+        basic->get_operator_g5(op_4, 5);
+
+        // first part
+        for(int rnd1 = 0; rnd1 < number_of_rnd_vec; ++rnd1){
+          // first u quark: t_source -> t_sink
+          for(int rnd3 = rnd1 + 1; rnd3 < number_of_rnd_vec; ++rnd3){
+            // first d quark: t_sink_1 -> t_source
+            X[rnd1][rnd3] = op_1[rnd3] * op_2[rnd1];
+          }
+        }
+
+        // second part
+        for(int rnd2 = 0; rnd2 < number_of_rnd_vec; ++rnd2){			
+          // second u quark: t_source_1 -> t_sink_1
+          for(int rnd4 = rnd2 + 1; rnd4 < number_of_rnd_vec; ++rnd4){
+            // second d quark: t_sink -> t_source_1
+            Y[rnd2][rnd4] = op_3[rnd4] * op_4[rnd2];
+          }
+        }
+
+        // complete diagramm
+        // every quark line must have its own random vec
+				for(int rnd1 = 0; rnd1 < number_of_rnd_vec; ++rnd1){
+				  for(int rnd3 = rnd1 + 1; rnd3 < number_of_rnd_vec; ++rnd3){
+				    for(int rnd2 = 0; rnd2 < number_of_rnd_vec; ++rnd2){			
+      				if((rnd2 != rnd1) && (rnd2 != rnd3)){
+					      for(int rnd4 = rnd2 + 1; rnd4 < number_of_rnd_vec; ++rnd4){
+						      if((rnd4 != rnd1) && (rnd4 != rnd3)){
+                    // -= accounts for - sign from wick contraction
+							      C2_mes[0][5][abs((t_sink - t_source - Lt) % Lt)] += 
+                        (X[rnd1][rnd3] * Y[rnd2][rnd4]).trace();
+						      }
+					      }
+              }
+            }
+          }
+        }
+#endif
+        //test other indices
+        basic->init_operator(t_source_1, t_sink_1, rewr, 'b');
+        basic->get_operator(op_1, 5);
+
         basic->init_operator(t_source, t_sink_1, rewr, 'b');
+        basic->get_operator_g5(op_2, 5);
+
+        basic->init_operator(t_source, t_sink, rewr, 'b');
+        basic->get_operator(op_3, 5);
+
+        basic->init_operator(t_source_1, t_sink, rewr, 'b');
         basic->get_operator_g5(op_4, 5);
 
         // first part
@@ -497,13 +548,91 @@ int main (int ac, char* av[]) {
 						      if((rnd4 != rnd1) && (rnd4 != rnd3)){
                     // -= accounts for - sign from wick contraction
 							      C2_mes[0][5][abs((t_sink - t_source - Lt) % Lt)] += 
-                        std::real((X[rnd1][rnd3] * Y[rnd2][rnd4]).trace());
+                        (X[rnd1][rnd3] * Y[rnd2][rnd4]).trace();
 						      }
 					      }
               }
             }
           }
         }
+
+      }
+    }
+
+
+#if 0
+
+				for(int rnd1 = 0; rnd1 < number_of_rnd_vec; ++rnd1){
+					// first u quark: t_source_1 -> t_sink_1
+					peram_1 = (basic->perambulator[rnd1]).block(
+							4 * number_of_eigen_vec * t_source_1,
+							quarks[0].number_of_dilution_E * quarks[0].number_of_dilution_D
+									* ( (t_sink_1/2 + t_sink_1%2) % (quarks[0].number_of_dilution_T)),  // changed for block interlace dilution
+							4 * number_of_eigen_vec,
+							quarks[0].number_of_dilution_E * quarks[0].number_of_dilution_D);
+					op_D_tsink_1 = peram_1
+							* basic->basicoperator[rnd1][t_sink_1][5];
+					for(int rnd3 = rnd1 + 1; rnd3 < number_of_rnd_vec; ++rnd3){
+						// first d quark: t_sink_1 -> t_source_1
+						peram_3 = (basic->perambulator[rnd3]).block(
+								4 * number_of_eigen_vec * t_source,
+								quarks[0].number_of_dilution_D * quarks[0].number_of_dilution_E
+										* ( (t_sink_1/2 + t_sink_1%2) % quarks[0].number_of_dilution_T),		// changed for block interlace dilution
+								4 * number_of_eigen_vec,
+								quarks[0].number_of_dilution_D
+										* quarks[0].number_of_dilution_E);
+						op_D_tsource_1 =
+								(peram_3 * basic->basicoperator[rnd3][t_sink_1][5]).adjoint();
+						op_D_tsource_1 = basic->mul_r_gamma(op_D_tsource_1,
+								op_D_tsource_1.rows(), op_D_tsource_1.cols(), 5, 3);
+
+						X[rnd1][rnd3] = op_D_tsink_1 * op_D_tsource_1;
+
+					}
+				}
+				for(int rnd2 = 0; rnd2 < number_of_rnd_vec; ++rnd2){
+					// second u quark: t_source -> t_sink
+					peram_2 = (basic->perambulator[rnd2]).block(
+							4 * number_of_eigen_vec * t_source,
+							quarks[0].number_of_dilution_E * quarks[0].number_of_dilution_D
+									* ( (t_sink/2 + t_sink%2) % quarks[0].number_of_dilution_T),    // changed for block interlace dilution
+							4 * number_of_eigen_vec,
+							quarks[0].number_of_dilution_E
+									* quarks[0].number_of_dilution_D);
+					op_D_tsink = peram_2
+							* basic->basicoperator[rnd2][t_sink][5];
+					for(int rnd4 = rnd2 + 1; rnd4 < number_of_rnd_vec; ++rnd4){
+						// second d quark: t_sink -> t_source
+						peram_4 = (basic->perambulator[rnd4]).block(
+								4 * number_of_eigen_vec * t_source_1,
+								quarks[0].number_of_dilution_D * quarks[0].number_of_dilution_E
+										* ( (t_sink/2 + t_sink%2) % quarks[0].number_of_dilution_T),		// changed for block interlace dilution
+								4 * number_of_eigen_vec,
+								quarks[0].number_of_dilution_D
+										* quarks[0].number_of_dilution_E);
+						op_D_tsource =
+								(peram_4 * basic->basicoperator[rnd4][t_sink][5]).adjoint();
+						op_D_tsource = basic->mul_r_gamma(op_D_tsource,
+								op_D_tsource.rows(), op_D_tsource.cols(), 5, 3);
+
+						Y[rnd2][rnd4] = op_D_tsink * op_D_tsource;
+
+					}
+				}
+
+
+				// building correlation function
+				for(int rnd1 = 0; rnd1 < number_of_rnd_vec; ++rnd1){
+				for(int rnd3 = rnd1 + 1; rnd3 < number_of_rnd_vec; ++rnd3){
+				for(int rnd2 = 0; rnd2 < number_of_rnd_vec; ++rnd2){			
+				if((rnd2 != rnd1) && (rnd2 != rnd3)){
+					for(int rnd4 = rnd2 + 1; rnd4 < number_of_rnd_vec; ++rnd4){
+						if((rnd4 != rnd1) && (rnd4 != rnd3)){
+							C2_mes[0][5][abs((t_sink - t_source - Lt) % Lt)]  += (X[rnd1][rnd3] * Y[rnd2][rnd4]).trace();
+						}
+					}
+				}}}}
+
 
 			}
 		}
