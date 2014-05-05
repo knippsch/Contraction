@@ -51,22 +51,17 @@ int main (int ac, char* av[]) {
 	char outfile[400];
 	FILE *fp = NULL;
 
+	// everything for operator handling
+	BasicOperator* basic = new BasicOperator;
+
+  // everything for Input files
+  ReadWrite* rewr = new ReadWrite;
+
 	// ***************************************************************************
 	// memory allocation *********************************************************
 	// memory for the operator in Dirac and eigenvector space and in time
 	// ***************************************************************************
   // ***************************************************************************
-
-//  Eigen::MatrixXcd* op_tsource_tsink = new Eigen::MatrixXcd[number_of_rnd_vec];
-//  Eigen::MatrixXcd* op_tsink_tsource = new Eigen::MatrixXcd[number_of_rnd_vec];
-
-//  for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i){
-//    (op_tsource_tsink[rnd_i]).resize(
-//        4 * number_of_eigen_vec, 4 * number_of_eigen_vec);
-//    (op_tsink_tsource[rnd_i]).resize(
-//        4 * number_of_eigen_vec, 4 * number_of_eigen_vec);
-//  }
-
 
 	Eigen::MatrixXcd op_D_tsource = Eigen::MatrixXcd::Zero(
 			quarks[0].number_of_dilution_E * quarks[0].number_of_dilution_D,
@@ -94,19 +89,13 @@ int main (int ac, char* av[]) {
 	}
 
 	// memory for the correlation function
-	std::complex<double>*** C2_mes = new std::complex<double>**[number_of_max_mom];
-	for(int p = 0; p < number_of_max_mom; ++p){
+	std::complex<double>*** C2_mes = new std::complex<double>**[rewr->number_of_momenta];
+	for(int p = 0; p < rewr->number_of_momenta; ++p){
 		C2_mes[p] = new std::complex<double>*[16]; // 16 Dirac matrices
 		for(int dirac = 0; dirac < 16; ++dirac){
 			C2_mes[p][dirac] = new std::complex<double>[Lt];
 		}
 	}
-
-	// everything for operator handling
-	BasicOperator* basic = new BasicOperator;
-
-  // everything for Input files
-  ReadWrite* rewr = new ReadWrite;
 
 	// intermidiate memory for traces
 	double part1[number_of_rnd_vec][number_of_rnd_vec];
@@ -174,7 +163,7 @@ int main (int ac, char* av[]) {
 		// setting the correlation function to zero
 		std::cout << "\n\tcomputing the connected contribution of pi_+/-:\n";
 		time = clock();
-		for(int p = 0; p < number_of_max_mom; ++p)
+		for(int p = 0; p < rewr->number_of_momenta; ++p)
 			for(int dirac = 0; dirac < 16; ++dirac)
 				for(int t1 = 0; t1 < Lt; ++t1)
 					C2_mes[p][dirac][t1] = std::complex<double>(0.0, 0.0);
@@ -182,13 +171,17 @@ int main (int ac, char* av[]) {
     int dirac_min = 5;
     int dirac_max = 6;
 
+		for(int p = 0; p < rewr->number_of_momenta; ++p) {
+
+      std::cout << "Berechne Correlator für p = " << p << std::endl;
+
 		for(int t_source = 0; t_source < Lt; ++t_source){
 			for(int t_sink = 0; t_sink < Lt; ++t_sink){
 
         // initialize contraction[rnd_i] = perambulator * basicoperator
         // = D_u^-1
         // choose 'i' for interlace or 'b' for block time dilution scheme
-        basic->init_operator(t_source, t_sink, rewr, 'b');
+        basic->init_operator(t_source, t_sink, rewr, 'b', p);
 
         for(int dirac = dirac_min; dirac < dirac_max; ++dirac){
 
@@ -205,13 +198,11 @@ int main (int ac, char* av[]) {
 
           for(int rnd1 = 0; rnd1 < number_of_rnd_vec; ++rnd1){
             for(int rnd2 = rnd1 + 1; rnd2 < number_of_rnd_vec; ++rnd2){
-              for(int p = 0; p < number_of_max_mom; ++p){
                 // building Correlation function get quite intuitive
                 // C2 = tr(D_d^-1 Gamma D_u^-1 Gamma)
                 // TODO: find signflip of imaginary part
                 C2_mes[p][dirac][abs((t_sink - t_source - Lt) % Lt)] += 
                     (op_2[rnd2] * op_1[rnd1]).trace();
-              }
             }
           }   
         }
@@ -219,9 +210,11 @@ int main (int ac, char* av[]) {
 			}
 		}
 
+    }
+
 		double norm3 = Lt * number_of_rnd_vec * (number_of_rnd_vec - 1) * 0.5;
 		for(int t = 0; t < Lt; ++t)
-			for(int p = 0; p < number_of_max_mom; ++p)
+			for(int p = 0; p < rewr->number_of_momenta; ++p)
 				for(int dirac = dirac_min; dirac < dirac_max; ++dirac)
 					C2_mes[p][dirac][t] /= norm3;
 
@@ -229,27 +222,33 @@ int main (int ac, char* av[]) {
 		sprintf(outfile, "./C2_pi+-_conf%04d.dat", config_i);
 		if((fp = fopen(outfile, "wb")) == NULL)
 			std::cout << "fail to open outputfile" << std::endl;
-		for(int p = 0; p < number_of_max_mom; ++p)
+		for(int p = 0; p < rewr->number_of_momenta; ++p)
 			for(int dirac = dirac_min; dirac < dirac_max; ++dirac)
 				fwrite((double*) C2_mes[p][dirac], sizeof(double), 2 * Lt, fp);
 		fclose(fp);
 
+
     // output to terminal
 		printf("\n");
-		for(int dirac = dirac_min; dirac < dirac_max; ++dirac){
-			printf("\tdirac = %02d\n", dirac);
-			printf(
-					"\t t\tRe(C2_con)\tIm(C2_con)\n\t----------------------------------\n");
-			for(int t1 = 0; t1 < Lt; ++t1){
-				printf("\t%02d\t%.5e\t%.5e\n", t1, real(C2_mes[0][dirac][t1]),
-						imag(C2_mes[0][dirac][t1]));
-			}
-			printf("\n");
-		}
-		printf("\n");
+    for(int p = 0; p < rewr->number_of_momenta; ++p) {
+      printf("\tmomentum = %02d\n", p);
+		  for(int dirac = dirac_min; dirac < dirac_max; ++dirac){
+			  printf("\tdirac    = %02d\n", dirac);
+			  //printf(
+				//  	"\t t\tRe(C2_con)\tIm(C2_con)\n\t----------------------------------\n");
+			  for(int t1 = 0; t1 < Lt; ++t1){
+				  printf("\t%02d\t%.5e\t%.5e\n", t1, real(C2_mes[p][dirac][t1]),
+				      imag(C2_mes[p][dirac][t1]));
+			  }
+			  printf("\n");
+		  }
+		  printf("\n");
+    }
 
     time = clock() - time;
 		printf("\t\tSUCCESS - %.1f seconds\n", ((float) time)/CLOCKS_PER_SEC);
+
+#if 0
 
 		// *************************************************************************
 		// FOUR PT CONTRACTION 1 ***************************************************
@@ -541,6 +540,7 @@ int main (int ac, char* av[]) {
 
     // identical to FOUR PT CONTRACTION 3
 
+#endif
 	} // loop over configs ends here
 
 	// TODO: freeing all memory!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

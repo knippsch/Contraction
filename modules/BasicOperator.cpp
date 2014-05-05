@@ -229,17 +229,17 @@ static void create_gamma (struct lookup* gamma, const int i) {
 
 BasicOperator::BasicOperator () {
   try{
-    // TODO: Look at Lx, Ly, Lz, dim_row, number_of_max_mom, verbose
-    // necassary for momenta?
     const int Lt = global_data->get_Lt();
     const int number_of_eigen_vec = global_data->get_number_of_eigen_vec();
     const std::vector<quark> quarks = global_data->get_quarks();
     const int number_of_rnd_vec = quarks[0].number_of_rnd_vec;
+
     // creating gamma matrices
     gamma = new struct lookup[16];
     for(int i = 0; i < 16; ++i){
       create_gamma(gamma, i);
     }
+
     // memory for the perambulator, random vector and basic operator
     contraction =         new Eigen::MatrixXcd*[number_of_rnd_vec];
     contraction_dagger =  new Eigen::MatrixXcd*[number_of_rnd_vec];
@@ -291,7 +291,7 @@ BasicOperator::~BasicOperator () {
 // initializes contractions[col] with columns of D_u^-1
 
 void BasicOperator::init_operator (const int t_source, const int t_sink, 
-    ReadWrite* rewr, const char dilution){
+    ReadWrite* rewr, const char dilution, const int p){
 
   clock_t t = clock();
   const int number_of_eigen_vec = global_data->get_number_of_eigen_vec();
@@ -329,7 +329,7 @@ void BasicOperator::init_operator (const int t_source, const int t_sink,
             t_sink_dil + (quarks[0].number_of_dilution_E) * col,
             number_of_eigen_vec,
             (quarks[0].number_of_dilution_E)) *
-        rewr->basicoperator[rnd_i][t_sink][col];
+        rewr->basicoperator[p][rnd_i][t_sink][col];
         
         // by gamma_5 trick Propagator matrix is daggered and the offdiagonal
         // 2x2 blocks get multiplied my -1. The if-statement is the shortest

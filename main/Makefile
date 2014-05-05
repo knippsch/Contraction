@@ -43,7 +43,7 @@ LIBPATH = /hiskp2/jost/boost_1_54_0/stage/lib/ /hiskp2/jost/lime-1.3.2/lib/
 
 
 # scheduling and optimization options
-CFLAGS = -Wall -O2 -fopenmp -pthread -march=native -std=c++0x 
+CFLAGS = -Wall -O3 -fopenmp -march=native -std=c++0x
 
 ############################## do not change ###################################
 
@@ -59,7 +59,7 @@ PGMS= $(MAIN) $(MODULES)
 # rule to make dependencies
 
 $(addsuffix .d,$(PGMS)): %.d: %.cpp Makefile
-	@ $(GCC) -ansi $< -MM $(addprefix -I,$(INCPATH)) -o $@
+	@ $(CC) -ansi $< -MM $(addprefix -I,$(INCPATH)) -o $@
 
 
 # rule to compile source programs

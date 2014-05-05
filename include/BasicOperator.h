@@ -42,7 +42,7 @@ public:
 	BasicOperator ();
 	virtual ~BasicOperator ();
   void init_operator (const int t_source, const int t_sink, ReadWrite* rewr, 
-      const char dilution);
+      const char dilution, const int p);
   void get_operator(Eigen::MatrixXcd*& op_1, const int dirac);
   void get_operator_g5(Eigen::MatrixXcd*& op_1, const int dirac);
 

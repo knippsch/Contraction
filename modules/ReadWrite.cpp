@@ -15,16 +15,23 @@ static void create_momenta (std::complex<double>** momentum) {
     const int Lx = global_data->get_Lx();
     const int Ly = global_data->get_Ly();
     const int Lz = global_data->get_Lz();
+    const int number_of_max_mom = global_data->get_number_of_max_mom();
     const int max_mom_in_one_dir = global_data->get_max_mom_in_one_dir();
     // helper variables for momenta
     const double px = 2. * M_PI / (double) Lx;
     const double py = 2. * M_PI / (double) Ly;
     const double pz = 2. * M_PI / (double) Lz;
     int p = 0;
+    int max_mom_squared = number_of_max_mom * number_of_max_mom;
+
     // running over all momentum components
     for(int ipx = -max_mom_in_one_dir; ipx <= max_mom_in_one_dir; ++ipx){
       for(int ipy = -max_mom_in_one_dir; ipy <= max_mom_in_one_dir; ++ipy){
         for(int ipz = -max_mom_in_one_dir; ipz <= max_mom_in_one_dir; ++ipz){
+          if((ipx * ipx + ipy * ipy + ipz * ipz) > max_mom_squared) {
+            continue;
+          }
+
           // running over all lattice points
           for(int x = 0; x < Lx; ++x){
             const int xH = x * Ly * Lz; // helper variable
@@ -45,10 +52,40 @@ static void create_momenta (std::complex<double>** momentum) {
     }
   }
   catch(std::exception& e){
-    std::cout << e.what() << "in: BasicOperator::create_momenta\n";
+    std::cout << e.what() << "in: ReadWrite::create_momenta\n";
     exit(0);
   }
 }
+
+int check_momenta() {
+  try {
+
+    const int number_of_max_mom = global_data->get_number_of_max_mom();
+    const int max_mom_in_one_dir = global_data->get_max_mom_in_one_dir();
+
+    int p = 0;
+    int max_mom_squared = number_of_max_mom * number_of_max_mom;
+
+    // running over all momentum components
+    for(int ipx = -max_mom_in_one_dir; ipx <= max_mom_in_one_dir; ++ipx){
+      for(int ipy = -max_mom_in_one_dir; ipy <= max_mom_in_one_dir; ++ipy){
+        for(int ipz = -max_mom_in_one_dir; ipz <= max_mom_in_one_dir; ++ipz){
+          if((ipx * ipx + ipy * ipy + ipz * ipz) > max_mom_squared) {
+            continue;
+          }
+          p++;
+        }
+      }
+    }
+
+    return p;
+  }
+  catch(std::exception& e) {
+    std::cout << e.what() << "in: ReadWrite::check_momenta\n";
+    exit(0);
+  }
+}
+   
 
 /******************************************************************************/
 /******************************************************************************/
@@ -74,35 +111,48 @@ ReadWrite::ReadWrite () {
     const int number_of_inversions = (Lt / quarks[0].number_of_dilution_T)
         * quarks[0].number_of_dilution_E * quarks[0].number_of_dilution_D;
 
+    // Initializing memory for eigen vectors
     V = new Eigen::MatrixXcd[Lt];
     for(int t = 0; t < Lt; ++t)
       V[t] = Eigen::MatrixXcd::Zero(dim_row, number_of_eigen_vec);
-    // Initializing memory for eigen vectors
+    V_temp = new Eigen::MatrixXcd[Lt];
+    for(int t = 0; t < Lt; ++t)
+      V_temp[t] = Eigen::MatrixXcd::Zero(dim_row, number_of_eigen_vec);
+
     // momentum creation
-    momentum = new std::complex<double>*[number_of_max_mom];
-    for(int p = 0; p < number_of_max_mom; ++p)
+    number_of_momenta = check_momenta();
+    std::cout << "Calulatiing correlators for " << number_of_momenta << 
+    " momenta" << std::endl;
+    momentum = new std::complex<double>*[number_of_momenta];
+    for(int p = 0; p < number_of_momenta; ++p)
       momentum[p] = new std::complex<double>[Lx * Ly * Lz];
     create_momenta(momentum);
+
     // memory for the perambulator, random vector and basic operator
+    basicoperator = new Eigen::MatrixXcd***[number_of_momenta];
+    for(int p = 0; p < number_of_momenta; ++p) {
+      basicoperator[p] = new Eigen::MatrixXcd**[number_of_rnd_vec];
+      for(int i = 0; i < number_of_rnd_vec; ++i){
+        basicoperator[p][i] = new Eigen::MatrixXcd*[Lt];
+        for(int t = 0; t < Lt; ++t){
+          basicoperator[p][i][t] = new Eigen::MatrixXcd[4];
+          for(int blocknr = 0; blocknr < 4; ++blocknr){
+            // blocks in Basicoperator are on diagonal in the beginning. 
+            // non-zero blocks have row = col = blocknr
+            basicoperator[p][i][t][blocknr] =  Eigen::MatrixXcd::Zero(
+                quarks[0].number_of_dilution_E,
+                number_of_eigen_vec);
+          }
+        }
+      }   
+    }
+
     perambulator = new Eigen::MatrixXcd[number_of_rnd_vec];
     rnd_vec = new Eigen::VectorXcd[number_of_rnd_vec];
-    basicoperator = new Eigen::MatrixXcd**[number_of_rnd_vec];
-    s = Eigen::MatrixXcd::Zero(number_of_eigen_vec, number_of_eigen_vec);
     for(int i = 0; i < number_of_rnd_vec; ++i){
       perambulator[i] = Eigen::MatrixXcd::Zero(4 * number_of_eigen_vec * Lt,
           number_of_inversions);
       rnd_vec[i] = Eigen::VectorXcd::Zero(Lt * number_of_eigen_vec * 4);
-      basicoperator[i] = new Eigen::MatrixXcd*[Lt];
-     for(int t = 0; t < Lt; ++t){
-        basicoperator[i][t] = new Eigen::MatrixXcd[4];
-        for(int blocknr = 0; blocknr < 4; ++blocknr){
-          // blocks in Basicoperator are on diagonal in the beginning. 
-          // non-zero blocks have row = col = blocknr
-          basicoperator[i][t][blocknr] =  Eigen::MatrixXcd::Zero(
-              quarks[0].number_of_dilution_E,
-              number_of_eigen_vec);
-        }
-      }
     }
   }
   catch(std::exception& e){
@@ -139,94 +189,55 @@ ReadWrite::~ReadWrite() {
 
 void ReadWrite::build_source_matrix () {
 
-    clock_t t2 = clock();
-    printf("\tbuild source matrix:");
-    fflush(stdout);
+  clock_t t2 = clock();
+  printf("\tbuild source matrix:\n");
+  fflush(stdout);
 
-    const int Lt = global_data->get_Lt();
-    const int number_of_eigen_vec = global_data->get_number_of_eigen_vec();
-    const int dim_row = global_data->get_dim_row();
-    //const int Vs = global_data->get_Lx() * global_data->get_Ly()
-    //    * global_data->get_Lz();
-    const std::vector<quark> quarks = global_data->get_quarks();
-    const int number_of_rnd_vec = quarks[0].number_of_rnd_vec;
+  const int Lt = global_data->get_Lt();
+  const int number_of_eigen_vec = global_data->get_number_of_eigen_vec();
+  const int dim_row = global_data->get_dim_row();
+  //const int Vs = global_data->get_Lx() * global_data->get_Ly()
+  //    * global_data->get_Lz();
+  const std::vector<quark> quarks = global_data->get_quarks();
+  const int number_of_rnd_vec = quarks[0].number_of_rnd_vec;
+  const int number_of_max_mom = global_data->get_number_of_max_mom();
 
-    // TODO: checking the order of loops - enhancement might be possible
-    for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i){
-      for(int t = 0; t < Lt; ++t){
-        // intermediate memory
-        // source is a matrix where the source on one timeslice is stored
-//        Eigen::MatrixXcd source = Eigen::MatrixXcd::Zero(4 * dim_row,
-//            quarks[0].number_of_dilution_E * quarks[0].number_of_dilution_D);
-//        // V_mat is the EV-matrix with Dirac components: diagonal in Dirac space
-//          Eigen::MatrixXcd V_mat = Eigen::MatrixXcd::Zero(4 * dim_row,
-//              4 * number_of_eigen_vec);
-//        // building matrix of sources on time slice t
-//      for(int vec_i = 0; vec_i < number_of_eigen_vec; ++vec_i){
-//        for(int mu = 0; mu < 4; ++mu){
-//          // filling V_vec and V_mat for source and operator creation
-//            Eigen::VectorXcd V_vec = Eigen::VectorXcd::Zero(4 * dim_row);
-//// *******************************************************************
-//#pragma omp parallel for
-//            for(int xs = 0; xs < Vs; ++xs){
-//              // three colour components
-//              V_vec[xs * 12 + mu * 3 + 0] = (V[t])(xs * 3 + 0, vec_i);
-//              V_vec[xs * 12 + mu * 3 + 1] = (V[t])(xs * 3 + 1, vec_i);
-//              V_vec[xs * 12 + mu * 3 + 2] = (V[t])(xs * 3 + 2, vec_i);
-//            }
-//// *******************************************************************
-//            V_mat.col(4 * vec_i + mu) = V_vec;
-//            // filling the source vector
-//            source.col(mu + 4 * (vec_i % quarks[0].number_of_dilution_E)) +=
-//                V_vec
-//                    * rnd_vec[rnd_i](
-//                        mu + vec_i * 4 + 4 * number_of_eigen_vec * t);
-//
-//
-//          }
-//        }
-        // creating basic operator
+  // TODO: checking the order of loops - enhancement might be possible
+  for(int p = 0; p < number_of_momenta; ++p) {
+    printf("\t\tBerechne Basicoperator für p = %2d\n", p);
+    for(int t = 0; t < Lt; ++t){
+      // creating basic operator
 
-      for(int vec_i = 0; vec_i < number_of_eigen_vec; ++vec_i) {
-        int vec_j = vec_i;
-        for(int vec_j = 0; vec_j < number_of_eigen_vec; ++vec_j) {
-          s(vec_i, vec_j) = 0;
-          for(int x = 0; x < dim_row; ++x) {
-            s(vec_i, vec_j) += std::conj((V[t])(x, vec_i)) * 
-                (V[t])(x, vec_j);
+      for(int x = 0; x < dim_row; ++x) {
+        V_temp[t].row(x) = momentum[p][x/3]
+            * V[t].row(x);
+      }
+        
+      //TODO: check if saving V[t].adjoint in own matrix is faster
+      Eigen::MatrixXcd s = (V[t]).adjoint() * V_temp[t];
+
+      //std::cout << "s rnd_i = " << rnd_i << ",t = " << t << ",p = " << p << std::endl;
+      //std::cout << s.block(0,0,4,4) << std::endl;
+
+      for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i){
+        for(int blocknr = 0; blocknr < 4; ++blocknr) {
+          // blocknr is identical with dirac. basicoperator blockdiagonal in 
+          // diracspace 
+          // thus, one can "sort" by dirac index
+          for(int vec_i = 0; vec_i < number_of_eigen_vec; ++vec_i) {
+            basicoperator[p][rnd_i][t][blocknr].row(vec_i % 
+                quarks[0].number_of_dilution_E) +=
+                std::conj(rnd_vec[rnd_i](blocknr + vec_i * 4 + 
+                4 * number_of_eigen_vec * t)) * s.row(vec_i);
           }
         }
-        //s(vec_i, vec_i) = 1;
-        std::cout << "s rnd_i = " << rnd_i << ",t = " << t << std::endl;
-        std::cout << s.block(0,0,4,4) << std::endl;
+
       }
-
-      for(int blocknr = 0; blocknr < 4; ++blocknr) {
-        // blocknr is identical with dirac. basicoperator blockdiagonal in 
-        // diracspace 
-        // thus, one can "sort" by dirac index
-        for(int vec_i = 0; vec_i < number_of_eigen_vec; ++vec_i) {
-          int vec_j = vec_i;
-          //for(int vec_j = 0; vec_j < number_of_eigen_vec; ++vec_j) {
-            basicoperator[rnd_i][t][blocknr](vec_i % 
-                quarks[0].number_of_dilution_E, vec_j) +=
-                std::conj(rnd_vec[rnd_i](blocknr + vec_i * 4 + 
-                4 * number_of_eigen_vec * t)) * s(vec_i, vec_j);
-
-//          ((basicoperator[rnd_i][t][blocknr]))
-//              (vec_i % quarks[0].number_of_dilution_E, vec_i) += 
-//              std::conj(rnd_vec[rnd_i](blocknr + vec_i * 4 + 
-//              4 * number_of_eigen_vec * t));
-          //}
-        }
-      }
-
-    // (basicoperator[rnd_i][t][4]).noalias() = source.adjoint() * V_mat;
-
     } // loop over time ends here
   }
   t2 = clock() - t2;
   printf("\t\tSUCCESS - %.1f seconds\n", ((float) t2)/CLOCKS_PER_SEC);
+  fflush(stdout);
 }
 
 /******************************************************************************/

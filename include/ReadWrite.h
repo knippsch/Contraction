@@ -40,13 +40,14 @@ public:
 	void read_rnd_vectors_from_file (const int config_i);
 
 	Eigen::MatrixXcd* perambulator;
-	Eigen::MatrixXcd*** basicoperator;
+	Eigen::MatrixXcd**** basicoperator;
+  int number_of_momenta;
 
 protected:
 	Eigen::VectorXcd* rnd_vec;
 	Eigen::MatrixXcd* V;
+  Eigen::MatrixXcd* V_temp;
 	std::complex<double>** momentum;
-  Eigen::MatrixXcd s;
 };
 
 #endif // _READ_WRITE_H__
