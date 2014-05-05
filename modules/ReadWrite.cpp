@@ -87,6 +87,7 @@ ReadWrite::ReadWrite () {
     perambulator = new Eigen::MatrixXcd[number_of_rnd_vec];
     rnd_vec = new Eigen::VectorXcd[number_of_rnd_vec];
     basicoperator = new Eigen::MatrixXcd**[number_of_rnd_vec];
+    s = Eigen::MatrixXcd::Zero(number_of_eigen_vec, number_of_eigen_vec);
     for(int i = 0; i < number_of_rnd_vec; ++i){
       perambulator[i] = Eigen::MatrixXcd::Zero(4 * number_of_eigen_vec * Lt,
           number_of_inversions);
@@ -144,6 +145,7 @@ void ReadWrite::build_source_matrix () {
 
     const int Lt = global_data->get_Lt();
     const int number_of_eigen_vec = global_data->get_number_of_eigen_vec();
+    const int dim_row = global_data->get_dim_row();
     //const int Vs = global_data->get_Lx() * global_data->get_Ly()
     //    * global_data->get_Lz();
     const std::vector<quark> quarks = global_data->get_quarks();
@@ -185,18 +187,42 @@ void ReadWrite::build_source_matrix () {
 //        }
         // creating basic operator
 
+      for(int vec_i = 0; vec_i < number_of_eigen_vec; ++vec_i) {
+        int vec_j = vec_i;
+        for(int vec_j = 0; vec_j < number_of_eigen_vec; ++vec_j) {
+          s(vec_i, vec_j) = 0;
+          for(int x = 0; x < dim_row; ++x) {
+            s(vec_i, vec_j) += std::conj((V[t])(x, vec_i)) * 
+                (V[t])(x, vec_j);
+          }
+        }
+        //s(vec_i, vec_i) = 1;
+        std::cout << "s rnd_i = " << rnd_i << ",t = " << t << std::endl;
+        std::cout << s.block(0,0,4,4) << std::endl;
+      }
+
       for(int blocknr = 0; blocknr < 4; ++blocknr) {
+        // blocknr is identical with dirac. basicoperator blockdiagonal in 
+        // diracspace 
+        // thus, one can "sort" by dirac index
         for(int vec_i = 0; vec_i < number_of_eigen_vec; ++vec_i) {
-          // blocknr is identical with dirac. basicoperator blockdiagonal in diracspace
-          // thus, one can "sort" by dirac index
-          ((basicoperator[rnd_i][t][blocknr]))
-              (vec_i % quarks[0].number_of_dilution_E, vec_i) += 
-              std::conj(rnd_vec[rnd_i](blocknr + vec_i * 4 + 
-              4 * number_of_eigen_vec * t));
+          int vec_j = vec_i;
+          //for(int vec_j = 0; vec_j < number_of_eigen_vec; ++vec_j) {
+            basicoperator[rnd_i][t][blocknr](vec_i % 
+                quarks[0].number_of_dilution_E, vec_j) +=
+                std::conj(rnd_vec[rnd_i](blocknr + vec_i * 4 + 
+                4 * number_of_eigen_vec * t)) * s(vec_i, vec_j);
+
+//          ((basicoperator[rnd_i][t][blocknr]))
+//              (vec_i % quarks[0].number_of_dilution_E, vec_i) += 
+//              std::conj(rnd_vec[rnd_i](blocknr + vec_i * 4 + 
+//              4 * number_of_eigen_vec * t));
+          //}
         }
       }
 
     // (basicoperator[rnd_i][t][4]).noalias() = source.adjoint() * V_mat;
+
     } // loop over time ends here
   }
   t2 = clock() - t2;

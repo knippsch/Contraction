@@ -46,6 +46,7 @@ protected:
 	Eigen::VectorXcd* rnd_vec;
 	Eigen::MatrixXcd* V;
 	std::complex<double>** momentum;
+  Eigen::MatrixXcd s;
 };
 
 #endif // _READ_WRITE_H__
