@@ -219,7 +219,7 @@ int main (int ac, char* av[]) {
 					C2_mes[p][dirac][t] /= norm3;
 
     // output to binary file
-		sprintf(outfile, "./C2_pi+-_conf%04d.dat", config_i);
+		sprintf(outfile, "./A80/C2_pi+-_conf%04d.dat", config_i);
 		if((fp = fopen(outfile, "wb")) == NULL)
 			std::cout << "fail to open outputfile" << std::endl;
 		for(int p = 0; p < rewr->number_of_momenta; ++p)
