@@ -29,7 +29,7 @@ int main (int ac, char* av[]) {
 	GlobalData* global_data = GlobalData::Instance();
 	global_data->read_parameters(ac, av);
 
-	Eigen::setNbThreads(4);
+	Eigen::setNbThreads(6);
 
 	// global variables from input file needed in main function
 	const int Lt = global_data->get_Lt();
@@ -154,7 +154,8 @@ int main (int ac, char* av[]) {
 		rewr->read_perambulators_from_file(config_i);
 		rewr->read_eigenvectors_from_file(config_i);
 		rewr->read_rnd_vectors_from_file(config_i);
-		rewr->build_source_matrix();
+    for(int p = 0; p < rewr->number_of_momenta; ++p)
+		  rewr->build_source_matrix(p);
 
 		// *************************************************************************
 		// CONNECTED CONTRACTION 1 *************************************************
@@ -171,9 +172,8 @@ int main (int ac, char* av[]) {
     int dirac_min = 5;
     int dirac_max = 6;
 
-		for(int p = 0; p < rewr->number_of_momenta; ++p) {
 
-      std::cout << "Berechne Correlator für p = " << p << std::endl;
+//      std::cout << "Berechne Correlator für p = " << p << std::endl;
 
 		for(int t_source = 0; t_source < Lt; ++t_source){
 			for(int t_sink = 0; t_sink < Lt; ++t_sink){
@@ -181,7 +181,7 @@ int main (int ac, char* av[]) {
         // initialize contraction[rnd_i] = perambulator * basicoperator
         // = D_u^-1
         // choose 'i' for interlace or 'b' for block time dilution scheme
-        basic->init_operator(t_source, t_sink, rewr, 'b', p);
+        basic->init_operator(t_source, t_sink, rewr, 'b', (rewr->number_of_momenta/2));
 
         for(int dirac = dirac_min; dirac < dirac_max; ++dirac){
 
@@ -190,6 +190,9 @@ int main (int ac, char* av[]) {
           // reordered by gamma multiplication. No actuall multiplication
           // is carried out
           basic->get_operator(op_1, dirac);
+
+		for(int p = 0; p < rewr->number_of_momenta; ++p) {
+        basic->init_operator(t_source, t_sink, rewr, 'b', p);
 
           // same as get_operator but with gamma_5 trick. D_u^-1 is
           // daggered and multipied with gamma_5 from left and right

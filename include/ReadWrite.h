@@ -34,7 +34,7 @@ public:
 	//EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 	ReadWrite ();
 	virtual ~ReadWrite (); 
-  void build_source_matrix ();
+  void build_source_matrix (const int p);
 	void read_eigenvectors_from_file (const int config_i);
 	void read_perambulators_from_file (const int config_i);
 	void read_rnd_vectors_from_file (const int config_i);

@@ -142,14 +142,14 @@ static void create_gamma (struct lookup* gamma, const int i) {
       break;
 
     case 11: // gamma_0 * gamma_2
-      gamma[10].row[0] = 1;
-      gamma[10].value[0] = 1;
-      gamma[10].row[1] = 0;
-      gamma[10].value[1] = -1;
-      gamma[10].row[2] = 3;
-      gamma[10].value[2] = -1;
-      gamma[10].row[3] = 2;
-      gamma[10].value[3] = 1;
+      gamma[11].row[0] = 1;
+      gamma[11].value[0] = 1;
+      gamma[11].row[1] = 0;
+      gamma[11].value[1] = -1;
+      gamma[11].row[2] = 3;
+      gamma[11].value[2] = -1;
+      gamma[11].row[3] = 2;
+      gamma[11].value[3] = 1;
       break;
 
     case 12: // gamma_0 * gamma_3
@@ -197,14 +197,14 @@ static void create_gamma (struct lookup* gamma, const int i) {
       break;
 
     case 16: // gamma_2 * gamma_0 * gamma_5
-      gamma[13].row[0] = 1;
-      gamma[13].value[0] = -1;
-      gamma[13].row[1] = 0;
-      gamma[13].value[1] = 1;
-      gamma[13].row[2] = 3;
-      gamma[13].value[2] = -1;
-      gamma[13].row[3] = 2;
-      gamma[13].value[3] = 1;
+      gamma[16].row[0] = 1;
+      gamma[16].value[0] = -1;
+      gamma[16].row[1] = 0;
+      gamma[16].value[1] = 1;
+      gamma[16].row[2] = 3;
+      gamma[16].value[2] = -1;
+      gamma[16].row[3] = 2;
+      gamma[16].value[3] = 1;
       break;
     default:
       printf("Dirac component %d not found in BasicOperator::create_gamma\n", i);

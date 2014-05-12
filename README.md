@@ -35,8 +35,10 @@ TODO:
   speedup
 - implement Dirac structure for Four-Point functions (second instance of 
   basic?)
+- find out why only the code has only 200% CPU-usage
+- write bash-script to automate starting the code
 
-- implement disconnected diagramms
+- implement disconnected diagramms? not necassary?
 - IMPLEMENT RHO MESON
 
 known bugs:

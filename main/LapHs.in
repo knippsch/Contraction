@@ -20,8 +20,8 @@ path_perambulators  = /hiskp2/knippsch/A80
 name_perambulators  = perambulator
 
 # momentum handling:
-number_of_max_mom  = 2
-max_mom_in_one_dir = 2
+number_of_max_mom  = 1
+max_mom_in_one_dir = 1
 
 [quarks]
 quark = u:5:TI:2:EI:6:DI:4

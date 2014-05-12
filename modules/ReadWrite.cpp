@@ -187,7 +187,7 @@ ReadWrite::~ReadWrite() {
 /******************************************************************************/
 /******************************************************************************/
 
-void ReadWrite::build_source_matrix () {
+void ReadWrite::build_source_matrix (const int p) {
 
   clock_t t2 = clock();
   printf("\tbuild source matrix:\n");
@@ -202,28 +202,44 @@ void ReadWrite::build_source_matrix () {
   const int number_of_rnd_vec = quarks[0].number_of_rnd_vec;
   const int number_of_max_mom = global_data->get_number_of_max_mom();
 
-  // TODO: checking the order of loops - enhancement might be possible
-  for(int p = 0; p < number_of_momenta; ++p) {
-    printf("\t\tBerechne Basicoperator für p = %2d\n", p);
-    for(int t = 0; t < Lt; ++t){
-      // creating basic operator
+  // creating basic operator
 
-      for(int x = 0; x < dim_row; ++x) {
-        V_temp[t].row(x) = momentum[p][x/3]
-            * V[t].row(x);
+  // for p = 0, s is the unit matrix. Thus, the V.adjoint() * V multiplication
+  // can be omitted
+  if(p == 0) {
+    for(int t = 0; t < Lt; ++t){
+      for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i) {
+        for(int blocknr = 0; blocknr < 4; ++blocknr) {
+          for(int vec_i = 0; vec_i < number_of_eigen_vec; ++vec_i) {
+            // blocknr is identical with dirac. basicoperator blockdiagonal 
+            // in diracspace -> treat every dirac index individually
+            ((basicoperator[0][rnd_i][t][blocknr]))(
+                vec_i % quarks[0].number_of_dilution_E, vec_i) =
+                std::conj(rnd_vec[rnd_i](blocknr + vec_i * 4 + 4 * 
+                number_of_eigen_vec * t));
+          }
+        }
       }
-        
+    } // loop over time ends here
+  }
+
+  // case p != 0
+  else  {
+    // TODO: checking the order of loops - enhancement might be possible
+    for(int t = 0; t < Lt; ++t){
+    
+      // multiply EV with momenta
+      for(int x = 0; x < dim_row; ++x) {
+        V_temp[t].row(x) = momentum[p][x/3] * V[t].row(x);
+      }
+      
       //TODO: check if saving V[t].adjoint in own matrix is faster
       Eigen::MatrixXcd s = (V[t]).adjoint() * V_temp[t];
-
-      //std::cout << "s rnd_i = " << rnd_i << ",t = " << t << ",p = " << p << std::endl;
-      //std::cout << s.block(0,0,4,4) << std::endl;
 
       for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i){
         for(int blocknr = 0; blocknr < 4; ++blocknr) {
           // blocknr is identical with dirac. basicoperator blockdiagonal in 
-          // diracspace 
-          // thus, one can "sort" by dirac index
+          // diracspace -> treat every dirac index individually
           for(int vec_i = 0; vec_i < number_of_eigen_vec; ++vec_i) {
             basicoperator[p][rnd_i][t][blocknr].row(vec_i % 
                 quarks[0].number_of_dilution_E) +=
@@ -231,10 +247,10 @@ void ReadWrite::build_source_matrix () {
                 4 * number_of_eigen_vec * t)) * s.row(vec_i);
           }
         }
-
       }
     } // loop over time ends here
   }
+
   t2 = clock() - t2;
   printf("\t\tSUCCESS - %.1f seconds\n", ((float) t2)/CLOCKS_PER_SEC);
   fflush(stdout);
