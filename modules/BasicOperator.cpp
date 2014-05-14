@@ -330,7 +330,9 @@ void BasicOperator::init_operator (const int t_source, const int t_sink,
             number_of_eigen_vec,
             (quarks[0].number_of_dilution_E)) *
         rewr->basicoperator[p][rnd_i][t_sink][col];
-        
+
+#if 0
+        if(p == rewr->number_of_momenta/2) {
         // by gamma_5 trick Propagator matrix is daggered and the offdiagonal
         // 2x2 blocks get multiplied my -1. The if-statement is the shortest
         // criterium I managed to think of for the offdiagonal blocks
@@ -342,6 +344,23 @@ void BasicOperator::init_operator (const int t_source, const int t_sink,
           contraction_dagger[rnd_i][row].block(col * number_of_eigen_vec, 0,
               number_of_eigen_vec, number_of_eigen_vec) *= -1;
         }
+        }
+        else {
+#endif
+          contraction_dagger[rnd_i][row].block(col * number_of_eigen_vec, 0,
+              number_of_eigen_vec, number_of_eigen_vec) =
+          rewr->basicoperator_d[p][rnd_i][t_sink][col] *
+          (rewr->perambulator[rnd_i].block(4 * number_of_eigen_vec * t_source + 
+              number_of_eigen_vec * row,
+              (quarks[0].number_of_dilution_E) * quarks[0].number_of_dilution_D * 
+              t_sink_dil + (quarks[0].number_of_dilution_E) * col,
+              number_of_eigen_vec,
+              (quarks[0].number_of_dilution_E))).adjoint();
+         if( ((row + col) == 3) || (abs(row - col) > 1) ){
+          contraction_dagger[rnd_i][row].block(col * number_of_eigen_vec, 0,
+              number_of_eigen_vec, number_of_eigen_vec) *= -1;
+        }
+      // }
       }
 
   t = clock() - t;

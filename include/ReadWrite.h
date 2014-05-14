@@ -41,12 +41,14 @@ public:
 
 	Eigen::MatrixXcd* perambulator;
 	Eigen::MatrixXcd**** basicoperator;
+	Eigen::MatrixXcd**** basicoperator_d;
   int number_of_momenta;
 
 protected:
 	Eigen::VectorXcd* rnd_vec;
 	Eigen::MatrixXcd* V;
   Eigen::MatrixXcd* V_temp;
+  Eigen::MatrixXcd* V_temp2;
 	std::complex<double>** momentum;
 };
 

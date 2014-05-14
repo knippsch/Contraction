@@ -8,7 +8,7 @@ Lz = 24
 
 # configuration handling:
 start_config = 750
-end_config   = 822
+end_config   = 750
 delta_config = 8
 
 # eigenvector handling:
@@ -24,7 +24,7 @@ number_of_max_mom  = 1
 max_mom_in_one_dir = 1
 
 [quarks]
-quark = u:5:TI:2:EI:6:DI:4
+quark = u:2:TI:2:EI:6:DI:4
 
 
 

@@ -40,9 +40,8 @@ static void create_momenta (std::complex<double>** momentum) {
               const int xHyH = xH + y * Lz; // helper variable
               const int ipxHipzH = ipxH + ipy * py * y; // helper variable
               for(int z = 0; z < Lz; ++z){
-                //ipz=1;
                 momentum[p][xHyH + z] = exp(-I * (ipxHipzH + ipz * pz * z));
-                //std::cout << "mom = " << momentum[p][xHyH + z] << std::endl;
+                //std::cout << "p = " << p << ", entspricht (" << ipx << ", " << ipy << ", " << ipz << ")" << std::endl;
               }
             }
           }
@@ -73,6 +72,7 @@ int check_momenta() {
           if((ipx * ipx + ipy * ipy + ipz * ipz) > max_mom_squared) {
             continue;
           }
+          std::cout << "p = " << p << ", entspricht (" << ipx << ", " << ipy << ", " << ipz << ")" << std::endl;
           p++;
         }
       }
@@ -116,8 +116,11 @@ ReadWrite::ReadWrite () {
     for(int t = 0; t < Lt; ++t)
       V[t] = Eigen::MatrixXcd::Zero(dim_row, number_of_eigen_vec);
     V_temp = new Eigen::MatrixXcd[Lt];
-    for(int t = 0; t < Lt; ++t)
+    V_temp2 = new Eigen::MatrixXcd[Lt];
+    for(int t = 0; t < Lt; ++t) {
       V_temp[t] = Eigen::MatrixXcd::Zero(dim_row, number_of_eigen_vec);
+      V_temp2[t] = Eigen::MatrixXcd::Zero(number_of_eigen_vec, dim_row);
+    }
 
     // momentum creation
     number_of_momenta = check_momenta();
@@ -142,6 +145,23 @@ ReadWrite::ReadWrite () {
             basicoperator[p][i][t][blocknr] =  Eigen::MatrixXcd::Zero(
                 quarks[0].number_of_dilution_E,
                 number_of_eigen_vec);
+          }
+        }
+      }   
+    }
+    basicoperator_d = new Eigen::MatrixXcd***[number_of_momenta];
+    for(int p = 0; p < number_of_momenta; ++p) {
+      basicoperator_d[p] = new Eigen::MatrixXcd**[number_of_rnd_vec];
+      for(int i = 0; i < number_of_rnd_vec; ++i){
+        basicoperator_d[p][i] = new Eigen::MatrixXcd*[Lt];
+        for(int t = 0; t < Lt; ++t){
+          basicoperator_d[p][i][t] = new Eigen::MatrixXcd[4];
+          for(int blocknr = 0; blocknr < 4; ++blocknr){
+            // blocks in Basicoperator are on diagonal in the beginning. 
+            // non-zero blocks have row = col = blocknr
+            basicoperator_d[p][i][t][blocknr] =  Eigen::MatrixXcd::Zero(
+                number_of_eigen_vec, 
+                quarks[0].number_of_dilution_E);
           }
         }
       }   
@@ -206,18 +226,20 @@ void ReadWrite::build_source_matrix (const int p) {
 
   // for p = 0, s is the unit matrix. Thus, the V.adjoint() * V multiplication
   // can be omitted
-  if(p == 0) {
-    for(int t = 0; t < Lt; ++t){
-      for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i) {
+  if(p == (number_of_momenta/2)) {
+    for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i) {
+      for(int t = 0; t < Lt; ++t){
         for(int blocknr = 0; blocknr < 4; ++blocknr) {
           for(int vec_i = 0; vec_i < number_of_eigen_vec; ++vec_i) {
             // blocknr is identical with dirac. basicoperator blockdiagonal 
             // in diracspace -> treat every dirac index individually
-            ((basicoperator[0][rnd_i][t][blocknr]))(
+            ((basicoperator[number_of_momenta/2][rnd_i][t][blocknr]))(
                 vec_i % quarks[0].number_of_dilution_E, vec_i) =
                 std::conj(rnd_vec[rnd_i](blocknr + vec_i * 4 + 4 * 
                 number_of_eigen_vec * t));
           }
+        basicoperator_d[number_of_momenta/2][rnd_i][t][blocknr] = 
+            (basicoperator[number_of_momenta/2][rnd_i][t][blocknr]).adjoint();
         }
       }
     } // loop over time ends here
@@ -226,28 +248,62 @@ void ReadWrite::build_source_matrix (const int p) {
   // case p != 0
   else  {
     // TODO: checking the order of loops - enhancement might be possible
+    // e.g. by reordering basicoperator with t faster than rnd_i
     for(int t = 0; t < Lt; ++t){
     
+
       // multiply EV with momenta
-      for(int x = 0; x < dim_row; ++x) {
-        V_temp[t].row(x) = momentum[p][x/3] * V[t].row(x);
-      }
-      
+      // Divisor 3 for colour index. All three colours on same lattice site get
+      // the same momentum
+      Eigen::VectorXcd mom = Eigen::VectorXcd::Zero(dim_row);
+      for(int x = 0; x < dim_row; ++x) 
+        mom(x) = momentum[p][x/3];
+      V_temp[t] = mom.asDiagonal() * V[t];
+      for(int x = 0; x < dim_row; ++x) 
+        mom(x) = momentum[p][x/3];
+      V_temp2[t] = (mom.asDiagonal() * V[t]).adjoint(); 
+
+
       //TODO: check if saving V[t].adjoint in own matrix is faster
-      Eigen::MatrixXcd s = (V[t]).adjoint() * V_temp[t];
+      //Eigen::MatrixXcd s = (V[t]).adjoint() * mom.asDiagonal() *  V[t];
+
+      //std::cout << "V.adjoint * exp(ipx) * V with p = " << p << std::endl;
+      //std::cout << s.block(0,0,6,6) << std::endl;
+      //std::cout << std::endl;
+      //std::cout << "(V.adjoint * exp(ipx) * V).adjoint" << std::endl;
+      //std::cout << (s.block(0,0,6,6)).adjoint() << std::endl;
+
+      Eigen::MatrixXcd rho = Eigen::MatrixXcd::Zero(
+          quarks[0].number_of_dilution_E, dim_row);
 
       for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i){
         for(int blocknr = 0; blocknr < 4; ++blocknr) {
           // blocknr is identical with dirac. basicoperator blockdiagonal in 
           // diracspace -> treat every dirac index individually
+
           for(int vec_i = 0; vec_i < number_of_eigen_vec; ++vec_i) {
-            basicoperator[p][rnd_i][t][blocknr].row(vec_i % 
-                quarks[0].number_of_dilution_E) +=
+            rho.row(vec_i % quarks[0].number_of_dilution_E) += 
                 std::conj(rnd_vec[rnd_i](blocknr + vec_i * 4 + 
-                4 * number_of_eigen_vec * t)) * s.row(vec_i);
+                4 * number_of_eigen_vec * t)) * ((V_temp2[t]).adjoint()).row(vec_i);
           }
+
+          basicoperator[p][rnd_i][t][blocknr] = rho * V_temp[t];
+          basicoperator_d[p][rnd_i][t][blocknr] = V_temp2[t] * rho.adjoint();
+#if 0
+          basicoperator[p][rnd_i][t][blocknr].row(vec_i % 
+              quarks[0].number_of_dilution_E) +=
+              std::conj(rnd_vec[rnd_i](blocknr + vec_i * 4 + 
+              4 * number_of_eigen_vec * t)) * s.row(vec_i);
+          basicoperator_d[p][rnd_i][t][blocknr].row(vec_i % 
+              quarks[0].number_of_dilution_E) +=
+              std::conj(rnd_vec[rnd_i](blocknr + vec_i * 4 + 
+              4 * number_of_eigen_vec * t)) * s.row(vec_i);
+#endif
+
         }
-      }
+      }      
+
+
     } // loop over time ends here
   }
 
