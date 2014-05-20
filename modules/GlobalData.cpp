@@ -404,6 +404,12 @@ void GlobalData::read_parameters (int ac, char* av[]) {
 
 		// computing some global variables depending on the input values ***********
 		dim_row = Lx * Ly * Lz * 3;
+
+    //needed for config_utils.h
+    //4 is number of directions, 3 number of colors and 2 factor
+    //for memory requirement of complex numbers
+    V_TS = dim_row * 4 * 3 * 2;
+    V_for_lime = V_TS * Lt;
 	}
 	catch(std::exception& e){
 		std::cout << e.what() << "\n";

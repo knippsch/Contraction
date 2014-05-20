@@ -72,7 +72,7 @@ int check_momenta() {
           if((ipx * ipx + ipy * ipy + ipz * ipz) > max_mom_squared) {
             continue;
           }
-          std::cout << "p = " << p << ", entspricht (" << ipx << ", " << ipy << ", " << ipz << ")" << std::endl;
+          //std::cout << "p = " << p << ", entspricht (" << ipx << ", " << ipy << ", " << ipz << ")" << std::endl;
           p++;
         }
       }
@@ -85,7 +85,6 @@ int check_momenta() {
     exit(0);
   }
 }
-   
 
 /******************************************************************************/
 /******************************************************************************/
@@ -103,32 +102,30 @@ ReadWrite::ReadWrite () {
     const int Lx = global_data->get_Lx();
     const int Ly = global_data->get_Ly();
     const int Lz = global_data->get_Lz();
+    const int Vs = Lx * Ly * Lz;
     const int dim_row = global_data->get_dim_row();
     const std::vector<quark> quarks = global_data->get_quarks();
-    const int number_of_max_mom = global_data->get_number_of_max_mom();
     const int number_of_eigen_vec = global_data->get_number_of_eigen_vec();
     const int number_of_rnd_vec = quarks[0].number_of_rnd_vec;
     const int number_of_inversions = (Lt / quarks[0].number_of_dilution_T)
         * quarks[0].number_of_dilution_E * quarks[0].number_of_dilution_D;
+    const int V_for_lime = global_data->get_V_for_lime();
 
     // Initializing memory for eigen vectors
     V = new Eigen::MatrixXcd[Lt];
     for(int t = 0; t < Lt; ++t)
       V[t] = Eigen::MatrixXcd::Zero(dim_row, number_of_eigen_vec);
-    V_temp = new Eigen::MatrixXcd[Lt];
-    V_temp2 = new Eigen::MatrixXcd[Lt];
-    for(int t = 0; t < Lt; ++t) {
-      V_temp[t] = Eigen::MatrixXcd::Zero(dim_row, number_of_eigen_vec);
-      V_temp2[t] = Eigen::MatrixXcd::Zero(number_of_eigen_vec, dim_row);
-    }
+    W = new Eigen::MatrixXcd[Lt];
+    for(int t = 0; t < Lt; ++t)
+      W[t] = Eigen::MatrixXcd::Zero(dim_row, number_of_eigen_vec);
 
     // momentum creation
     number_of_momenta = check_momenta();
-    std::cout << "Calulatiing correlators for " << number_of_momenta << 
+    std::cout << "Calulating correlators for " << number_of_momenta << 
     " momenta" << std::endl;
     momentum = new std::complex<double>*[number_of_momenta];
     for(int p = 0; p < number_of_momenta; ++p)
-      momentum[p] = new std::complex<double>[Lx * Ly * Lz];
+      momentum[p] = new std::complex<double>[Vs];
     create_momenta(momentum);
 
     // memory for the perambulator, random vector and basic operator
@@ -160,8 +157,8 @@ ReadWrite::ReadWrite () {
             // blocks in Basicoperator are on diagonal in the beginning. 
             // non-zero blocks have row = col = blocknr
             basicoperator_d[p][i][t][blocknr] =  Eigen::MatrixXcd::Zero(
-                number_of_eigen_vec, 
-                quarks[0].number_of_dilution_E);
+                quarks[0].number_of_dilution_E,
+                number_of_eigen_vec);
           }
         }
       }   
@@ -174,6 +171,21 @@ ReadWrite::ReadWrite () {
           number_of_inversions);
       rnd_vec[i] = Eigen::VectorXcd::Zero(Lt * number_of_eigen_vec * 4);
     }
+
+    //memory for gauge fields
+    gaugefield = new double[V_for_lime];
+    //Allocate Eigen Array to hold timeslice
+    Eigen::Matrix3cd **eigen_timeslice = new Eigen::Matrix3cd *[Vs];
+    iup = new int*[Vs];
+    idown = new int*[Vs];
+    for (int i = 0; i < Vs; ++i ) {
+      eigen_timeslice[i] = new Eigen::Matrix3cd[3];
+      iup[i] = new int[3];
+      idown[i] = new int[3];
+    }
+
+    hopping3d(iup, idown);
+
   }
   catch(std::exception& e){
     std::cout << e.what() << "in: ReadWrite::ReadWrite\n";
@@ -207,6 +219,65 @@ ReadWrite::~ReadWrite() {
 /******************************************************************************/
 /******************************************************************************/
 
+void ReadWrite::build_source_matrix (const int dir) {
+
+  clock_t t2 = clock();
+  printf("\tbuild source matrix:\n");
+  fflush(stdout);
+
+  const int Lt = global_data->get_Lt();
+  const int number_of_eigen_vec = global_data->get_number_of_eigen_vec();
+  const std::vector<quark> quarks = global_data->get_quarks();
+  const int number_of_rnd_vec = quarks[0].number_of_rnd_vec;
+
+  for(int t = 0; t < Lt; ++t){
+    
+    //Time Slice of Configuration
+    double* timeslice = gaugefield + (t*24*24*24*9*2);
+    
+    //Write Timeslice in Eigen Array
+    map_timeslice_to_eigen(eigen_timeslice, timeslice);
+
+    //displacement in one direction i acting to the right
+    right_displacement_one_dir(eigen_timeslice, iup, idown, dir, 
+        V[t], W[t]);
+    // dir = 2 for z-displacement (0 x 1 y)
+    // W holds DV
+
+//    Eigen::MatrixXcd s = Eigen::MatrixXcd::Zero(number_of_eigen_vec, 
+//        number_of_eigen_vec);
+    Eigen::MatrixXcd s = (V[t]).adjoint() * W[t];
+    s = s.adjoint() - s;
+
+      for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i){
+        for(int blocknr = 0; blocknr < 4; ++blocknr) {
+          // blocknr is identical with dirac. basicoperator blockdiagonal in 
+          // diracspace -> treat every dirac index individually
+          for(int vec_i = 0; vec_i < number_of_eigen_vec; ++vec_i) {
+
+          basicoperator[number_of_momenta/2][rnd_i][t][blocknr].row(vec_i % 
+              quarks[0].number_of_dilution_E) +=
+              std::conj(rnd_vec[rnd_i](blocknr + vec_i * 4 + 
+              4 * number_of_eigen_vec * t)) * s.row(vec_i);
+/*          basicoperator_d[p][rnd_i][t][blocknr].row(vec_i % 
+              quarks[0].number_of_dilution_E) +=
+              std::conj(rnd_vec[rnd_i](blocknr + vec_i * 4 + 
+              4 * number_of_eigen_vec * t)) * s_d.row(vec_i);
+*/
+
+          }
+        }
+      }      
+    } // loop over time ends here
+
+
+  t2 = clock() - t2;
+  printf("\t\tSUCCESS - %.1f seconds\n", ((float) t2)/CLOCKS_PER_SEC);
+  fflush(stdout);
+}
+
+
+#if 0
 void ReadWrite::build_source_matrix (const int p) {
 
   clock_t t2 = clock();
@@ -234,15 +305,15 @@ void ReadWrite::build_source_matrix (const int p) {
             // blocknr is identical with dirac. basicoperator blockdiagonal 
             // in diracspace -> treat every dirac index individually
             ((basicoperator[number_of_momenta/2][rnd_i][t][blocknr]))(
-                vec_i % quarks[0].number_of_dilution_E, vec_i) =
+                vec_i % quarks[0].number_of_dilution_E, vec_i) +=
                 std::conj(rnd_vec[rnd_i](blocknr + vec_i * 4 + 4 * 
                 number_of_eigen_vec * t));
           }
-        basicoperator_d[number_of_momenta/2][rnd_i][t][blocknr] = 
-            (basicoperator[number_of_momenta/2][rnd_i][t][blocknr]).adjoint();
+
         }
-      }
-    } // loop over time ends here
+      } // loop over time ends here
+    }
+
   }
 
   // case p != 0
@@ -258,14 +329,14 @@ void ReadWrite::build_source_matrix (const int p) {
       Eigen::VectorXcd mom = Eigen::VectorXcd::Zero(dim_row);
       for(int x = 0; x < dim_row; ++x) 
         mom(x) = momentum[p][x/3];
-      V_temp[t] = mom.asDiagonal() * V[t];
-      for(int x = 0; x < dim_row; ++x) 
-        mom(x) = momentum[p][x/3];
-      V_temp2[t] = (mom.asDiagonal() * V[t]).adjoint(); 
-
-
+      
       //TODO: check if saving V[t].adjoint in own matrix is faster
-      //Eigen::MatrixXcd s = (V[t]).adjoint() * mom.asDiagonal() *  V[t];
+      Eigen::MatrixXcd s = (V[t]).adjoint() * mom.asDiagonal() *  V[t];
+
+      for(int x = 0; x < dim_row; ++x) 
+        mom(x) = momentum[number_of_momenta - p - 1][x/3];
+
+      Eigen::MatrixXcd s_d = (V[t]).adjoint() * mom.asDiagonal() *  V[t];
 
       //std::cout << "V.adjoint * exp(ipx) * V with p = " << p << std::endl;
       //std::cout << s.block(0,0,6,6) << std::endl;
@@ -273,23 +344,12 @@ void ReadWrite::build_source_matrix (const int p) {
       //std::cout << "(V.adjoint * exp(ipx) * V).adjoint" << std::endl;
       //std::cout << (s.block(0,0,6,6)).adjoint() << std::endl;
 
-      Eigen::MatrixXcd rho = Eigen::MatrixXcd::Zero(
-          quarks[0].number_of_dilution_E, dim_row);
-
       for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i){
         for(int blocknr = 0; blocknr < 4; ++blocknr) {
           // blocknr is identical with dirac. basicoperator blockdiagonal in 
           // diracspace -> treat every dirac index individually
-
           for(int vec_i = 0; vec_i < number_of_eigen_vec; ++vec_i) {
-            rho.row(vec_i % quarks[0].number_of_dilution_E) += 
-                std::conj(rnd_vec[rnd_i](blocknr + vec_i * 4 + 
-                4 * number_of_eigen_vec * t)) * ((V_temp2[t]).adjoint()).row(vec_i);
-          }
 
-          basicoperator[p][rnd_i][t][blocknr] = rho * V_temp[t];
-          basicoperator_d[p][rnd_i][t][blocknr] = V_temp2[t] * rho.adjoint();
-#if 0
           basicoperator[p][rnd_i][t][blocknr].row(vec_i % 
               quarks[0].number_of_dilution_E) +=
               std::conj(rnd_vec[rnd_i](blocknr + vec_i * 4 + 
@@ -297,20 +357,20 @@ void ReadWrite::build_source_matrix (const int p) {
           basicoperator_d[p][rnd_i][t][blocknr].row(vec_i % 
               quarks[0].number_of_dilution_E) +=
               std::conj(rnd_vec[rnd_i](blocknr + vec_i * 4 + 
-              4 * number_of_eigen_vec * t)) * s.row(vec_i);
-#endif
+              4 * number_of_eigen_vec * t)) * s_d.row(vec_i);
 
+          }
         }
       }      
-
-
     } // loop over time ends here
+
   }
 
   t2 = clock() - t2;
   printf("\t\tSUCCESS - %.1f seconds\n", ((float) t2)/CLOCKS_PER_SEC);
   fflush(stdout);
 }
+#endif
 
 /******************************************************************************/
 /******************************************************************************/
@@ -406,8 +466,13 @@ void ReadWrite::read_perambulators_from_file (const int config_i) {
       //TODO: name is hard-coded at the moment
       sprintf(infile,
           "%sperambulator.rndvecnb%02d.u.TsoB0024.VsoI0006.DsoF4.TsiF0048."
-          "SsiF13824.DsiF4.CsiF3.smeared1.%05d", filename.c_str(), rnd_vec_i, 
-          config_i);
+          "SsiF13824.DsiF4.CsiF3.smeared1.00000"/*%05d"*/, filename.c_str(), rnd_vec_i/*, 
+          config_i*/);
+
+//      sprintf(infile,
+//          "%sperambulator.rndvecnb%02d.u.TsoB0024.VsoI0006.DsoF4.TsiF0048."
+//          "SsiF13824.DsiF4.CsiF3.smeared1.%05d", filename.c_str(), rnd_vec_i, 
+//          config_i);
 
 //         "%s.dil%02d.u.Tso%03d.Dso%01d.Vso%03d.Tsi%03d.Dsi%01d.Vsi%03d.%04d",
 //          filename.c_str(), rnd_vec_i, quarks[0].number_of_dilution_T,
@@ -497,8 +562,11 @@ void ReadWrite::read_rnd_vectors_from_file (const int config_i) {
 				+ "/" + temp;
 
       // read random vector
-      sprintf(infile, "%srandomvector.rndvecnb%02d.u.nbev0120.%04d", 
-          filename.c_str(), rnd_vec_i, config_i);
+      sprintf(infile, "%srandomvector.rndvecnb%02d.u.nbev0120.0000"/*%04d"*/, 
+          filename.c_str(), rnd_vec_i/*, config_i*/);
+
+//      sprintf(infile, "%srandomvector.rndvecnb%02d.u.nbev0120.%04d", 
+//          filename.c_str(), rnd_vec_i, config_i);
 
 //      sprintf(infile, "%s.%03d.u.Ti.%04d", filename.c_str(), rnd_vec_i,
 //          config_i);
@@ -526,3 +594,145 @@ void ReadWrite::read_rnd_vectors_from_file (const int config_i) {
     exit(0);
   }
 }
+
+/******************************************************************************/
+/******************************************************************************/
+/******************************************************************************/
+
+void ReadWrite::read_lime_gauge_field_doubleprec_timeslices(const int config_i) {
+
+  const int Lt = global_data->get_Lt();
+  const int Lx = global_data->get_Lx();
+  const int Ly = global_data->get_Ly();
+  const int Lz = global_data->get_Lz();
+  
+  const int slice_i = 0;
+  const int slice_f = Lt+1;
+  char filename[200];
+
+  FILE * ifs;
+  int t, x, y, z, status;
+  n_uint64_t bytes;
+  char * header_type;
+  LimeReader * limereader;
+  double tmp[72], tmp2[72];
+  int words_bigendian;
+
+  sprintf(filename, "/hiskp2/gauges/A40.20_L20_T48_beta190_mul0040_musig150_mudel190_kappa1632700/conf.%04d", config_i);
+
+  words_bigendian = big_endian();
+  ifs = fopen(filename, "r");
+  if(ifs == (FILE *)NULL) {
+    fprintf(stderr, "Could not open file %s\n Aborting...\n", filename);
+    exit(500);
+  }
+  limereader = limeCreateReader( ifs );
+  if( limereader == (LimeReader *)NULL ) {
+    fprintf(stderr, "Unable to open LimeReader\n");
+    exit(500);
+  }
+  while( (status = limeReaderNextRecord(limereader)) != LIME_EOF ) {
+    if(status != LIME_SUCCESS ) {
+      fprintf(stderr, "limeReaderNextRecord returned error with status = %d!\n",
+          status);
+      status = LIME_EOF;
+      break;
+    }
+    header_type = limeReaderType(limereader);
+    if(strcmp("ildg-binary-data",header_type) == 0) break;
+  }
+  if(status == LIME_EOF) {
+    fprintf(stderr, "no ildg-binary-data record found in file %s\n",filename);
+    limeDestroyReader(limereader);
+    fclose(ifs);
+    exit(-2);
+  }
+  bytes = limeReaderBytes(limereader);
+  if(bytes != (n_uint64_t)Lx*Ly*Lz*Lt*72*(n_uint64_t)sizeof(double)) {
+    if(bytes != (n_uint64_t)Lx*Ly*Lz*Lt*72*(n_uint64_t)sizeof(double)/2) {
+      fprintf(stderr, "Probably wrong lattice size or precision (bytes=%lu) in file %s expected %lu\n",
+          (n_uint64_t)bytes, filename,
+          (n_uint64_t)Lx*Ly*Lz*Lt*72*(n_uint64_t)sizeof(double));
+      fprintf(stderr, "Aborting...!\n");
+      fflush( stdout );
+      exit(501);
+    }
+    else {
+      fclose(ifs);
+      fprintf(stderr, "single precision read!\n");
+
+      fprintf(stderr, "Not implemented!\n");
+      exit(EXIT_FAILURE);
+      read_lime_gauge_field_singleprec(gaugefield, filename, Lt, Lx, Ly, Lz);
+      return;
+    }
+  }
+
+  bytes = (n_uint64_t)72*sizeof(double);
+
+  for(t = 0; t < Lt; t++) {
+    for(z = 0; z < Lz; z++) {
+      for(y = 0; y < Ly; y++) {
+        for(x = 0; x < Lx; x++) {
+
+          // check for endianess and reading in data
+          // the pointer limereader is internally increased by bytes
+          // in the limeReaderReadData function
+          if(!words_bigendian) {
+            status = limeReaderReadData(tmp, &bytes, limereader);
+            byte_swap_assign(tmp2, tmp, 72);
+          }
+          else
+            status = limeReaderReadData(tmp2, &bytes, limereader);
+          // check if reading was successfull
+          if(status < 0 && status != LIME_EOR) {
+            fprintf(stderr, "LIME read error occured with status = %d while reading file %s!\n Aborting...\n",
+                status, filename);
+            exit(500);
+          }
+
+          // we just want to read in data in the specific range of timeslices
+          // must be here because the limereader pointer must be increased 
+          // correctly
+          // could be done with much more performance but might be tricky to 
+          // do correctly
+          if(t<slice_i || t>slice_f)
+            continue;
+
+          // copy of link variables from tmp2 into config
+          // ILDG has mu-order: x,y,z,t so it is changed here to: t,x,y,z !
+          const size_t p = (size_t) ( ((t-slice_i)*Lx*Lz*Lz + 
+              x*Ly*Lz + y*Lz + z) * 72); // position in config
+          size_t k = 0;
+          for(size_t mu = 1; mu <= 4; mu++) { // mu=4 is for the shift of U_t
+            size_t index;
+            if (mu != 4)
+              index = p + mu*18; // for U_x, U_y and U_z
+            else
+              index = p; // U_t is copied into the beginning of
+            // the (config+p) array
+
+            for(size_t i = 0; i < 3; i++) {
+              for(size_t j = 0; j < 3; j++) {
+                gaugefield[index+6*i+2*j] = tmp2[2*k];
+                gaugefield[index+6*i+2*j+1] = tmp2[2*k+1];
+                k++;
+              }
+            }
+
+          } // loop over mu ends here
+
+        } // loop over position space ends here
+      }
+    }
+  }
+  if(status < 0 && status != LIME_EOR) {
+    fprintf(stderr, "LIME read error occured with status = %d while reading file %s!\n Aborting...\n",
+        status, filename);
+    exit(500);
+  }
+  limeDestroyReader(limereader);
+  fclose(ifs);
+  return;
+}
+

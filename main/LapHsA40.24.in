@@ -7,16 +7,16 @@ Ly = 24
 Lz = 24
 
 # configuration handling:
-start_config = 42
-end_config   = 42
+start_config = 1370
+end_config   = 1378
 delta_config = 8
 
 # eigenvector handling:
 number_of_eigen_vec = 120
-path_eigenvectors   = /hiskp2/eigensystems/unit_gauge
+path_eigenvectors   = /hiskp2/eigensystems/A40.24_L24_T48_beta190_mul0040_musig150_mudel190_kappa1632700/hyp_062_058_3/nev_120/
 name_eigenvectors   = eigenvectors
 # perambulator handling
-path_perambulators  = /hiskp2/knippsch/unit_gauge_test
+path_perambulators  = /hiskp2/knippsch/A40
 name_perambulators  = perambulator
 
 # momentum handling:
@@ -24,7 +24,7 @@ number_of_max_mom  = 1
 max_mom_in_one_dir = 1
 
 [quarks]
-quark = u:2:TI:2:EI:6:DI:4
+quark = u:3:TI:2:EI:6:DI:4
 
 
 

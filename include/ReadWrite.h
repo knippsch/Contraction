@@ -25,6 +25,8 @@
 #include "GlobalData.h"
 #include "propagator_io.h"
 #include "quark.h"
+#include "io_utils.h"
+#include "config_utils.h"
 
 /***************************Input from files**********************************/
 
@@ -38,6 +40,7 @@ public:
 	void read_eigenvectors_from_file (const int config_i);
 	void read_perambulators_from_file (const int config_i);
 	void read_rnd_vectors_from_file (const int config_i);
+  void read_lime_gauge_field_doubleprec_timeslices(const int config_i);
 
 	Eigen::MatrixXcd* perambulator;
 	Eigen::MatrixXcd**** basicoperator;
@@ -47,9 +50,13 @@ public:
 protected:
 	Eigen::VectorXcd* rnd_vec;
 	Eigen::MatrixXcd* V;
-  Eigen::MatrixXcd* V_temp;
-  Eigen::MatrixXcd* V_temp2;
+	Eigen::MatrixXcd* W;
 	std::complex<double>** momentum;
+
+  double* gaugefield;
+  Eigen::Matrix3cd** eigen_timeslice;
+  int** iup;
+  int** idown;
 };
 
 #endif // _READ_WRITE_H__

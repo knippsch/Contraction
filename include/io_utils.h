@@ -3,6 +3,16 @@
 #ifndef _IO_UTILS_H
 #define _IO_UTILS_H
 
+#include <cstdlib>
+#include <cstdio>
+#include <cstring>
+#include <ctime>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <cmath>
+
+#include "lime.h"
+
 #ifndef isnan
 # define isnan(x)						 \
   (sizeof (x) == sizeof (long double) ? isnan_ld (x)		 \

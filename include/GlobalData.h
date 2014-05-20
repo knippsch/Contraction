@@ -29,7 +29,7 @@ private:
 	static GlobalData* instance_;
 	//! globally accessible data
 	int Lx, Ly, Lz, Lt;
-	int dim_row;
+	int dim_row, V_TS, V_for_lime;
 	int number_of_eigen_vec;
 	int number_of_rnd_vec;
 	int number_of_inversions;
@@ -65,6 +65,12 @@ public:
 	inline int get_dim_row () {
 		return dim_row;
 	}
+  inline int get_V_TS () {
+    return V_TS;
+  }
+  inline int get_V_for_lime () {
+    return V_for_lime;
+  }
 	inline int get_number_of_inversions () {
 		return number_of_inversions;
 	}

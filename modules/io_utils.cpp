@@ -1,17 +1,5 @@
 /* $Id: io_utils.c,v 1.2 2007/11/22 15:57:38 urbach Exp $ */
 
-//#include "lime.h"
-
-#include <cstdlib>
-#include <cstdio>
-#include <cstring>
-#include <ctime>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <cmath>
-
-#include "lime.h"
-
 #include "io_utils.h"
 
 int isnan_f (float x) {

@@ -29,7 +29,7 @@ int main (int ac, char* av[]) {
 	GlobalData* global_data = GlobalData::Instance();
 	global_data->read_parameters(ac, av);
 
-	Eigen::setNbThreads(6);
+	Eigen::setNbThreads(4);
 
 	// global variables from input file needed in main function
 	const int Lt = global_data->get_Lt();
@@ -140,6 +140,19 @@ int main (int ac, char* av[]) {
         4 * number_of_eigen_vec);
   }
 
+
+  // ***************************************************************************
+	// ***************************************************************************
+	// dirac indices and momenta to calculate ************************************ 
+	// ***************************************************************************
+	// ***************************************************************************
+
+  int dirac_min = 5;
+  int dirac_max = 6;
+
+  int p_min = rewr->number_of_momenta/2;
+  int p_max = rewr->number_of_momenta/2 + 1;
+
 	// ***************************************************************************
 	// ***************************************************************************
 	// Loop over all configurations **********************************************
@@ -154,9 +167,11 @@ int main (int ac, char* av[]) {
 		rewr->read_perambulators_from_file(config_i);
 		rewr->read_eigenvectors_from_file(config_i);
 		rewr->read_rnd_vectors_from_file(config_i);
-    for(int p = rewr->number_of_momenta/2; p < rewr->number_of_momenta/2+2; ++p){
-		  rewr->build_source_matrix(p);
-    }
+    rewr->read_lime_gauge_field_doubleprec_timeslices(config_i);
+//    for(int p = p_min; p < p_max; ++p){
+		rewr->build_source_matrix(2);
+//		  rewr->build_source_matrix(rewr->number_of_momenta/2-1);
+//    }
 
 		// *************************************************************************
 		// CONNECTED CONTRACTION 1 *************************************************
@@ -170,51 +185,50 @@ int main (int ac, char* av[]) {
 				for(int t1 = 0; t1 < Lt; ++t1)
 					C2_mes[p][dirac][t1] = std::complex<double>(0.0, 0.0);
 
-    int dirac_min = 5;
-    int dirac_max = 6;
 
 		for(int t_source = 0; t_source < Lt; ++t_source){
 			for(int t_sink = 0; t_sink < Lt; ++t_sink){
 
-		    for(int p = rewr->number_of_momenta/2 ; p < rewr->number_of_momenta/2 + 2; ++p) {
 
-        // initialize contraction[rnd_i] = perambulator * basicoperator
-        // = D_u^-1
-        // choose 'i' for interlace or 'b' for block time dilution scheme
-        basic->init_operator(t_source, t_sink, rewr, 'b', p);
+		    for(int p = p_min; p < p_max; ++p) {
 
-        for(int dirac = dirac_min; dirac < dirac_max; ++dirac){
+          basic->init_operator(t_source, t_sink, rewr, 'b', p);
+          // initialize contraction[rnd_i] = perambulator * basicoperator
+          // = D_u^-1
+          // choose 'i' for interlace or 'b' for block time dilution scheme
+  
+          for(int dirac = dirac_min; dirac < dirac_max; ++dirac){
+  
+            // "multiply contraction[rnd_i] with gamma structure"
+            // contraction[rnd_i] are the columns of D_u^-1 which get
+            // reordered by gamma multiplication. No actuall multiplication
+            // is carried out
+            basic->get_operator(op_1, dirac);
+  
+            // same as get_operator but with gamma_5 trick. D_u^-1 is
+            // daggered and multipied with gamma_5 from left and right
+            // the momentum is changed to reflect the switched sign in
+            // the momentum exponential
+  
+            //basic->init_operator(t_sink, t_source, rewr, 'b', rewr->number_of_momenta - p -1);
+            basic->init_operator(t_sink, t_source, rewr, 'b', rewr->number_of_momenta - p - 1);
+            basic->get_operator(op_2, dirac);
+  
+  
+            for(int rnd1 = 0; rnd1 < number_of_rnd_vec; ++rnd1){
+              for(int rnd2 = rnd1 + 1; rnd2 < number_of_rnd_vec; ++rnd2){
+                  // building Correlation function get quite intuitive
+                  // C2 = tr(D_d^-1 Gamma D_u^-1 Gamma)
+                  // TODO: find signflip of imaginary part
+                  C2_mes[p][dirac][abs((t_sink - t_source - Lt) % Lt)] += 
+                      (op_2[rnd2] * op_1[rnd1]).trace();
+              }
+            }   
+          }
+			  }
 
-          // "multiply contraction[rnd_i] with gamma structure"
-          // contraction[rnd_i] are the columns of D_u^-1 which get
-          // reordered by gamma multiplication. No actuall multiplication
-          // is carried out
-          basic->get_operator(op_1, dirac);
-
-          // same as get_operator but with gamma_5 trick. D_u^-1 is
-          // daggered and multipied with gamma_5 from left and right
-          // the impuls is changed to reflect the switched sign in
-          // the momentum exponential
-
-          basic->init_operator(t_source, t_sink, rewr, 'b', rewr->number_of_momenta/2);
-          basic->get_operator_g5(op_2, dirac);
-
-
-          for(int rnd1 = 0; rnd1 < number_of_rnd_vec; ++rnd1){
-            for(int rnd2 = rnd1 + 1; rnd2 < number_of_rnd_vec; ++rnd2){
-                // building Correlation function get quite intuitive
-                // C2 = tr(D_d^-1 Gamma D_u^-1 Gamma)
-                // TODO: find signflip of imaginary part
-                C2_mes[p][dirac][abs((t_sink - t_source - Lt) % Lt)] += 
-                    (op_2[rnd2] * op_1[rnd1]).trace();
-            }
-          }   
-        }
-
-			}
+      }
 		}
-
-    }
 
 		double norm3 = Lt * number_of_rnd_vec * (number_of_rnd_vec - 1) * 0.5;
 		for(int t = 0; t < Lt; ++t)
@@ -223,7 +237,7 @@ int main (int ac, char* av[]) {
 					C2_mes[p][dirac][t] /= norm3;
 
     // output to binary file
-		sprintf(outfile, "./A80/C2_pi+-_conf%04d.dat", config_i);
+		sprintf(outfile, "./A40/C2_pi+-_conf%04d.dat", config_i);
 		if((fp = fopen(outfile, "wb")) == NULL)
 			std::cout << "fail to open outputfile" << std::endl;
 		for(int p = 0; p < rewr->number_of_momenta; ++p)
