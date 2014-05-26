@@ -43,12 +43,11 @@ public:
   void read_lime_gauge_field_doubleprec_timeslices(const int config_i);
 
 	Eigen::MatrixXcd* perambulator;
-	Eigen::MatrixXcd**** basicoperator;
-	Eigen::MatrixXcd**** basicoperator_d;
+	Eigen::MatrixXcd** basicoperator;
+	Eigen::VectorXcd* rnd_vec;
   int number_of_momenta;
 
 protected:
-	Eigen::VectorXcd* rnd_vec;
 	Eigen::MatrixXcd* V;
 	Eigen::MatrixXcd* W;
 	std::complex<double>** momentum;

@@ -28,6 +28,10 @@ void map_timeslice_to_eigen(Eigen::Matrix3cd **eigen, double *timeslice);
 void right_displacement_one_dir(Eigen::Matrix3cd** config, int** iup, 
     int** idown, const int dir, Eigen::MatrixXcd& V, Eigen::MatrixXcd& W );
 
+//Hyp-Smearing of one timeslice eigeen timeslice is overwritten smearing takes place in 3 dimensions 
+//using alpha_1, alpha_2 as staple weights and iter as iteration number
+void smearing_hyp(Eigen::Matrix3cd **eigen_timeslice, double alpha_1, double alpha_2, int iter);
+
 // empty function header for compiling! No single precision support
 void read_lime_gauge_field_singleprec(double *config, const char * filename,
     const int T, const int LX, const int LY, const int LZ);

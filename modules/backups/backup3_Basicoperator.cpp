@@ -241,42 +241,34 @@ BasicOperator::BasicOperator () {
     }
 
     // memory for the perambulator, random vector and basic operator
-    contraction =         new Eigen::MatrixXcd**[number_of_rnd_vec];
+    contraction =         new Eigen::MatrixXcd*[number_of_rnd_vec];
     contraction_dagger =  new Eigen::MatrixXcd*[number_of_rnd_vec];
     for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i){
-      contraction[rnd_i] =        new Eigen::MatrixXcd*[number_of_rnd_vec];
-      for(int rnd_j = 0; rnd_j < number_of_rnd_vec; ++rnd_j) {
-      contraction[rnd_i][rnd_j] = new Eigen::MatrixXcd[4];
-      for(int blocknr = 0; blocknr < 4; ++blocknr){
-        contraction[rnd_i][rnd_j][blocknr] =         Eigen::MatrixXcd::Zero(
-            4 * number_of_eigen_vec, quarks[0].number_of_dilution_E);
-      }
-      }
-
+      contraction[rnd_i] =        new Eigen::MatrixXcd[4];
       contraction_dagger[rnd_i] = new Eigen::MatrixXcd[4];
       for(int blocknr = 0; blocknr < 4; ++blocknr){
         // D_u^-1 = perambulator * basicoperator. Columns are always
         // the same, only permuted and multiplied with +-i or -1 by
         // gamma matrices. contraction holds the for columns
+        contraction[rnd_i][blocknr] =         Eigen::MatrixXcd::Zero(
+            4 * number_of_eigen_vec, number_of_eigen_vec);
         contraction_dagger[rnd_i][blocknr] =  Eigen::MatrixXcd::Zero(
+//            4 * number_of_eigen_vec, number_of_eigen_vec);
             4 * quarks[0].number_of_dilution_E, number_of_eigen_vec);
       }
     }
 
-    // memory for (P^(b) rho V)^dagger exp(-ipx) V P^(b) rho to build u quark in 
-    // charged case
-    s_charged = new Eigen::MatrixXcd***[number_of_rnd_vec];
+    // memory for P rho V^dagger exp(ipx) V P rho to build u quark in charged
+    // case
+    s_charged = new Eigen::MatrixXcd*[number_of_rnd_vec];
     for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i){
-      s_charged[rnd_i] = new Eigen::MatrixXcd**[number_of_rnd_vec];
-      for(int rnd_j = 0; rnd_j < number_of_rnd_vec; ++rnd_j) {
-        s_charged[rnd_i][rnd_j] = new Eigen::MatrixXcd*[4];
+        s_charged[rnd_i] = new Eigen::MatrixXcd[4];
         for(int blocknr = 0; blocknr < 4; blocknr++){
-          s_charged[rnd_i][rnd_j][blocknr] = 
+          s_charged[rnd_i][blocknr] = 
               Eigen::MatrixXcd::Zero(quarks[0].number_of_dilution_E, 
-              quarks[0].number_of_dilution_E);
+              number_of_eigen_vec);
         }
       }
-    }
 
   }
   catch(std::exception& e){
@@ -340,82 +332,32 @@ void BasicOperator::init_operator (const int t_source, const int t_sink,
     }
 
   // for charged particles dilute u quark V^dagger*V in rows and cols
-  // s contains diluted basicoperator
-
-  // initialize s to 0  
+  
   for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i){
-    for(int rnd_j = 0; rnd_j < number_of_rnd_vec; ++rnd_j) {
-      for(int blocknr = 0; blocknr < 4; ++blocknr) {
-        for(int i = 0; i < quarks[0].number_of_dilution_E; i++) {
-          for(int j = 0; j < quarks[0].number_of_dilution_E; j++) {
-            s_charged[rnd_i][rnd_j][blocknr](i, j) = 0;
-          }
-        }
-      }
-    }
-  }
-
-  // dilute s: for dilution from right side do a left dilution with rho* 
-  // and basicoperator[-p] and dagger the whole object
-  // for dilution from the left, dilute again
-  Eigen::MatrixXcd s_temp = Eigen::MatrixXcd::Zero(quarks[0].number_of_dilution_E,
-      number_of_eigen_vec);
-
-  for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i) {
     for(int blocknr = 0; blocknr < 4; ++blocknr) {
-
-      // s_temp holds first left dilution without daggering
-      for(int vec_i = 0; vec_i < number_of_eigen_vec; ++vec_i) {
-        s_temp.row(vec_i % quarks[0].number_of_dilution_E) +=
-            std::conj(rewr->rnd_vec[rnd_i](blocknr + vec_i * 4 + 
-            4 * number_of_eigen_vec * t_sink)) *
-            rewr->basicoperator[rewr->number_of_momenta - p - 1][t_sink].row(vec_i);
-      }
-      // second left dilution
-      for(int rnd_j = 0; rnd_j < number_of_rnd_vec; ++rnd_j) {
-        for(int vec_j = 0; vec_j < number_of_eigen_vec; vec_j++) {
-          s_charged[rnd_j][rnd_i][blocknr].row(vec_j % 
-              quarks[0].number_of_dilution_E) +=
-              std::conj(rewr->rnd_vec[rnd_j](blocknr + vec_j * 4 +
-              4 * number_of_eigen_vec * t_sink)) *
-              (s_temp.adjoint()).row(vec_j);
-        }
-      }
-      // reset s_temp to 0
       for(int i = 0; i < quarks[0].number_of_dilution_E; i++) {
         for(int j = 0; j < number_of_eigen_vec; j++) {
-          s_temp(i, j) = 0;
+          s_charged[rnd_i][blocknr](i, j) = 0;
         }
       }
-
     }
   }
-                
-// works for uncharged pion, check if this can be used for charged
-#if 0
+
   //TODO: if p == 0 skip vec_j loop (only diagonal elements)
   for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i){
-  for(int rnd_j = 0; rnd_j < number_of_rnd_vec; ++rnd_j){
     for(int blocknr = 0; blocknr < 4; ++blocknr) {
-//    for(int blocknr2 = 0; blocknr2 < 4; ++blocknr2) {
-      int blocknr2 = blocknr;
       // blocknr is identical with dirac. basicoperator blockdiagonal in 
       // diracspace -> treat every dirac index individually
       for(int vec_i = 0; vec_i < number_of_eigen_vec; ++vec_i) {
         for(int vec_j = 0; vec_j < number_of_eigen_vec; ++vec_j) {
-        s_charged[rnd_i][rnd_j][blocknr](vec_i % quarks[0].number_of_dilution_E,
-            vec_j % quarks[0].number_of_dilution_E)
+        s_charged[rnd_i][blocknr].row(vec_i % quarks[0].number_of_dilution_E)  
             += std::conj(rewr->rnd_vec[rnd_i](blocknr + vec_i * 4 + 
             4 * number_of_eigen_vec * t_sink)) * 
-            rewr->rnd_vec[rnd_j](blocknr2 + vec_j * 4 + 4 * number_of_eigen_vec * t_sink) *
-            rewr->basicoperator[p][t_sink](vec_i, vec_j);
+            rewr->basicoperator[p][t_sink].row(vec_i);
         }
       }
-  //  }
     }
   }
-  }
-#endif
 
 
   for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i) {
@@ -425,23 +367,24 @@ void BasicOperator::init_operator (const int t_source, const int t_sink,
         // propagator D_u^-1 = perambulator(tsource, tsink) * basicoperator(tsink)
         // calculate columns of D_u^-1. gamma structure can be implented by
         // reordering columns and multiplying them with constants
-        for(int rnd_j = 0; rnd_j < number_of_rnd_vec; rnd_j++) {
-        contraction[rnd_i][rnd_j][col].block(row * number_of_eigen_vec, 0,
-            number_of_eigen_vec, quarks[0].number_of_dilution_E) =
+        contraction[rnd_i][col].block(row * number_of_eigen_vec, 0,
+            number_of_eigen_vec, number_of_eigen_vec) =
         rewr->perambulator[rnd_i].block(4 * number_of_eigen_vec * t_source + 
             number_of_eigen_vec * row,
             (quarks[0].number_of_dilution_E) * quarks[0].number_of_dilution_D * 
             t_sink_dil + (quarks[0].number_of_dilution_E) * col,
             number_of_eigen_vec,
             (quarks[0].number_of_dilution_E)) *
-        s_charged[rnd_i][rnd_j][col];
-        }
+        s_charged[rnd_i][col];
 
-        // don't need to build contraction_dagger for uncharged pion
+
 //        if(charge != 'c') continue;
 
         contraction_dagger[rnd_i][row].block(col * quarks[0].number_of_dilution_E, 0,
             quarks[0].number_of_dilution_E, number_of_eigen_vec) = 
+//        contraction_dagger[rnd_i][row].block(col * number_of_eigen_vec, 0,
+//            number_of_eigen_vec, number_of_eigen_vec) =
+//        (s_charged[rnd_i][col]).adjoint() * 
         (rewr->perambulator[rnd_i].block(4 * number_of_eigen_vec * t_source + 
             number_of_eigen_vec * row,
             (quarks[0].number_of_dilution_E) * quarks[0].number_of_dilution_D * 
@@ -450,17 +393,17 @@ void BasicOperator::init_operator (const int t_source, const int t_sink,
             (quarks[0].number_of_dilution_E))).adjoint() *
         rewr->basicoperator[rewr->number_of_momenta - p - 1][t_source];
           
-        // that's the best criterium I could think up for multiplication with
-        // gamma_5 from left and right side. It changes the sign of the two
-        // upper right and tow lower left blocks in dirac space
-        if( ((row + col) == 3) || (abs(row - col) > 1) ){
-        contraction_dagger[rnd_i][row].block(col * 
-            quarks[0].number_of_dilution_E, 0,
-            quarks[0].number_of_dilution_E, number_of_eigen_vec) *= -1;
-        }
+//        std::cout << contraction_dagger[rnd_i][row].block(0,0,6,6) << std::endl;
+
+          if( ((row + col) == 3) || (abs(row - col) > 1) ){
+          contraction_dagger[rnd_i][row].block(col * 
+//              number_of_eigen_vec, 0, number_of_eigen_vec, number_of_eigen_vec) *= -1;
+              quarks[0].number_of_dilution_E, 0,
+              quarks[0].number_of_dilution_E, number_of_eigen_vec) *= -1;
+          }
   
+        }
       }
-    }
 
   }
 
@@ -481,37 +424,58 @@ void BasicOperator::get_operator_charged (Eigen::MatrixXcd**& op_1, ReadWrite* r
   const std::vector<quark> quarks = global_data->get_quarks();
   const int number_of_rnd_vec = quarks[0].number_of_rnd_vec;
 
-  for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i){
-    for(int rnd_j = rnd_i + 1; rnd_j < number_of_rnd_vec; ++rnd_j) {
+  Eigen::MatrixXcd op_temp = Eigen::MatrixXcd::Zero(4 * number_of_eigen_vec,
+      4 * number_of_eigen_vec);
 
-      for(int i = 0; i < 4; i++) {
-        op_1[rnd_i][rnd_j].block(0, gamma[dirac].row[i] * quarks[0].number_of_dilution_E,
-            4 * number_of_eigen_vec, quarks[0].number_of_dilution_E) =
-        gamma[dirac].value[i] * contraction[rnd_i][rnd_j][i];
+  for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i) {
+    for(int rnd_j = 0; rnd_j < number_of_rnd_vec; ++rnd_j) {
+      for(int i = 0; i < 4 * number_of_eigen_vec; i++) {
+        for(int j = 0; j < 4 * quarks[0].number_of_dilution_E; j++) {
+          op_1[rnd_i](i, j) = 0;
+        }
       }
     }
+  }
 
-//check if it is faster to initialize op_1 block- instead of column-wise
-#if 0
-      for(int j = 0; j < 4; j++) {
-        for(int i = 0; i < 4; i++){
-      (op_1[rnd_i]).block(i * number_of_eigen_vec, (gamma[dirac].row[j]) * 
-          number_of_eigen_vec, number_of_eigen_vec, number_of_eigen_vec) = 
-          gamma[dirac].value[j] * contraction[rnd_i][j + 4 * i];
-      (op_1[rnd_i]).block(i * number_of_eigen_vec, (gamma[dirac].row[j]) * 
-          number_of_eigen_vec, number_of_eigen_vec, number_of_eigen_vec) = 
-          gamma[dirac].value[j] * contraction[rnd_i][j + 4 * i];
-      (op_1[rnd_i]).block(i * number_of_eigen_vec, (gamma[dirac].row[j]) * 
-          number_of_eigen_vec, number_of_eigen_vec, number_of_eigen_vec) = 
-          gamma[dirac].value[j] * contraction[rnd_i][j + 4 * i];
-      (op_1[rnd_i]).block(i * number_of_eigen_vec, (gamma[dirac].row[j]) * 
-          number_of_eigen_vec, number_of_eigen_vec, number_of_eigen_vec) = 
-          gamma[dirac].value[j] * contraction[rnd_i][j + 4 * i];
+  for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i){
+
+    for(int i = 0; i < 4; i++) {
+      op_temp.block(0, gamma[dirac].row[i] * number_of_eigen_vec,
+          4 * number_of_eigen_vec, number_of_eigen_vec) =
+      gamma[dirac].value[i] * contraction[rnd_i][i];
+    }
+
+/*
+    for(int rnd_j = rnd_i + 1; rnd_j < number_of_rnd_vec; ++rnd_j) {
+      for(int vec_j = 0; vec_j < number_of_eigen_vec; vec_j++) {
+        for(int blocknr = 0; blocknr < 4; blocknr++) {
+          op_1[rnd_i][rnd_j].col(blocknr * quarks[0].number_of_dilution_E +
+              (vec_j % quarks[0].number_of_dilution_E)) +=
+              (rewr->rnd_vec[rnd_j](blocknr + vec_j * 4 + 4 * 
+              number_of_eigen_vec * t_sink)) * op_temp.col(blocknr * 
+              number_of_eigen_vec + vec_j);
         }
+      }
+*/
+
+#if 0
+      for(int i = 0; i < 4; i++){
+      (op_1[rnd_i]).block(i * number_of_eigen_vec, (gamma[dirac].row[0]) * 
+          number_of_eigen_vec, number_of_eigen_vec, number_of_eigen_vec) = 
+          gamma[dirac].value[0] * contraction[rnd_i][0 + 4 * i];
+      (op_1[rnd_i]).block(i * number_of_eigen_vec, (gamma[dirac].row[1]) * 
+          number_of_eigen_vec, number_of_eigen_vec, number_of_eigen_vec) = 
+          gamma[dirac].value[1] * contraction[rnd_i][1 + 4 * i];
+      (op_1[rnd_i]).block(i * number_of_eigen_vec, (gamma[dirac].row[2]) * 
+          number_of_eigen_vec, number_of_eigen_vec, number_of_eigen_vec) = 
+          gamma[dirac].value[2] * contraction[rnd_i][2 + 4 * i];
+      (op_1[rnd_i]).block(i * number_of_eigen_vec, (gamma[dirac].row[3]) * 
+          number_of_eigen_vec, number_of_eigen_vec, number_of_eigen_vec) = 
+          gamma[dirac].value[3] * contraction[rnd_i][3 + 4 * i];
       }
 #endif
     
-//    }
+    }
   }
 
 }
@@ -536,23 +500,20 @@ void BasicOperator::get_operator_g5 (Eigen::MatrixXcd*& op_1, const int dirac){
       gamma[dirac].value[i] * contraction_dagger[rnd_i][i];
     }
 
-//check if it is faster to initialize op_1 block- instead of column-wise
 #if 0
-      for(int j = 0; j < 4; j++) {
-        for(int i = 0; i < 4; i++){
-          (op_1[rnd_i]).block(i * number_of_eigen_vec, gamma[dirac].row[j] * 
-              number_of_eigen_vec, number_of_eigen_vec, number_of_eigen_vec) = 
-              gamma[dirac].value[j] * contraction_dagger[rnd_i][j + 4 * i];
-          (op_1[rnd_i]).block(i * number_of_eigen_vec, gamma[dirac].row[j] * 
-              number_of_eigen_vec, number_of_eigen_vec, number_of_eigen_vec) = 
-              gamma[dirac].value[j] * contraction_dagger[rnd_i][j + 4 * i];
-          (op_1[rnd_i]).block(i * number_of_eigen_vec, gamma[dirac].row[j] * 
-              number_of_eigen_vec, number_of_eigen_vec, number_of_eigen_vec) = 
-              gamma[dirac].value[j] * contraction_dagger[rnd_i][j + 4 * i];
-          (op_1[rnd_i]).block(i * number_of_eigen_vec, gamma[dirac].row[j] * 
-              number_of_eigen_vec, number_of_eigen_vec, number_of_eigen_vec) = 
-              gamma[dirac].value[j] * contraction_dagger[rnd_i][j + 4 * i];
-        }
+      for(int i = 0; i < 4; i++){
+      (op_1[rnd_i]).block(i * number_of_eigen_vec, gamma[dirac].row[0] * 
+          number_of_eigen_vec, number_of_eigen_vec, number_of_eigen_vec) = 
+          gamma[dirac].value[0] * contraction_dagger[rnd_i][0 + 4 * i];
+      (op_1[rnd_i]).block(i * number_of_eigen_vec, gamma[dirac].row[1] * 
+          number_of_eigen_vec, number_of_eigen_vec, number_of_eigen_vec) = 
+          gamma[dirac].value[1] * contraction_dagger[rnd_i][1 + 4 * i];
+      (op_1[rnd_i]).block(i * number_of_eigen_vec, gamma[dirac].row[2] * 
+          number_of_eigen_vec, number_of_eigen_vec, number_of_eigen_vec) = 
+          gamma[dirac].value[2] * contraction_dagger[rnd_i][2 + 4 * i];
+      (op_1[rnd_i]).block(i * number_of_eigen_vec, gamma[dirac].row[3] * 
+          number_of_eigen_vec, number_of_eigen_vec, number_of_eigen_vec) = 
+          gamma[dirac].value[3] * contraction_dagger[rnd_i][3 + 4 * i];
       }
 #endif
 
@@ -583,11 +544,10 @@ void BasicOperator::get_operator_uncharged (Eigen::MatrixXcd*& op_1, const int d
   for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i){
 
     for(int i = 0; i < 4; i++) {
-      int rnd_j = 0;
  
       op_1[rnd_i].block(0, gamma[dirac].row[i] * number_of_eigen_vec,
           4 * number_of_eigen_vec, number_of_eigen_vec) =
-      gamma[dirac].value[i] * contraction[rnd_i][rnd_j][i];
+      gamma[dirac].value[i] * contraction[rnd_i][i];
   
     }
   }

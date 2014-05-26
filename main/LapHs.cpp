@@ -71,6 +71,7 @@ int main (int ac, char* av[]) {
 			4 * number_of_eigen_vec);
 	Eigen::MatrixXcd op_D_tsink = Eigen::MatrixXcd::Zero(
 			quarks[0].number_of_dilution_E * quarks[0].number_of_dilution_D,
+
 			4 * number_of_eigen_vec);
 	Eigen::MatrixXcd op_D_tsink_1 = Eigen::MatrixXcd::Zero(
 			quarks[0].number_of_dilution_E * quarks[0].number_of_dilution_D,
@@ -124,15 +125,20 @@ int main (int ac, char* av[]) {
   // (op_1) and vice versa (op_2)
   // additional t_source to t_sink (op_3) and t_sink to t_source (op_4) for
   // 4-point functions
-  Eigen::MatrixXcd* op_1 = new Eigen::MatrixXcd[number_of_rnd_vec];
+  Eigen::MatrixXcd** op_1 = new Eigen::MatrixXcd*[number_of_rnd_vec];
+  for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i) {
+    op_1[rnd_i] = new Eigen::MatrixXcd[number_of_rnd_vec];
+  }
   Eigen::MatrixXcd* op_2 = new Eigen::MatrixXcd[number_of_rnd_vec];
   Eigen::MatrixXcd* op_3 = new Eigen::MatrixXcd[number_of_rnd_vec];
   Eigen::MatrixXcd* op_4 = new Eigen::MatrixXcd[number_of_rnd_vec];
 
   for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i){
-    op_1[rnd_i] = Eigen::MatrixXcd(4 * number_of_eigen_vec, 
-        4 * number_of_eigen_vec);
-    op_2[rnd_i] = Eigen::MatrixXcd(4 * number_of_eigen_vec, 
+    for(int rnd_j = 0; rnd_j < number_of_rnd_vec; ++rnd_j){
+    op_1[rnd_i][rnd_j] = Eigen::MatrixXcd(4 * number_of_eigen_vec, 
+        4 * quarks[0].number_of_dilution_E);
+    }
+    op_2[rnd_i] = Eigen::MatrixXcd(4 * quarks[0].number_of_dilution_E, 
         4 * number_of_eigen_vec);
     op_3[rnd_i] = Eigen::MatrixXcd(4 * number_of_eigen_vec, 
         4 * number_of_eigen_vec);
@@ -150,8 +156,8 @@ int main (int ac, char* av[]) {
   int dirac_min = 5;
   int dirac_max = 6;
 
-  int p_min = rewr->number_of_momenta/2;
-  int p_max = rewr->number_of_momenta/2 + 1;
+  int p_min = 0;
+  int p_max = rewr->number_of_momenta;
 
 	// ***************************************************************************
 	// ***************************************************************************
@@ -167,11 +173,10 @@ int main (int ac, char* av[]) {
 		rewr->read_perambulators_from_file(config_i);
 		rewr->read_eigenvectors_from_file(config_i);
 		rewr->read_rnd_vectors_from_file(config_i);
-    rewr->read_lime_gauge_field_doubleprec_timeslices(config_i);
-//    for(int p = p_min; p < p_max; ++p){
-		rewr->build_source_matrix(2);
-//		  rewr->build_source_matrix(rewr->number_of_momenta/2-1);
-//    }
+//    rewr->read_lime_gauge_field_doubleprec_timeslices(config_i);
+    for(int p = rewr->number_of_momenta/2; p < p_max; ++p){
+      rewr->build_source_matrix(p);
+    }
 
 		// *************************************************************************
 		// CONNECTED CONTRACTION 1 *************************************************
@@ -189,41 +194,61 @@ int main (int ac, char* av[]) {
 		for(int t_source = 0; t_source < Lt; ++t_source){
 			for(int t_sink = 0; t_sink < Lt; ++t_sink){
 
+        for(int dirac = dirac_min; dirac < dirac_max; ++dirac){
+		      for(int p = p_min; p < p_max; ++p) {
 
-		    for(int p = p_min; p < p_max; ++p) {
+// code for pi+-
 
-          basic->init_operator(t_source, t_sink, rewr, 'b', p);
-          // initialize contraction[rnd_i] = perambulator * basicoperator
-          // = D_u^-1
-          // choose 'i' for interlace or 'b' for block time dilution scheme
-  
-          for(int dirac = dirac_min; dirac < dirac_max; ++dirac){
+            // initialize contraction[rnd_i] = perambulator * basicoperator
+            // = D_u^-1
+            // choose 'i' for interlace or 'b' for block time dilution scheme
+            // choose 'c' for charged or 'u' for uncharged particles
+            basic->init_operator(t_source, t_sink, rewr, 'b', 'c', p);
   
             // "multiply contraction[rnd_i] with gamma structure"
             // contraction[rnd_i] are the columns of D_u^-1 which get
-            // reordered by gamma multiplication. No actuall multiplication
+            // reordered by gamma multiplication. No actual multiplication
             // is carried out
-            basic->get_operator(op_1, dirac);
+            basic->get_operator_charged(op_1, rewr, dirac, t_sink);
   
             // same as get_operator but with gamma_5 trick. D_u^-1 is
             // daggered and multipied with gamma_5 from left and right
             // the momentum is changed to reflect the switched sign in
-            // the momentum exponential
-  
-            //basic->init_operator(t_sink, t_source, rewr, 'b', rewr->number_of_momenta - p -1);
-            basic->init_operator(t_sink, t_source, rewr, 'b', rewr->number_of_momenta - p - 1);
-            basic->get_operator(op_2, dirac);
-  
-  
+            // the momentum exponential for pi_+-
+            basic->get_operator_g5(op_2, dirac);
+ 
             for(int rnd1 = 0; rnd1 < number_of_rnd_vec; ++rnd1){
               for(int rnd2 = rnd1 + 1; rnd2 < number_of_rnd_vec; ++rnd2){
                   // building Correlation function get quite intuitive
                   // C2 = tr(D_d^-1 Gamma D_u^-1 Gamma)
                   // TODO: find signflip of imaginary part
+                  // TODO: is C2_mes[dirac][p] better?
                   C2_mes[p][dirac][abs((t_sink - t_source - Lt) % Lt)] += 
-                      (op_2[rnd2] * op_1[rnd1]).trace();
+                      (op_2[rnd2] * op_1[rnd1][rnd2]).trace();
               }
             }   
+ 
+#if 0 
+// code for pi0 currently not supported :/
+            basic->init_operator(t_source, t_sink, rewr, 'b', 'u', p);
+            basic->get_operator_uncharged(op_3, dirac);
+    
+            basic->init_operator(t_sink, t_source, rewr, 'b', 'u', 
+                rewr->number_of_momenta - p - 1);
+            basic->get_operator_uncharged(op_4, dirac);            
+
+            for(int rnd1 = 0; rnd1 < number_of_rnd_vec; ++rnd1){
+              for(int rnd2 = rnd1 + 1; rnd2 < number_of_rnd_vec; ++rnd2){
+                  // building Correlation function get quite intuitive
+                  // C2 = tr(D_d^-1 Gamma D_u^-1 Gamma)
+                  // TODO: find signflip of imaginary part
+                  // TODO: is C2_mes[dirac][p] better?
+                  C2_mes[p][dirac][abs((t_sink - t_source - Lt) % Lt)] += 
+                      (op_4[rnd2] * op_3[rnd1]).trace();
+
+              }
+            }   
+#endif
           }
 			  }
 
@@ -237,7 +262,7 @@ int main (int ac, char* av[]) {
 					C2_mes[p][dirac][t] /= norm3;
 
     // output to binary file
-		sprintf(outfile, "./A40/C2_pi+-_conf%04d.dat", config_i);
+		sprintf(outfile, "./A40.20_pi+/C2_pi+-_conf%04d.dat", config_i);
 		if((fp = fopen(outfile, "wb")) == NULL)
 			std::cout << "fail to open outputfile" << std::endl;
 		for(int p = 0; p < rewr->number_of_momenta; ++p)
@@ -245,10 +270,9 @@ int main (int ac, char* av[]) {
 				fwrite((double*) C2_mes[p][dirac], sizeof(double), 2 * Lt, fp);
 		fclose(fp);
 
-
     // output to terminal
 		printf("\n");
-    for(int p = 0; p < rewr->number_of_momenta; ++p) {
+    for(int p = p_min; p < p_max; ++p) {
       printf("\tmomentum = %02d\n", p);
 		  for(int dirac = dirac_min; dirac < dirac_max; ++dirac){
 			  printf("\tdirac    = %02d\n", dirac);
