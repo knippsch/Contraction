@@ -1,4 +1,6 @@
-LapHs.o: LapHs.cpp /hiskp2/jost/eigen-eigen-ffa86ffb5570/Eigen/Dense \
+config_utils.o: ../modules/config_utils.cpp ../include/config_utils.h \
+ /hiskp2/jost/eigen-eigen-ffa86ffb5570/Eigen/Eigen \
+ /hiskp2/jost/eigen-eigen-ffa86ffb5570/Eigen/Dense \
  /hiskp2/jost/eigen-eigen-ffa86ffb5570/Eigen/Core \
  /hiskp2/jost/eigen-eigen-ffa86ffb5570/Eigen/src/Core/util/DisableStupidWarnings.h \
  /hiskp2/jost/eigen-eigen-ffa86ffb5570/Eigen/src/Core/util/Macros.h \
@@ -153,37 +155,6 @@ LapHs.o: LapHs.cpp /hiskp2/jost/eigen-eigen-ffa86ffb5570/Eigen/Dense \
  /hiskp2/jost/eigen-eigen-ffa86ffb5570/Eigen/src/Eigenvalues/GeneralizedEigenSolver.h \
  /hiskp2/jost/eigen-eigen-ffa86ffb5570/Eigen/src/Eigenvalues/./RealQZ.h \
  /hiskp2/jost/eigen-eigen-ffa86ffb5570/Eigen/src/Eigenvalues/MatrixBaseEigenvalues.h \
- /hiskp2/jost/eigen-eigen-ffa86ffb5570/Eigen/Core \
- /hiskp2/jost/eigen-eigen-ffa86ffb5570/Eigen/SparseCore \
- /hiskp2/jost/eigen-eigen-ffa86ffb5570/Eigen/src/SparseCore/SparseUtil.h \
- /hiskp2/jost/eigen-eigen-ffa86ffb5570/Eigen/src/SparseCore/SparseMatrixBase.h \
- /hiskp2/jost/eigen-eigen-ffa86ffb5570/Eigen/src/SparseCore/../plugins/CommonCwiseUnaryOps.h \
- /hiskp2/jost/eigen-eigen-ffa86ffb5570/Eigen/src/SparseCore/../plugins/CommonCwiseBinaryOps.h \
- /hiskp2/jost/eigen-eigen-ffa86ffb5570/Eigen/src/SparseCore/../plugins/MatrixCwiseUnaryOps.h \
- /hiskp2/jost/eigen-eigen-ffa86ffb5570/Eigen/src/SparseCore/../plugins/MatrixCwiseBinaryOps.h \
- /hiskp2/jost/eigen-eigen-ffa86ffb5570/Eigen/src/SparseCore/../plugins/BlockMethods.h \
- /hiskp2/jost/eigen-eigen-ffa86ffb5570/Eigen/src/SparseCore/CompressedStorage.h \
- /hiskp2/jost/eigen-eigen-ffa86ffb5570/Eigen/src/SparseCore/AmbiVector.h \
- /hiskp2/jost/eigen-eigen-ffa86ffb5570/Eigen/src/SparseCore/SparseMatrix.h \
- /hiskp2/jost/eigen-eigen-ffa86ffb5570/Eigen/src/SparseCore/MappedSparseMatrix.h \
- /hiskp2/jost/eigen-eigen-ffa86ffb5570/Eigen/src/SparseCore/SparseVector.h \
- /hiskp2/jost/eigen-eigen-ffa86ffb5570/Eigen/src/SparseCore/SparseBlock.h \
- /hiskp2/jost/eigen-eigen-ffa86ffb5570/Eigen/src/SparseCore/SparseTranspose.h \
- /hiskp2/jost/eigen-eigen-ffa86ffb5570/Eigen/src/SparseCore/SparseCwiseUnaryOp.h \
- /hiskp2/jost/eigen-eigen-ffa86ffb5570/Eigen/src/SparseCore/SparseCwiseBinaryOp.h \
- /hiskp2/jost/eigen-eigen-ffa86ffb5570/Eigen/src/SparseCore/SparseDot.h \
- /hiskp2/jost/eigen-eigen-ffa86ffb5570/Eigen/src/SparseCore/SparsePermutation.h \
- /hiskp2/jost/eigen-eigen-ffa86ffb5570/Eigen/src/SparseCore/SparseRedux.h \
- /hiskp2/jost/eigen-eigen-ffa86ffb5570/Eigen/src/SparseCore/SparseFuzzy.h \
- /hiskp2/jost/eigen-eigen-ffa86ffb5570/Eigen/src/SparseCore/ConservativeSparseSparseProduct.h \
- /hiskp2/jost/eigen-eigen-ffa86ffb5570/Eigen/src/SparseCore/SparseSparseProductWithPruning.h \
- /hiskp2/jost/eigen-eigen-ffa86ffb5570/Eigen/src/SparseCore/SparseProduct.h \
- /hiskp2/jost/eigen-eigen-ffa86ffb5570/Eigen/src/SparseCore/SparseDenseProduct.h \
- /hiskp2/jost/eigen-eigen-ffa86ffb5570/Eigen/src/SparseCore/SparseDiagonalProduct.h \
- /hiskp2/jost/eigen-eigen-ffa86ffb5570/Eigen/src/SparseCore/SparseTriangularView.h \
- /hiskp2/jost/eigen-eigen-ffa86ffb5570/Eigen/src/SparseCore/SparseSelfAdjointView.h \
- /hiskp2/jost/eigen-eigen-ffa86ffb5570/Eigen/src/SparseCore/TriangularSolver.h \
- /hiskp2/jost/eigen-eigen-ffa86ffb5570/Eigen/src/SparseCore/SparseView.h \
  ../include/GlobalData.h \
  /hiskp2/jost/boost_1_54_0/boost/algorithm/string/classification.hpp \
  /hiskp2/jost/boost_1_54_0/boost/range/value_type.hpp \
@@ -765,17 +736,4 @@ LapHs.o: LapHs.cpp /hiskp2/jost/eigen-eigen-ffa86ffb5570/Eigen/Dense \
  /hiskp2/jost/boost_1_54_0/boost/program_options/detail/convert.hpp \
  /hiskp2/jost/boost_1_54_0/boost/program_options/variables_map.hpp \
  /hiskp2/jost/boost_1_54_0/boost/program_options/version.hpp \
- ../include/quark.h ../include/BasicOperator.h ../include/GlobalData.h \
- ../include/ReadWrite.h ../include/propagator_io.h ../include/io_utils.h \
- /hiskp2/jost/lime-1.3.2/include/lime.h \
- /hiskp2/jost/lime-1.3.2/include/lime_config.h \
- /hiskp2/jost/lime-1.3.2/include/lime_config_internal.h \
- /hiskp2/jost/lime-1.3.2/include/dcap-overload.h \
- /hiskp2/jost/lime-1.3.2/include/lime_defs.h \
- /hiskp2/jost/lime-1.3.2/include/lime_header.h \
- /hiskp2/jost/lime-1.3.2/include/lime_fixed_types.h \
- /hiskp2/jost/lime-1.3.2/include/lime_config.h \
- /hiskp2/jost/lime-1.3.2/include/lime_writer.h \
- /hiskp2/jost/lime-1.3.2/include/lime_reader.h ../include/config_utils.h \
- /hiskp2/jost/eigen-eigen-ffa86ffb5570/Eigen/Eigen \
- /hiskp2/jost/eigen-eigen-ffa86ffb5570/Eigen/Dense ../include/ReadWrite.h
+ ../include/quark.h

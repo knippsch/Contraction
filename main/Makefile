@@ -20,7 +20,7 @@ all: rmxeq mkdep mkxeq
 
 MAIN = LapHs
 
-GENERAL = GlobalData BasicOperator ReadWrite io_utils propagator_io config_utils
+GENERAL = GlobalData BasicOperator ReadWrite io_utils propagator_io #config_utils
 MODULES = $(GENERAL)
 
 # search path for modules

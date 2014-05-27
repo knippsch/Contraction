@@ -265,11 +265,11 @@ BasicOperator::BasicOperator () {
 
     // memory for (P^(b) rho V)^dagger exp(-ipx) V P^(b) rho to build u quark in 
     // charged case
-    s_charged = new Eigen::MatrixXcd***[number_of_rnd_vec];
+    s_charged = new Eigen::MatrixXcd**[number_of_rnd_vec];
     for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i){
-      s_charged[rnd_i] = new Eigen::MatrixXcd**[number_of_rnd_vec];
+      s_charged[rnd_i] = new Eigen::MatrixXcd*[number_of_rnd_vec];
       for(int rnd_j = 0; rnd_j < number_of_rnd_vec; ++rnd_j) {
-        s_charged[rnd_i][rnd_j] = new Eigen::MatrixXcd*[4];
+        s_charged[rnd_i][rnd_j] = new Eigen::MatrixXcd[4];
         for(int blocknr = 0; blocknr < 4; blocknr++){
           s_charged[rnd_i][rnd_j][blocknr] = 
               Eigen::MatrixXcd::Zero(quarks[0].number_of_dilution_E, 

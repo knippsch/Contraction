@@ -53,7 +53,7 @@ protected:
 //  void create_gamma(struct lookup* gamma, const int dirac);
   Eigen::MatrixXcd*** contraction;
   Eigen::MatrixXcd** contraction_dagger;
-  Eigen::MatrixXcd**** s_charged;
+  Eigen::MatrixXcd*** s_charged;
   struct lookup*  gamma;
 };
 
