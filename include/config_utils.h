@@ -16,20 +16,22 @@
 #include <iomanip>
 #include <iostream>
 #include <Eigen/Eigen>
+#include <unsupported/Eigen/MatrixFunctions>
 #include "GlobalData.h"
 
-//navigation through timeslice
+// navigation through timeslice
 void hopping3d(int** iup, int** idown);
 
-//write timeslice of ildg-message to array of eigen-matrices
+// write timeslice of ildg-message to array of eigen-matrices
 void map_timeslice_to_eigen(Eigen::Matrix3cd **eigen, double *timeslice);
 
-//Right displacement of one eigensystem
+// Right displacement of one eigensystem
 void right_displacement_one_dir(Eigen::Matrix3cd** config, int** iup, 
     int** idown, const int dir, Eigen::MatrixXcd& V, Eigen::MatrixXcd& W );
 
-//Hyp-Smearing of one timeslice eigeen timeslice is overwritten smearing takes place in 3 dimensions 
-//using alpha_1, alpha_2 as staple weights and iter as iteration number
+// Hyp-Smearing of one timeslice eigeen timeslice is overwritten smearing takes 
+// place in 3 dimensions using alpha_1, alpha_2 as staple weights and iter as 
+// iteration number
 void smearing_hyp(Eigen::Matrix3cd **eigen_timeslice, double alpha_1, double alpha_2, int iter);
 
 // empty function header for compiling! No single precision support

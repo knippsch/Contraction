@@ -130,14 +130,17 @@ ReadWrite::ReadWrite () {
     create_momenta(momentum);
 
     // memory for the perambulator, random vector and basic operator
-    basicoperator = new Eigen::MatrixXcd*[number_of_momenta];
+    basicoperator = new Eigen::MatrixXcd**[number_of_momenta];
     for(int p = 0; p < number_of_momenta; ++p) {
-      basicoperator[p] = new Eigen::MatrixXcd[Lt];
+      basicoperator[p] = new Eigen::MatrixXcd*[Lt];
       for(int t = 0; t < Lt; ++t){
-        // blocks in Basicoperator are on diagonal in the beginning. 
-        // non-zero blocks have row = col = blocknr
-        basicoperator[p][t] =  Eigen::MatrixXcd::Zero(
-            number_of_eigen_vec, number_of_eigen_vec);
+        basicoperator[p][t] = new Eigen::MatrixXcd[4];
+        for(int dir = 0; dir < 4; dir++) {
+          // blocks in Basicoperator are on diagonal in the beginning. 
+          // non-zero blocks have row = col = blocknr
+          basicoperator[p][t][dir] =  Eigen::MatrixXcd::Zero(
+              number_of_eigen_vec, number_of_eigen_vec);
+        }
       }
     }   
 
@@ -149,12 +152,10 @@ ReadWrite::ReadWrite () {
       rnd_vec[i] = Eigen::VectorXcd::Zero(Lt * number_of_eigen_vec * 4);
     }
 
-#if 0
-// memory for displacement, not yet supported
     //memory for gauge fields
     gaugefield = new double[V_for_lime];
     //Allocate Eigen Array to hold timeslice
-    Eigen::Matrix3cd **eigen_timeslice = new Eigen::Matrix3cd *[Vs];
+    eigen_timeslice = new Eigen::Matrix3cd *[Vs];
     iup = new int*[Vs];
     idown = new int*[Vs];
     for (int i = 0; i < Vs; ++i ) {
@@ -164,7 +165,6 @@ ReadWrite::ReadWrite () {
     }
 
     hopping3d(iup, idown);
-#endif
 
   }
   catch(std::exception& e){
@@ -200,7 +200,7 @@ ReadWrite::~ReadWrite() {
 /******************************************************************************/
 
 
-void ReadWrite::build_source_matrix (const int p) {
+void ReadWrite::build_source_matrix (const int p, const int dir) {
 
   clock_t t2 = clock();
   printf("\tbuild source matrix:\n");
@@ -209,14 +209,10 @@ void ReadWrite::build_source_matrix (const int p) {
   const int Lt = global_data->get_Lt();
   const int number_of_eigen_vec = global_data->get_number_of_eigen_vec();
   const int dim_row = global_data->get_dim_row();
-  //const int Vs = global_data->get_Lx() * global_data->get_Ly()
-  //    * global_data->get_Lz();
-  const std::vector<quark> quarks = global_data->get_quarks();
-  const int number_of_rnd_vec = quarks[0].number_of_rnd_vec;
-  const int number_of_max_mom = global_data->get_number_of_max_mom();
 
   // creating basic operator
 
+#if 0
   // for p = 0, s is the unit matrix. Thus, the V.adjoint() * V multiplication
   // can be omitted
   // TODO: initialize somewhere in the constructor
@@ -235,58 +231,70 @@ void ReadWrite::build_source_matrix (const int p) {
 
   // case p != 0
   else  {
+#endif
     // TODO: checking the order of loops - enhancement might be possible
     // e.g. by reordering basicoperator with t faster than rnd_i
     for(int t = 0; t < Lt; ++t){
 
-      // multiply EV with momenta
-      // Divisor 3 for colour index. All three colours on same lattice site get
-      // the same momentum
-      Eigen::VectorXcd mom = Eigen::VectorXcd::Zero(dim_row);
-      for(int x = 0; x < dim_row; ++x) {
-        mom(x) = momentum[p][x/3];
+      // TODO: implement switch case for displacement
+      if(dir == 0) {
+
+        // momentum vector contains exp(-i p x)
+        // Divisor 3 for colour index. All three colours on same lattice site get
+        // the same momentum
+        Eigen::VectorXcd mom = Eigen::VectorXcd::Zero(dim_row);
+        for(int x = 0; x < dim_row; ++x) {
+          mom(x) = momentum[p][x/3];
+        }
+
+        basicoperator[p][t][0] = (V[t]).adjoint() * mom.asDiagonal() * V[t];
+//        basicoperator[number_of_momenta - p - 1][t][0] = 
+//            (basicoperator[p][t][0]).adjoint();
       }
       
-      //TODO: check if saving V[t].adjoint in own matrix is faster
-      // build basicoperator = V^dagger exp(-ipx) V 
-      // opposite momentum is just basicoperator daggered
-      basicoperator[p][t] = (V[t]).adjoint() * mom.asDiagonal() *  V[t];
-      basicoperator[number_of_momenta - p - 1][t] = 
-          (basicoperator[p][t]).adjoint();
+      else {
 
-//      std::cout << "V.adjoint * exp(ipx) * V with p = " << p << std::endl;
-//      std::cout << basicoperator[p][t].block(0,0,6,6) << std::endl;
+        //Time Slice of Configuration
+        //Factor 3 for second color index, 2 for complex numbers
+        double* timeslice = gaugefield + (t * dim_row * 3 * 2);
+        
+        //Write Timeslice in Eigen Array
+        map_timeslice_to_eigen(eigen_timeslice, timeslice);
+    
+        //displacement in one direction i acting to the right
+        right_displacement_one_dir(eigen_timeslice, iup, idown, dir - 1, 
+            V[t], W[t]);
+        // dir = 3 for z-displacement (1 x 2 y)
+        // W holds DV
+  
+        // momentum vector contains exp(-i p x)
+        // Divisor 3 for colour index. All three colours on same lattice site get
+        // the same momentum
+        Eigen::VectorXcd mom = Eigen::VectorXcd::Zero(dim_row);
+        for(int x = 0; x < dim_row; ++x) {
+          mom(x) = momentum[p][x/3];
+        }
+        
+        //TODO: check if saving V[t].adjoint in own matrix is faster
+        //TODO: is that efficient?
+        // build basicoperator = V^dagger exp(-ipx) V 
+        // opposite momentum is just basicoperator daggered
+        basicoperator[p][t][dir] = (V[t]).adjoint() * mom.asDiagonal() *  W[t] - 
+            (W[t]).adjoint() * mom.asDiagonal() * V[t];
+        basicoperator[number_of_momenta - p - 1][t][dir] = 
+            (-1) *  (basicoperator[p][t][dir]).adjoint();
+      }
+
+//      std::cout << "V.adjoint * exp(-ipx) * V with p = " << p << std::endl;
+//      std::cout << basicoperator[number_of_momenta - p - 1][t].block(0,0,6,6) 
+//          << std::endl << "\n" << s.block(0,0,6,6) << std::endl;
 //      std::cout << std::endl;
 
     } // loop over time ends here
 
-  }
-
-//code for Displacement
 #if 0
-
-  for(int t = 0; t < Lt; ++t){
-    
-    //Time Slice of Configuration
-    //Factor 3 for second color index, 2 for complex numbers
-    double* timeslice = gaugefield + (t * dim_row * 3 * 2);
-    
-    //Write Timeslice in Eigen Array
-    map_timeslice_to_eigen(eigen_timeslice, timeslice);
-
-    //displacement in one direction i acting to the right
-    right_displacement_one_dir(eigen_timeslice, iup, idown, dir, 
-        V[t], W[t]);
-    // dir = 2 for z-displacement (0 x 1 y)
-    // W holds DV
-
-//    Eigen::MatrixXcd s = Eigen::MatrixXcd::Zero(number_of_eigen_vec, 
-//        number_of_eigen_vec);
-    Eigen::MatrixXcd s = (V[t]).adjoint() * W[t];
-    s = s.adjoint() - s;
-
-
-#endif 
+  }
+#endif
 
   t2 = clock() - t2;
   printf("\t\tSUCCESS - %.1f seconds\n", ((float) t2)/CLOCKS_PER_SEC);

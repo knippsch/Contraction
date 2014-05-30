@@ -153,11 +153,14 @@ int main (int ac, char* av[]) {
 	// ***************************************************************************
 	// ***************************************************************************
 
-  int dirac_min = 5;
-  int dirac_max = 6;
+  int dirac_min = 13;
+  int dirac_max = 16;
 
-  int p_min = 0;
-  int p_max = rewr->number_of_momenta;
+  int displ_min = 1;
+  int displ_max = 4;
+
+  int p_min = rewr->number_of_momenta/2;
+  int p_max = rewr->number_of_momenta/2 + 1;
 
 	// ***************************************************************************
 	// ***************************************************************************
@@ -173,9 +176,11 @@ int main (int ac, char* av[]) {
 		rewr->read_perambulators_from_file(config_i);
 		rewr->read_eigenvectors_from_file(config_i);
 		rewr->read_rnd_vectors_from_file(config_i);
-//    rewr->read_lime_gauge_field_doubleprec_timeslices(config_i);
+    rewr->read_lime_gauge_field_doubleprec_timeslices(config_i);
     for(int p = rewr->number_of_momenta/2; p < p_max; ++p){
-      rewr->build_source_matrix(p);
+      for(int dir = displ_min; dir < displ_max; dir++) {
+        rewr->build_source_matrix(p, dir);
+      }
     }
 
 		// *************************************************************************
@@ -195,7 +200,7 @@ int main (int ac, char* av[]) {
 			for(int t_sink = 0; t_sink < Lt; ++t_sink){
 
         for(int dirac = dirac_min; dirac < dirac_max; ++dirac){
-		      for(int p = p_min; p < p_max; ++p) {
+	        for(int p = p_min; p < p_max; ++p) {
 
 // code for pi+-
 
@@ -203,7 +208,9 @@ int main (int ac, char* av[]) {
             // = D_u^-1
             // choose 'i' for interlace or 'b' for block time dilution scheme
             // choose 'c' for charged or 'u' for uncharged particles
-            basic->init_operator(t_source, t_sink, rewr, 'b', 'c', p);
+            // 15 - dirac is a bit cheaty, but gives correct displacement for O3
+            basic->init_operator(t_source, t_sink, rewr, 'b', 'c', p, 
+                16 - dirac);
   
             // "multiply contraction[rnd_i] with gamma structure"
             // contraction[rnd_i] are the columns of D_u^-1 which get
@@ -211,11 +218,15 @@ int main (int ac, char* av[]) {
             // is carried out
             basic->get_operator_charged(op_1, rewr, dirac, t_sink);
   
-            // same as get_operator but with gamma_5 trick. D_u^-1 is
-            // daggered and multipied with gamma_5 from left and right
-            // the momentum is changed to reflect the switched sign in
-            // the momentum exponential for pi_+-
-            basic->get_operator_g5(op_2, dirac);
+            for(int dirac2 = dirac_min; dirac2 < dirac_max; ++dirac2) {
+              basic->init_operator(t_source, t_sink, rewr, 'b', 'c', p, 
+                  16 - dirac2);
+
+              // same as get_operator but with gamma_5 trick. D_u^-1 is
+              // daggered and multipied with gamma_5 from left and right
+              // the momentum is changed to reflect the switched sign in
+              // the momentum exponential for pi_+-
+              basic->get_operator_g5(op_2, dirac2);
  
             for(int rnd1 = 0; rnd1 < number_of_rnd_vec; ++rnd1){
               for(int rnd2 = rnd1 + 1; rnd2 < number_of_rnd_vec; ++rnd2){
@@ -223,7 +234,8 @@ int main (int ac, char* av[]) {
                   // C2 = tr(D_d^-1 Gamma D_u^-1 Gamma)
                   // TODO: find signflip of imaginary part
                   // TODO: is C2_mes[dirac][p] better?
-                  C2_mes[p][dirac][abs((t_sink - t_source - Lt) % Lt)] += 
+//                  C2_mes[p][dirac][abs((t_sink - t_source - Lt) % Lt)] += 
+                  C2_mes[p][13][abs((t_sink - t_source - Lt) % Lt)] += 
                       (op_2[rnd2] * op_1[rnd1][rnd2]).trace();
               }
             }   
@@ -251,6 +263,7 @@ int main (int ac, char* av[]) {
 #endif
           }
 			  }
+        }
 
       }
 		}
@@ -262,7 +275,7 @@ int main (int ac, char* av[]) {
 					C2_mes[p][dirac][t] /= norm3;
 
     // output to binary file
-		sprintf(outfile, "./A40.20_pi+/C2_pi+-_conf%04d.dat", config_i);
+		sprintf(outfile, "./A40.20_displ/C2_pi+-_conf%04d.dat", config_i);
 		if((fp = fopen(outfile, "wb")) == NULL)
 			std::cout << "fail to open outputfile" << std::endl;
 		for(int p = 0; p < rewr->number_of_momenta; ++p)

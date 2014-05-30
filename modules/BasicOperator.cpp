@@ -229,7 +229,6 @@ static void create_gamma (struct lookup* gamma, const int i) {
 
 BasicOperator::BasicOperator () {
   try{
-    const int Lt = global_data->get_Lt();
     const int number_of_eigen_vec = global_data->get_number_of_eigen_vec();
     const std::vector<quark> quarks = global_data->get_quarks();
     const int number_of_rnd_vec = quarks[0].number_of_rnd_vec;
@@ -315,7 +314,8 @@ BasicOperator::~BasicOperator () {
 // initializes contractions[col] with columns of D_u^-1
 
 void BasicOperator::init_operator (const int t_source, const int t_sink, 
-    ReadWrite* rewr, const char dilution, const char charge, const int p){
+    ReadWrite* rewr, const char dilution, const char charge, const int p, 
+    const int displ){
 
   clock_t t = clock();
   const int number_of_eigen_vec = global_data->get_number_of_eigen_vec();
@@ -369,7 +369,8 @@ void BasicOperator::init_operator (const int t_source, const int t_sink,
         s_temp.row(vec_i % quarks[0].number_of_dilution_E) +=
             std::conj(rewr->rnd_vec[rnd_i](blocknr + vec_i * 4 + 
             4 * number_of_eigen_vec * t_sink)) *
-            rewr->basicoperator[rewr->number_of_momenta - p - 1][t_sink].row(vec_i);
+            rewr->basicoperator[rewr->number_of_momenta - p - 1]
+            [t_sink][displ].row(vec_i);
       }
       // second left dilution
       for(int rnd_j = 0; rnd_j < number_of_rnd_vec; ++rnd_j) {
@@ -448,7 +449,7 @@ void BasicOperator::init_operator (const int t_source, const int t_sink,
             t_sink_dil + (quarks[0].number_of_dilution_E) * col,
             number_of_eigen_vec,
             (quarks[0].number_of_dilution_E))).adjoint() *
-        rewr->basicoperator[rewr->number_of_momenta - p - 1][t_source];
+        rewr->basicoperator[rewr->number_of_momenta - p - 1][t_source][displ];
           
         // that's the best criterium I could think up for multiplication with
         // gamma_5 from left and right side. It changes the sign of the two

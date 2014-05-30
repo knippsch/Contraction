@@ -20,7 +20,7 @@ all: rmxeq mkdep mkxeq
 
 MAIN = LapHs
 
-GENERAL = GlobalData BasicOperator ReadWrite io_utils propagator_io #config_utils
+GENERAL = GlobalData BasicOperator ReadWrite io_utils propagator_io config_utils
 MODULES = $(GENERAL)
 
 # search path for modules
@@ -32,7 +32,8 @@ LOGOPTION =
 
 
 # additional include directories
-INCPATH = /hiskp2/jost/eigen-eigen-ffa86ffb5570 /hiskp2/jost/boost_1_54_0/ /hiskp2/jost/lime-1.3.2/include ../include 
+INCPATH = /hiskp2/jost/code/eigen /hiskp2/jost/boost_1_54_0/ /hiskp2/jost/lime-1.3.2/include ../include 
+#INCPATH = /hiskp2/jost/eigen-eigen-ffa86ffb5570 /hiskp2/jost/boost_1_54_0/ /hiskp2/jost/lime-1.3.2/include ../include 
 
 
 # additional libraries
@@ -43,7 +44,7 @@ LIBPATH = /hiskp2/jost/boost_1_54_0/stage/lib/ /hiskp2/jost/lime-1.3.2/lib/
 
 
 # scheduling and optimization options
-CFLAGS = -Wall -O3 -fopenmp -march=native -std=c++0x 
+CFLAGS = -Wall -O3 -fopenmp -march=native -std=c++0x -g
 
 ############################## do not change ###################################
 
