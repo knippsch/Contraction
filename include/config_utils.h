@@ -17,6 +17,7 @@
 #include <iostream>
 #include <Eigen/Eigen>
 #include <unsupported/Eigen/MatrixFunctions>
+#include <array>
 #include "GlobalData.h"
 
 // navigation through timeslice

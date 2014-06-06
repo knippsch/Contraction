@@ -32,16 +32,19 @@ static void create_momenta (std::complex<double>** momentum) {
             continue;
           }
 
+          //TODO: for Lx == Ly == Lz ipxH and ipxHipyH may be integers and px, 
+          //py get multiplied in the exponential
+          //std::cout << "p = " << p << ", entspricht (" << ipx << ", " << 
+          //ipy << ", " << ipz << ")" << std::endl;
           // running over all lattice points
           for(int x = 0; x < Lx; ++x){
             const int xH = x * Ly * Lz; // helper variable
-            const int ipxH = ipx * px * x; // helper variable
+            const double ipxH = ipx * px * x; // helper variable
             for(int y = 0; y < Ly; ++y){
               const int xHyH = xH + y * Lz; // helper variable
-              const int ipxHipzH = ipxH + ipy * py * y; // helper variable
+              const double ipxHipyH = ipxH + ipy * py * y; // helper variable
               for(int z = 0; z < Lz; ++z){
-                momentum[p][xHyH + z] = exp(-I * (ipxHipzH + ipz * pz * z));
-                //std::cout << "p = " << p << ", entspricht (" << ipx << ", " << ipy << ", " << ipz << ")" << std::endl;
+                momentum[p][xHyH + z] = exp(-I * (ipxHipyH + ipz * pz * z));
               }
             }
           }
@@ -111,6 +114,7 @@ ReadWrite::ReadWrite () {
         * quarks[0].number_of_dilution_E * quarks[0].number_of_dilution_D;
     const int V_for_lime = global_data->get_V_for_lime();
 
+#if 0
     // Initializing memory for eigenvectors
     V = new Eigen::MatrixXcd[Lt];
     for(int t = 0; t < Lt; ++t)
@@ -119,6 +123,7 @@ ReadWrite::ReadWrite () {
     W = new Eigen::MatrixXcd[Lt];
     for(int t = 0; t < Lt; ++t)
       W[t] = Eigen::MatrixXcd::Zero(dim_row, number_of_eigen_vec);
+#endif
 
     // momentum creation
     number_of_momenta = check_momenta();
@@ -135,7 +140,8 @@ ReadWrite::ReadWrite () {
       basicoperator[p] = new Eigen::MatrixXcd*[Lt];
       for(int t = 0; t < Lt; ++t){
         basicoperator[p][t] = new Eigen::MatrixXcd[4];
-        for(int dir = 0; dir < 4; dir++) {
+// changed to case of no displacement. Else dir < 4
+        for(int dir = 0; dir < 1; dir++) {
           // blocks in Basicoperator are on diagonal in the beginning. 
           // non-zero blocks have row = col = blocknr
           basicoperator[p][t][dir] =  Eigen::MatrixXcd::Zero(
@@ -152,6 +158,7 @@ ReadWrite::ReadWrite () {
       rnd_vec[i] = Eigen::VectorXcd::Zero(Lt * number_of_eigen_vec * 4);
     }
 
+#if 0
     //memory for gauge fields
     gaugefield = new double[V_for_lime];
     //Allocate Eigen Array to hold timeslice
@@ -165,6 +172,9 @@ ReadWrite::ReadWrite () {
     }
 
     hopping3d(iup, idown);
+#endif
+
+  std::cout << "\t allocated memory for ReadWrite" << std::endl;
 
   }
   catch(std::exception& e){
@@ -200,7 +210,8 @@ ReadWrite::~ReadWrite() {
 /******************************************************************************/
 
 
-void ReadWrite::build_source_matrix (const int p, const int dir) {
+void ReadWrite::build_source_matrix (const int config_i, const int p_min, 
+    const int p_max, const int displ_min, const int displ_max) {
 
   clock_t t2 = clock();
   printf("\tbuild source matrix:\n");
@@ -212,61 +223,68 @@ void ReadWrite::build_source_matrix (const int p, const int dir) {
 
   // creating basic operator
 
-#if 0
-  // for p = 0, s is the unit matrix. Thus, the V.adjoint() * V multiplication
-  // can be omitted
-  // TODO: initialize somewhere in the constructor
-  if(p == (number_of_momenta/2)) {
-    for(int t = 0; t < Lt; ++t){
+  for(int t = 0; t < Lt; ++t){
 
-      for(int vec_i = 0; vec_i < number_of_eigen_vec; vec_i++) {
-        for(int vec_j = 0; vec_j < number_of_eigen_vec; vec_j++) {
-          (basicoperator[number_of_momenta/2][t])(vec_i, vec_i) = 1;
-        }
-     }
-
-    } // loop over time ends here
-
-  }
-
-  // case p != 0
-  else  {
-#endif
-    // TODO: checking the order of loops - enhancement might be possible
-    // e.g. by reordering basicoperator with t faster than rnd_i
-    for(int t = 0; t < Lt; ++t){
-
-      // TODO: implement switch case for displacement
-      if(dir == 0) {
-
-        // momentum vector contains exp(-i p x)
-        // Divisor 3 for colour index. All three colours on same lattice site get
-        // the same momentum
-        Eigen::VectorXcd mom = Eigen::VectorXcd::Zero(dim_row);
-        for(int x = 0; x < dim_row; ++x) {
-          mom(x) = momentum[p][x/3];
-        }
-
-        basicoperator[p][t][0] = (V[t]).adjoint() * mom.asDiagonal() * V[t];
-//        basicoperator[number_of_momenta - p - 1][t][0] = 
-//            (basicoperator[p][t][0]).adjoint();
-      }
+    Eigen::MatrixXcd V_t = Eigen::MatrixXcd::Zero(dim_row, number_of_eigen_vec);
+    read_eigenvectors_from_file(V_t, config_i, t);
+   
+    for(int dir = displ_min; dir < displ_max + 1; dir++) {
+      for(int p = number_of_momenta/2; p < p_max; p++){
+        // TODO: implement switch case for displacement
+        // case no displacement
+        if(dir == 0) {
       
+          // TODO: checking the order of loops - enhancement might be possible
+          // e.g. by reordering basicoperator with t faster than rnd_i
+      
+      
+          // for p = 0, s is the unit matrix. Thus, the V.adjoint() * V multiplication
+          // can be omitted
+          // TODO: initialize somewhere in the constructor
+          if(p == (number_of_momenta/2)) {
+    
+            for(int vec_i = 0; vec_i < number_of_eigen_vec; vec_i++) {
+              for(int vec_j = 0; vec_j < number_of_eigen_vec; vec_j++) {
+                (basicoperator[number_of_momenta/2][t][0])(vec_i, vec_i) = 1;
+              }
+            }
+          
+          }
+    
+          else {
+    
+            // momentum vector contains exp(-i p x)
+            // Divisor 3 for colour index. All three colours on same lattice site get
+            // the same momentum
+            Eigen::VectorXcd mom = Eigen::VectorXcd::Zero(dim_row);
+            for(int x = 0; x < dim_row; ++x) {
+              mom(x) = momentum[p][x/3];
+            }
+   
+            basicoperator[p][t][0] = (V_t).adjoint() * mom.asDiagonal() * V_t;
+            basicoperator[number_of_momenta - p - 1][t][0] = 
+                (basicoperator[p][t][0]).adjoint();
+    
+          }
+    
+        }
+    
+      // case displacement
       else {
-
+    
         //Time Slice of Configuration
         //Factor 3 for second color index, 2 for complex numbers
         double* timeslice = gaugefield + (t * dim_row * 3 * 2);
-        
+          
         //Write Timeslice in Eigen Array
         map_timeslice_to_eigen(eigen_timeslice, timeslice);
-    
+      
         //displacement in one direction i acting to the right
         right_displacement_one_dir(eigen_timeslice, iup, idown, dir - 1, 
             V[t], W[t]);
         // dir = 3 for z-displacement (1 x 2 y)
         // W holds DV
-  
+      
         // momentum vector contains exp(-i p x)
         // Divisor 3 for colour index. All three colours on same lattice site get
         // the same momentum
@@ -274,7 +292,7 @@ void ReadWrite::build_source_matrix (const int p, const int dir) {
         for(int x = 0; x < dim_row; ++x) {
           mom(x) = momentum[p][x/3];
         }
-        
+          
         //TODO: check if saving V[t].adjoint in own matrix is faster
         //TODO: is that efficient?
         // build basicoperator = V^dagger exp(-ipx) V 
@@ -283,22 +301,75 @@ void ReadWrite::build_source_matrix (const int p, const int dir) {
             (W[t]).adjoint() * mom.asDiagonal() * V[t];
         basicoperator[number_of_momenta - p - 1][t][dir] = 
             (-1) *  (basicoperator[p][t][dir]).adjoint();
+    
+      
+        }
+  
       }
+    }
+
+  } // loop over time ends here
 
 //      std::cout << "V.adjoint * exp(-ipx) * V with p = " << p << std::endl;
 //      std::cout << basicoperator[number_of_momenta - p - 1][t].block(0,0,6,6) 
 //          << std::endl << "\n" << s.block(0,0,6,6) << std::endl;
 //      std::cout << std::endl;
 
-    } // loop over time ends here
-
-#if 0
-  }
-#endif
-
   t2 = clock() - t2;
   printf("\t\tSUCCESS - %.1f seconds\n", ((float) t2)/CLOCKS_PER_SEC);
   fflush(stdout);
+}
+
+/******************************************************************************/
+/******************************************************************************/
+/******************************************************************************/
+
+void ReadWrite::read_eigenvectors_from_file (Eigen::MatrixXcd& V, const int config_i, const int t) {
+
+  try{
+    clock_t time = clock();
+    const int Lt = global_data->get_Lt();
+    const int dim_row = global_data->get_dim_row();
+    const int verbose = global_data->get_verbose();
+    const int number_of_eigen_vec = global_data->get_number_of_eigen_vec();
+
+    std::string filename = global_data->get_path_eigenvectors() + "/"
+        + global_data->get_name_eigenvectors();
+    //buffer for read in
+    std::complex<double>* eigen_vec = new std::complex<double>[dim_row];
+
+    if(verbose) printf("reading eigen vectors from files:\n");
+    else printf("\treading eigenvectors:");
+    fflush(stdout);
+
+    //setting up file
+    char name[200];
+    sprintf(name, "%s.%04d.%03d", filename.c_str(), config_i, t); 
+    if(verbose) std::cout << "Reading file: " << name << std::endl;
+    std::ifstream infile(name, std::ifstream::binary);
+  
+    for (int nev = 0; nev < number_of_eigen_vec; ++nev) {
+      infile.read( (char*) eigen_vec, 2*dim_row*sizeof(double));
+      for(int nrow = 0; nrow < dim_row; ++nrow)
+      V(nrow, nev) = eigen_vec[nrow];
+    }
+    infile.close();
+    // small test of trace and sum over the eigen vector matrix!
+    if(verbose){
+      std::cout << "trace of V^d*V on t = " << t << ":\t"
+          << (V.adjoint() * V).trace() << std::endl;
+      std::cout << "sum over all entries of V^d*V on t = " << t << ":\t"
+          << (V.adjoint() * V).sum() << std::endl;
+    }   
+
+    delete[] eigen_vec;
+    time = clock() - time;
+    if(!verbose) printf("\t\tSUCCESS - %.1f seconds\n", ((float) time)/CLOCKS_PER_SEC);
+  }
+  catch(std::exception& e){
+    std::cout << e.what() << "in: ReadWrite::read_eigenvectors_from_file\n";
+    exit(0);
+  }
 }
 
 /******************************************************************************/
@@ -365,6 +436,10 @@ void ReadWrite::read_perambulators_from_file (const int config_i) {
     char infile[400];
     FILE *fp = NULL;
     const int Lt = global_data->get_Lt();
+    const int Lx = global_data->get_Lx();
+    const int Ly = global_data->get_Ly();
+    const int Lz = global_data->get_Lz();
+    const int Vs = Lx * Ly * Lz;
     const int verbose = global_data->get_verbose();
     const int number_of_eigen_vec = global_data->get_number_of_eigen_vec();
     const std::vector<quark> quarks = global_data->get_quarks();
@@ -392,10 +467,14 @@ void ReadWrite::read_perambulators_from_file (const int config_i) {
       std::string filename = global_data->get_path_perambulators() + "/"
           + temp;
 
-      //TODO: name is hard-coded at the moment
+      //TODO: sink dilution is  hard-coded at the moment
       sprintf(infile,
-          "%sperambulator.rndvecnb%02d.u.TsoB0024.VsoI0006.DsoF4.TsiF0048."
-          "SsiF8000.DsiF4.CsiF3.smeared1.%05d", filename.c_str(), rnd_vec_i, 
+          "%sperambulator.rndvecnb%02d.u.TsoB%04d.VsoI%04d.DsoF%1d.TsiF%04d."
+          "SsiF%d.DsiF4.CsiF3.smeared1.%05d", 
+          filename.c_str(), rnd_vec_i, 
+          Lt / quarks[0].number_of_dilution_T, quarks[0].number_of_dilution_E,
+          quarks[0].number_of_dilution_D,
+          Lt, Vs,
           config_i);
 
       if((fp = fopen(infile, "rb")) == NULL){
@@ -481,8 +560,8 @@ void ReadWrite::read_rnd_vectors_from_file (const int config_i) {
 				+ "/" + temp;
 
       // read random vector
-      sprintf(infile, "%srandomvector.rndvecnb%02d.u.nbev0066.%04d", 
-          filename.c_str(), rnd_vec_i, config_i);
+      sprintf(infile, "%srandomvector.rndvecnb%02d.u.nbev%04d.%04d", 
+          filename.c_str(), rnd_vec_i, number_of_eigen_vec, config_i);
 
 //      sprintf(infile, "%srandomvector.rndvecnb%02d.u.nbev0120.%04d", 
 //          filename.c_str(), rnd_vec_i, config_i);
@@ -522,138 +601,154 @@ void ReadWrite::read_rnd_vectors_from_file (const int config_i) {
 // what this does
 void ReadWrite::read_lime_gauge_field_doubleprec_timeslices(const int config_i) {
 
-  const int Lt = global_data->get_Lt();
-  const int Lx = global_data->get_Lx();
-  const int Ly = global_data->get_Ly();
-  const int Lz = global_data->get_Lz();
-  
-  const int slice_i = 0;
-  const int slice_f = Lt+1;
-  char filename[200];
+  try{
+    const int Lt = global_data->get_Lt();
+    const int Lx = global_data->get_Lx();
+    const int Ly = global_data->get_Ly();
+    const int Lz = global_data->get_Lz();
+    const int verbose = global_data->get_verbose();
+    
+    const int slice_i = 0;
+    const int slice_f = Lt+1;
+    char filename[200];
 
-  FILE * ifs;
-  int t, x, y, z, status;
-  n_uint64_t bytes;
-  char * header_type;
-  LimeReader * limereader;
-  double tmp[72], tmp2[72];
-  int words_bigendian;
+    FILE * ifs;
+    int t, x, y, z, status;
+    n_uint64_t bytes;
+    char * header_type;
+    LimeReader * limereader;
+    double tmp[72], tmp2[72];
+    int words_bigendian;
 
-  sprintf(filename, "/hiskp2/gauges/A40.20_L20_T48_beta190_mul0040_musig150_mudel190_kappa1632700/conf.%04d", config_i);
-
-  words_bigendian = big_endian();
-  ifs = fopen(filename, "r");
-  if(ifs == (FILE *)NULL) {
-    fprintf(stderr, "Could not open file %s\n Aborting...\n", filename);
-    exit(500);
-  }
-  limereader = limeCreateReader( ifs );
-  if( limereader == (LimeReader *)NULL ) {
-    fprintf(stderr, "Unable to open LimeReader\n");
-    exit(500);
-  }
-  while( (status = limeReaderNextRecord(limereader)) != LIME_EOF ) {
-    if(status != LIME_SUCCESS ) {
-      fprintf(stderr, "limeReaderNextRecord returned error with status = %d!\n",
-          status);
-      status = LIME_EOF;
-      break;
+    if(verbose){
+      printf("reading gauge fields from files:\n");
     }
-    header_type = limeReaderType(limereader);
-    if(strcmp("ildg-binary-data",header_type) == 0) break;
-  }
-  if(status == LIME_EOF) {
-    fprintf(stderr, "no ildg-binary-data record found in file %s\n",filename);
-    limeDestroyReader(limereader);
-    fclose(ifs);
-    exit(-2);
-  }
-  bytes = limeReaderBytes(limereader);
-  if(bytes != (n_uint64_t)Lx*Ly*Lz*Lt*72*(n_uint64_t)sizeof(double)) {
-    if(bytes != (n_uint64_t)Lx*Ly*Lz*Lt*72*(n_uint64_t)sizeof(double)/2) {
-      fprintf(stderr, "Probably wrong lattice size or precision (bytes=%lu) in file %s expected %lu\n",
-          (n_uint64_t)bytes, filename,
-          (n_uint64_t)Lx*Ly*Lz*Lt*72*(n_uint64_t)sizeof(double));
-      fprintf(stderr, "Aborting...!\n");
-      fflush( stdout );
-      exit(501);
+    else{
+      printf("\treading gauge fields:");
     }
-    else {
+
+    sprintf(filename, "/hiskp2/gauges/A40.20_L20_T48_beta190_mul0040_musig150_mudel190_kappa1632700/conf.%04d", config_i);
+
+    words_bigendian = big_endian();
+    ifs = fopen(filename, "r");
+    if(ifs == (FILE *)NULL) {
+      fprintf(stderr, "Could not open file %s\n Aborting...\n", filename);
+      exit(500);
+    }
+    limereader = limeCreateReader( ifs );
+    if( limereader == (LimeReader *)NULL ) {
+      fprintf(stderr, "Unable to open LimeReader\n");
+      exit(500);
+    }
+    while( (status = limeReaderNextRecord(limereader)) != LIME_EOF ) {
+      if(status != LIME_SUCCESS ) {
+        fprintf(stderr, "limeReaderNextRecord returned error with status = %d!\n",
+            status);
+        status = LIME_EOF;
+        break;
+      }
+      header_type = limeReaderType(limereader);
+      if(strcmp("ildg-binary-data",header_type) == 0) break;
+    }
+    if(status == LIME_EOF) {
+      fprintf(stderr, "no ildg-binary-data record found in file %s\n",filename);
+      limeDestroyReader(limereader);
       fclose(ifs);
-      fprintf(stderr, "single precision read!\n");
-
-      fprintf(stderr, "Not implemented!\n");
-      exit(EXIT_FAILURE);
-      read_lime_gauge_field_singleprec(gaugefield, filename, Lt, Lx, Ly, Lz);
-      return;
+      exit(-2);
     }
-  }
+    bytes = limeReaderBytes(limereader);
+    if(bytes != (n_uint64_t)Lx*Ly*Lz*Lt*72*(n_uint64_t)sizeof(double)) {
+      if(bytes != (n_uint64_t)Lx*Ly*Lz*Lt*72*(n_uint64_t)sizeof(double)/2) {
+        fprintf(stderr, "Probably wrong lattice size or precision (bytes=%lu) in file %s expected %lu\n",
+            (n_uint64_t)bytes, filename,
+            (n_uint64_t)Lx*Ly*Lz*Lt*72*(n_uint64_t)sizeof(double));
+        fprintf(stderr, "Aborting...!\n");
+        fflush( stdout );
+        exit(501);
+      }
+      else {
+        fclose(ifs);
+        fprintf(stderr, "single precision read!\n");
 
-  bytes = (n_uint64_t)72*sizeof(double);
-
-  for(t = 0; t < Lt; t++) {
-    for(z = 0; z < Lz; z++) {
-      for(y = 0; y < Ly; y++) {
-        for(x = 0; x < Lx; x++) {
-
-          // check for endianess and reading in data
-          // the pointer limereader is internally increased by bytes
-          // in the limeReaderReadData function
-          if(!words_bigendian) {
-            status = limeReaderReadData(tmp, &bytes, limereader);
-            byte_swap_assign(tmp2, tmp, 72);
-          }
-          else
-            status = limeReaderReadData(tmp2, &bytes, limereader);
-          // check if reading was successfull
-          if(status < 0 && status != LIME_EOR) {
-            fprintf(stderr, "LIME read error occured with status = %d while reading file %s!\n Aborting...\n",
-                status, filename);
-            exit(500);
-          }
-
-          // we just want to read in data in the specific range of timeslices
-          // must be here because the limereader pointer must be increased 
-          // correctly
-          // could be done with much more performance but might be tricky to 
-          // do correctly
-          if(t<slice_i || t>slice_f)
-            continue;
-
-          // copy of link variables from tmp2 into config
-          // ILDG has mu-order: x,y,z,t so it is changed here to: t,x,y,z !
-          const size_t p = (size_t) ( ((t-slice_i)*Lx*Lz*Lz + 
-              x*Ly*Lz + y*Lz + z) * 72); // position in config
-          size_t k = 0;
-          for(size_t mu = 1; mu <= 4; mu++) { // mu=4 is for the shift of U_t
-            size_t index;
-            if (mu != 4)
-              index = p + mu*18; // for U_x, U_y and U_z
-            else
-              index = p; // U_t is copied into the beginning of
-            // the (config+p) array
-
-            for(size_t i = 0; i < 3; i++) {
-              for(size_t j = 0; j < 3; j++) {
-                gaugefield[index+6*i+2*j] = tmp2[2*k];
-                gaugefield[index+6*i+2*j+1] = tmp2[2*k+1];
-                k++;
-              }
-            }
-
-          } // loop over mu ends here
-
-        } // loop over position space ends here
+        fprintf(stderr, "Not implemented!\n");
+        exit(EXIT_FAILURE);
+        read_lime_gauge_field_singleprec(gaugefield, filename, Lt, Lx, Ly, Lz);
+        return;
       }
     }
+
+    bytes = (n_uint64_t)72*sizeof(double);
+
+    for(t = 0; t < Lt; t++) {
+      for(z = 0; z < Lz; z++) {
+        for(y = 0; y < Ly; y++) {
+          for(x = 0; x < Lx; x++) {
+
+            // check for endianess and reading in data
+            // the pointer limereader is internally increased by bytes
+            // in the limeReaderReadData function
+            if(!words_bigendian) {
+              status = limeReaderReadData(tmp, &bytes, limereader);
+              byte_swap_assign(tmp2, tmp, 72);
+            }
+            else
+              status = limeReaderReadData(tmp2, &bytes, limereader);
+            // check if reading was successfull
+            if(status < 0 && status != LIME_EOR) {
+              fprintf(stderr, "LIME read error occured with status = %d while reading file %s!\n Aborting...\n",
+                  status, filename);
+              exit(500);
+            }
+
+            // we just want to read in data in the specific range of timeslices
+            // must be here because the limereader pointer must be increased 
+            // correctly
+            // could be done with much more performance but might be tricky to 
+            // do correctly
+            if(t<slice_i || t>slice_f)
+              continue;
+
+            // copy of link variables from tmp2 into config
+            // ILDG has mu-order: x,y,z,t so it is changed here to: t,x,y,z !
+            const size_t p = (size_t) ( ((t-slice_i)*Lx*Lz*Lz + 
+                x*Ly*Lz + y*Lz + z) * 72); // position in config
+            size_t k = 0;
+            for(size_t mu = 1; mu <= 4; mu++) { // mu=4 is for the shift of U_t
+              size_t index;
+              if (mu != 4)
+                index = p + mu*18; // for U_x, U_y and U_z
+              else
+                index = p; // U_t is copied into the beginning of
+              // the (config+p) array
+
+              for(size_t i = 0; i < 3; i++) {
+                for(size_t j = 0; j < 3; j++) {
+                  gaugefield[index+6*i+2*j] = tmp2[2*k];
+                  gaugefield[index+6*i+2*j+1] = tmp2[2*k+1];
+                  k++;
+                }
+              }
+
+            } // loop over mu ends here
+
+          } // loop over position space ends here
+        }
+      }
+    }
+    if(status < 0 && status != LIME_EOR) {
+      fprintf(stderr, "LIME read error occured with status = %d while reading file %s!\n Aborting...\n",
+          status, filename);
+      exit(500);
+    }
+    limeDestroyReader(limereader);
+    fclose(ifs);
+    return;
+
   }
-  if(status < 0 && status != LIME_EOR) {
-    fprintf(stderr, "LIME read error occured with status = %d while reading file %s!\n Aborting...\n",
-        status, filename);
-    exit(500);
+  catch(std::exception& e){
+    std::cout << e.what() << "in: ReadWrite::read_lime_gauge_field_doubleprec_timeslices\n";
+    exit(0);
   }
-  limeDestroyReader(limereader);
-  fclose(ifs);
-  return;
+
 }
 

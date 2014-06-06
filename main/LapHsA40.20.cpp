@@ -128,22 +128,25 @@ int main (int ac, char* av[]) {
   Eigen::MatrixXcd** op_1 = new Eigen::MatrixXcd*[number_of_rnd_vec];
   for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i) {
     op_1[rnd_i] = new Eigen::MatrixXcd[number_of_rnd_vec];
-    op_3[rnd_i] = new Eigen::MatrixXcd[number_of_rnd_vec];
   }
   Eigen::MatrixXcd* op_2 = new Eigen::MatrixXcd[number_of_rnd_vec];
   Eigen::MatrixXcd** op_3 = new Eigen::MatrixXcd*[number_of_rnd_vec];
+  for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i) {
+    op_3[rnd_i] = new Eigen::MatrixXcd[number_of_rnd_vec];
+  }
   Eigen::MatrixXcd* op_4 = new Eigen::MatrixXcd[number_of_rnd_vec];
 
   for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i){
     for(int rnd_j = 0; rnd_j < number_of_rnd_vec; ++rnd_j){
-      op_1[rnd_i][rnd_j] = Eigen::MatrixXcd(4 * number_of_eigen_vec, 
-          4 * quarks[0].number_of_dilution_E);
-      op_3[rnd_i][rnd_j] = Eigen::MatrixXcd(4 * number_of_eigen_vec, 
-          4 * quarks[0].number_of_dilution_E);
+    op_1[rnd_i][rnd_j] = Eigen::MatrixXcd(4 * number_of_eigen_vec, 
+        4 * quarks[0].number_of_dilution_E);
     }
-
     op_2[rnd_i] = Eigen::MatrixXcd(4 * quarks[0].number_of_dilution_E, 
         4 * number_of_eigen_vec);
+    for(int rnd_j = 0; rnd_j < number_of_rnd_vec; ++rnd_j){
+      op_3[rnd_i][rnd_j] = Eigen::MatrixXcd(4 * number_of_eigen_vec, 
+          4 * quarks[0].number_of_dilution_E);
+      }
     op_4[rnd_i] = Eigen::MatrixXcd(4 * number_of_eigen_vec, 
         4 * number_of_eigen_vec);
   }
@@ -295,6 +298,8 @@ int main (int ac, char* av[]) {
     time = clock() - time;
 		printf("\t\tSUCCESS - %.1f seconds\n", ((float) time)/CLOCKS_PER_SEC);
 
+#if 0
+
 		// *************************************************************************
 		// FOUR PT CONTRACTION 1 ***************************************************
 		// *************************************************************************
@@ -402,6 +407,7 @@ int main (int ac, char* av[]) {
     time = clock() - time;
 		printf("\t\tSUCCESS - %.1f seconds\n", ((float) time)/CLOCKS_PER_SEC);
 
+#endif
 #if 0
 		// *************************************************************************
 		// FOUR PT CONTRACTION 2 ***************************************************

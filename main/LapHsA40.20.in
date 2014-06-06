@@ -2,21 +2,21 @@
 
 # lattice parameters:
 Lt = 48
-Lx = 24
-Ly = 24
-Lz = 24
+Lx = 20
+Ly = 20
+Lz = 20
 
 # configuration handling:
-start_config = 1302
-end_config   = 1462
-delta_config = 8
+start_config = 1300
+end_config   = 1420
+delta_config = 6
 
 # eigenvector handling:
-number_of_eigen_vec = 120
-path_eigenvectors   = /hiskp2/eigensystems/A40.24_L24_T48_beta190_mul0040_musig150_mudel190_kappa1632700/hyp_062_058_3/nev_120/
+number_of_eigen_vec = 66
+path_eigenvectors   = /hiskp2/eigensystems/A40.20_L20_T48_beta190_mul0040_musig150_mudel190_kappa1632700/hyp_062_062_3/nev_120/
 name_eigenvectors   = eigenvectors
 # perambulator handling
-path_perambulators  = /hiskp2/knippsch/A40
+path_perambulators  = /hiskp2/knippsch/A40.20
 name_perambulators  = perambulator
 
 # momentum handling:

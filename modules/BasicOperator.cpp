@@ -277,6 +277,8 @@ BasicOperator::BasicOperator () {
       }
     }
 
+    std::cout << "\t allocated memory in BasicOperator" << std::endl;
+
   }
   catch(std::exception& e){
     std::cout << e.what() << "in: BasicOperator::BasicOperator\n";

@@ -36,7 +36,8 @@ public:
 	//EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 	ReadWrite ();
 	virtual ~ReadWrite (); 
-  void build_source_matrix (const int p, const int dir);
+  void build_source_matrix (const int config_i, const int p_min, 
+      const int p_max, const int displ_min, const int displ_max);
 	void read_eigenvectors_from_file (const int config_i);
 	void read_perambulators_from_file (const int config_i);
 	void read_rnd_vectors_from_file (const int config_i);
@@ -56,6 +57,8 @@ protected:
   double* gaugefield;
   int** iup;
   int** idown;
+	void read_eigenvectors_from_file (Eigen::MatrixXcd& V, const int config_i, 
+      const int t);
 };
 
 #endif // _READ_WRITE_H__

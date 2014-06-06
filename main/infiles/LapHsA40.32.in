@@ -2,13 +2,13 @@
 
 # lattice parameters:
 Lt = 64
-Lx = 4
-Ly = 4
-Lz = 4
+Lx = 32
+Ly = 32
+Lz = 32
 
 # configuration handling:
-start_config = 288
-end_config   = 360
+start_config = 200
+end_config   = 208
 delta_config = 8
 
 # eigenvector handling:
@@ -21,7 +21,7 @@ name_perambulators  = perambulator
 
 # momentum handling:
 number_of_max_mom  = 1
-max_mom_in_one_dir = 1
+max_mom_in_one_dir = 0
 
 [quarks]
 quark = u:5:TI:2:EI:4:DI:4
