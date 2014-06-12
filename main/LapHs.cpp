@@ -126,12 +126,12 @@ int main (int ac, char* av[]) {
   // additional t_source to t_sink (op_3) and t_sink to t_source (op_4) for
   // 4-point functions
   Eigen::MatrixXcd** op_1 = new Eigen::MatrixXcd*[number_of_rnd_vec];
+  Eigen::MatrixXcd** op_3 = new Eigen::MatrixXcd*[number_of_rnd_vec];
   for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i) {
     op_1[rnd_i] = new Eigen::MatrixXcd[number_of_rnd_vec];
     op_3[rnd_i] = new Eigen::MatrixXcd[number_of_rnd_vec];
   }
   Eigen::MatrixXcd* op_2 = new Eigen::MatrixXcd[number_of_rnd_vec];
-  Eigen::MatrixXcd** op_3 = new Eigen::MatrixXcd*[number_of_rnd_vec];
   Eigen::MatrixXcd* op_4 = new Eigen::MatrixXcd[number_of_rnd_vec];
 
   for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i){

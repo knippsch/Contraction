@@ -114,17 +114,6 @@ ReadWrite::ReadWrite () {
         * quarks[0].number_of_dilution_E * quarks[0].number_of_dilution_D;
     const int V_for_lime = global_data->get_V_for_lime();
 
-#if 0
-    // Initializing memory for eigenvectors
-    V = new Eigen::MatrixXcd[Lt];
-    for(int t = 0; t < Lt; ++t)
-      V[t] = Eigen::MatrixXcd::Zero(dim_row, number_of_eigen_vec);
-    // Initialising memory for displaced eigenvectors
-    W = new Eigen::MatrixXcd[Lt];
-    for(int t = 0; t < Lt; ++t)
-      W[t] = Eigen::MatrixXcd::Zero(dim_row, number_of_eigen_vec);
-#endif
-
     // momentum creation
     number_of_momenta = check_momenta();
     std::cout << "\tNumber of momenta:\t " << number_of_momenta << 
@@ -227,6 +216,8 @@ void ReadWrite::build_source_matrix (const int config_i, const int p_min,
 
     Eigen::MatrixXcd V_t = Eigen::MatrixXcd::Zero(dim_row, number_of_eigen_vec);
     read_eigenvectors_from_file(V_t, config_i, t);
+
+//    Eigen::MatrixXcd W_t = Eigen::MatrixXcd::Zero(dim_row, number_of_eigen_vec);
    
     for(int dir = displ_min; dir < displ_max + 1; dir++) {
       for(int p = number_of_momenta/2; p < p_max; p++){
@@ -269,6 +260,7 @@ void ReadWrite::build_source_matrix (const int config_i, const int p_min,
     
         }
     
+#if 0
       // case displacement
       else {
     
@@ -304,6 +296,7 @@ void ReadWrite::build_source_matrix (const int config_i, const int p_min,
     
       
         }
+#endif
   
       }
     }
@@ -376,6 +369,9 @@ void ReadWrite::read_eigenvectors_from_file (Eigen::MatrixXcd& V, const int conf
 /******************************************************************************/
 /******************************************************************************/
 
+// we could throw that out as well
+#if 0
+
 void ReadWrite::read_eigenvectors_from_file (const int config_i) {
 
   try{
@@ -424,6 +420,7 @@ void ReadWrite::read_eigenvectors_from_file (const int config_i) {
     exit(0);
   }
 }
+#endif
 
 /******************************************************************************/
 /******************************************************************************/
@@ -597,6 +594,8 @@ void ReadWrite::read_rnd_vectors_from_file (const int config_i) {
 /******************************************************************************/
 /******************************************************************************/
 
+#if 0
+
 // Christophers function to read in the gauge fields. Don't ask me for comments on 
 // what this does
 void ReadWrite::read_lime_gauge_field_doubleprec_timeslices(const int config_i) {
@@ -751,4 +750,5 @@ void ReadWrite::read_lime_gauge_field_doubleprec_timeslices(const int config_i) 
   }
 
 }
+#endif
 

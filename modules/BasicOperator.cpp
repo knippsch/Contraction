@@ -567,6 +567,8 @@ void BasicOperator::get_operator_g5 (Eigen::MatrixXcd*& op_1, const int dirac){
 // and get_operator_g5
 
 
+#if 0
+
 /******************************************************************************/
 /******************************************************************************/
 /*uncharged********************************************************************/
@@ -595,4 +597,6 @@ void BasicOperator::get_operator_uncharged (Eigen::MatrixXcd*& op_1, const int d
     }
   }
 }
+
+#endif
 
