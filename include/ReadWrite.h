@@ -37,8 +37,7 @@ public:
 	ReadWrite ();
 	virtual ~ReadWrite (); 
   void build_source_matrix (const int config_i, const int p_min, 
-      const int p_max, const int displ_min, const int displ_max);
-	void read_eigenvectors_from_file (const int config_i);
+      const int p_max);
 	void read_perambulators_from_file (const int config_i);
 	void read_rnd_vectors_from_file (const int config_i);
   void read_lime_gauge_field_doubleprec_timeslices(const int config_i);
@@ -49,8 +48,6 @@ public:
   int number_of_momenta;
 
 protected:
-	Eigen::MatrixXcd* V;
-	Eigen::MatrixXcd* W;
 	std::complex<double>** momentum;
 
   Eigen::Matrix3cd** eigen_timeslice;

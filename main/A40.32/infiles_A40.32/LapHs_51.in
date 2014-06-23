@@ -1,0 +1,34 @@
+# This is an example input file
+
+# lattice parameters:
+Lt = 64
+Lx = 32
+Ly = 32
+Lz = 32
+
+# configuration handling:
+start_config = 400 
+end_config = 400 
+delta_config = 4
+
+# eigenvector handling:
+number_of_eigen_vec = 220
+path_eigenvectors   = /hiskp2/eigensystems/A40.32_L32_T64_beta190_mul0040_musig150_mudel190_kappa1632700/hyp_062_062_3/nev_300
+name_eigenvectors   = eigenvectors
+# perambulator handling
+path_perambulators  = /hiskp2/knippsch/A40.32
+name_perambulators  = perambulator
+
+# momentum handling:
+number_of_max_mom  = 2
+max_mom_in_one_dir = 2
+
+[quarks]
+quark = u:5:TI:2:EI:4:DI:4
+
+
+
+
+
+
+

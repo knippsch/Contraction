@@ -29,12 +29,18 @@ private:
 	static GlobalData* instance_;
 	//! globally accessible data
 	int Lx, Ly, Lz, Lt;
+	std::string name_lattice;
+	std::string path_output;
 	int dim_row, V_TS, V_for_lime;
 	int number_of_eigen_vec;
 	int number_of_rnd_vec;
 	int number_of_inversions;
 	int number_of_max_mom;
 	int max_mom_in_one_dir;
+  int dirac_min;
+  int dirac_max;
+  int displ_min;
+  int displ_max;
 	int start_config, end_config, delta_config;
 	int verbose;
 	std::string path_eigenvectors;
@@ -50,6 +56,12 @@ public:
 
 	void read_parameters(int ac, char* av[]);
 
+	inline std::string get_name_lattice() {
+		return name_lattice;
+	}
+	inline std::string get_output_path() {
+		return path_output;
+	}
 	inline int get_Lx () {
 		return Lx;
 	}
@@ -82,6 +94,18 @@ public:
 	}
 	inline int get_max_mom_in_one_dir () {
 		return max_mom_in_one_dir;
+	}
+	inline int get_dirac_min() {
+		return dirac_min;
+	}
+	inline int get_dirac_max() {
+		return dirac_max;
+	}
+	inline int get_displ_min() {
+		return displ_min;
+	}
+	inline int get_displ_max() {
+		return displ_max;
 	}
 	inline int get_start_config () {
 		return start_config;

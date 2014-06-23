@@ -130,7 +130,7 @@ ReadWrite::ReadWrite () {
       for(int t = 0; t < Lt; ++t){
         basicoperator[p][t] = new Eigen::MatrixXcd[4];
 // changed to case of no displacement. Else dir < 4
-        for(int dir = 0; dir < 1; dir++) {
+        for(int dir = 0; dir < 4; dir++) {
           // blocks in Basicoperator are on diagonal in the beginning. 
           // non-zero blocks have row = col = blocknr
           basicoperator[p][t][dir] =  Eigen::MatrixXcd::Zero(
@@ -147,7 +147,6 @@ ReadWrite::ReadWrite () {
       rnd_vec[i] = Eigen::VectorXcd::Zero(Lt * number_of_eigen_vec * 4);
     }
 
-#if 0
     //memory for gauge fields
     gaugefield = new double[V_for_lime];
     //Allocate Eigen Array to hold timeslice
@@ -161,7 +160,6 @@ ReadWrite::ReadWrite () {
     }
 
     hopping3d(iup, idown);
-#endif
 
   std::cout << "\t allocated memory for ReadWrite" << std::endl;
 
@@ -184,10 +182,7 @@ ReadWrite::~ReadWrite() {
     delete[] perambulator;
     delete[] basicoperator;
     delete[] rnd_vec;
-    delete[] V;
     delete[] momentum;
-
-    V = NULL;
   }
   catch(std::exception& e){
     std::cout << e.what() << "in: ReadWrite::~ReadWrite\n";
@@ -200,7 +195,7 @@ ReadWrite::~ReadWrite() {
 
 
 void ReadWrite::build_source_matrix (const int config_i, const int p_min, 
-    const int p_max, const int displ_min, const int displ_max) {
+    const int p_max) {
 
   clock_t t2 = clock();
   printf("\tbuild source matrix:\n");
@@ -209,6 +204,8 @@ void ReadWrite::build_source_matrix (const int config_i, const int p_min,
   const int Lt = global_data->get_Lt();
   const int number_of_eigen_vec = global_data->get_number_of_eigen_vec();
   const int dim_row = global_data->get_dim_row();
+  const int displ_min = global_data->get_displ_min();
+  const int displ_max = global_data->get_displ_max();
 
   // creating basic operator
 
@@ -216,8 +213,6 @@ void ReadWrite::build_source_matrix (const int config_i, const int p_min,
 
     Eigen::MatrixXcd V_t = Eigen::MatrixXcd::Zero(dim_row, number_of_eigen_vec);
     read_eigenvectors_from_file(V_t, config_i, t);
-
-//    Eigen::MatrixXcd W_t = Eigen::MatrixXcd::Zero(dim_row, number_of_eigen_vec);
    
     for(int dir = displ_min; dir < displ_max + 1; dir++) {
       for(int p = number_of_momenta/2; p < p_max; p++){
@@ -252,7 +247,7 @@ void ReadWrite::build_source_matrix (const int config_i, const int p_min,
               mom(x) = momentum[p][x/3];
             }
    
-            basicoperator[p][t][0] = (V_t).adjoint() * mom.asDiagonal() * V_t;
+            basicoperator[p][t][0] = V_t.adjoint() * mom.asDiagonal() * V_t;
             basicoperator[number_of_momenta - p - 1][t][0] = 
                 (basicoperator[p][t][0]).adjoint();
     
@@ -260,43 +255,52 @@ void ReadWrite::build_source_matrix (const int config_i, const int p_min,
     
         }
     
-#if 0
-      // case displacement
-      else {
-    
-        //Time Slice of Configuration
-        //Factor 3 for second color index, 2 for complex numbers
-        double* timeslice = gaugefield + (t * dim_row * 3 * 2);
+        // case displacement
+        else {
+      
+          Eigen::MatrixXcd W_t = Eigen::MatrixXcd::Zero(dim_row, number_of_eigen_vec);
+
+          //Time Slice of Configuration
+          //Factor 3 for second color index, 2 for complex numbers
+          double* timeslice = gaugefield + (t * dim_row * 3 * 2);
+            
+          //Write Timeslice in Eigen Array
+          map_timeslice_to_eigen(eigen_timeslice, timeslice);
+        
+          //displacement in one direction i acting to the right
+          right_displacement_one_dir(eigen_timeslice, iup, idown, dir - 1, 
+              V_t, W_t);
+          // dir = 3 for z-displacement (1 x 2 y)
+          // W holds DV
+  
+          if(p == number_of_momenta/2) {
+            
+            basicoperator[number_of_momenta/2][t][dir] = V_t.adjoint() * W_t
+                - W_t.adjoint() * V_t;
+          }
+  
+          else {   
+
+            // momentum vector contains exp(-i p x)
+            // Divisor 3 for colour index. All three colours on same lattice site get
+            // the same momentum
+            Eigen::VectorXcd mom = Eigen::VectorXcd::Zero(dim_row);
+            for(int x = 0; x < dim_row; ++x) {
+              mom(x) = momentum[p][x/3];
+            }
+              
+            //TODO: check if saving V[t].adjoint in own matrix is faster
+            //TODO: is that efficient?
+            // build basicoperator = V^dagger exp(-ipx) V 
+            // opposite momentum is just basicoperator daggered
+            basicoperator[p][t][dir] = V_t.adjoint() * mom.asDiagonal() *  W_t - 
+                W_t.adjoint() * mom.asDiagonal() * V_t;
+            basicoperator[number_of_momenta - p - 1][t][dir] = 
+                (-1) *  (basicoperator[p][t][dir]).adjoint();
+        
           
-        //Write Timeslice in Eigen Array
-        map_timeslice_to_eigen(eigen_timeslice, timeslice);
-      
-        //displacement in one direction i acting to the right
-        right_displacement_one_dir(eigen_timeslice, iup, idown, dir - 1, 
-            V[t], W[t]);
-        // dir = 3 for z-displacement (1 x 2 y)
-        // W holds DV
-      
-        // momentum vector contains exp(-i p x)
-        // Divisor 3 for colour index. All three colours on same lattice site get
-        // the same momentum
-        Eigen::VectorXcd mom = Eigen::VectorXcd::Zero(dim_row);
-        for(int x = 0; x < dim_row; ++x) {
-          mom(x) = momentum[p][x/3];
+          }
         }
-          
-        //TODO: check if saving V[t].adjoint in own matrix is faster
-        //TODO: is that efficient?
-        // build basicoperator = V^dagger exp(-ipx) V 
-        // opposite momentum is just basicoperator daggered
-        basicoperator[p][t][dir] = (V[t]).adjoint() * mom.asDiagonal() *  W[t] - 
-            (W[t]).adjoint() * mom.asDiagonal() * V[t];
-        basicoperator[number_of_momenta - p - 1][t][dir] = 
-            (-1) *  (basicoperator[p][t][dir]).adjoint();
-    
-      
-        }
-#endif
   
       }
     }
@@ -369,63 +373,6 @@ void ReadWrite::read_eigenvectors_from_file (Eigen::MatrixXcd& V, const int conf
 /******************************************************************************/
 /******************************************************************************/
 
-// we could throw that out as well
-#if 0
-
-void ReadWrite::read_eigenvectors_from_file (const int config_i) {
-
-  try{
-    clock_t t = clock();
-    const int Lt = global_data->get_Lt();
-    const int dim_row = global_data->get_dim_row();
-    const int verbose = global_data->get_verbose();
-    const int number_of_eigen_vec = global_data->get_number_of_eigen_vec();
-
-    std::string filename = global_data->get_path_eigenvectors() + "/"
-        + global_data->get_name_eigenvectors();
-    //buffer for read in
-    std::complex<double>* eigen_vec = new std::complex<double>[dim_row];
-
-    if(verbose) printf("reading eigen vectors from files:\n");
-    else printf("\treading eigenvectors:");
-    fflush(stdout);
-
-    for(int t = 0; t < Lt; ++t){
-      //setting up file
-      char name[200];
-      sprintf(name, "%s.%04d.%03d", filename.c_str(), config_i, t); 
-      if(verbose) std::cout << "Reading file: " << name << std::endl;
-      std::ifstream infile(name, std::ifstream::binary);
-    
-      for (int nev = 0; nev < number_of_eigen_vec; ++nev) {
-        infile.read( (char*) eigen_vec, 2*dim_row*sizeof(double));
-        for(int nrow = 0; nrow < dim_row; ++nrow)
-        (V[t])(nrow, nev) = eigen_vec[nrow];
-      }
-      infile.close();
-      // small test of trace and sum over the eigen vector matrix!
-      if(verbose){
-        std::cout << "trace of V^d*V on t = " << t << ":\t"
-            << (V[t].adjoint() * V[t]).trace() << std::endl;
-        std::cout << "sum over all entries of V^d*V on t = " << t << ":\t"
-            << (V[t].adjoint() * V[t]).sum() << std::endl;
-      }   
-    }
-    delete[] eigen_vec;
-    t = clock() - t;
-    if(!verbose) printf("\t\tSUCCESS - %.1f seconds\n", ((float) t)/CLOCKS_PER_SEC);
-  }
-  catch(std::exception& e){
-    std::cout << e.what() << "in: ReadWrite::read_eigenvectors_from_file\n";
-    exit(0);
-  }
-}
-#endif
-
-/******************************************************************************/
-/******************************************************************************/
-/******************************************************************************/
-
 void ReadWrite::read_perambulators_from_file (const int config_i) {
 
   try{
@@ -449,7 +396,7 @@ void ReadWrite::read_perambulators_from_file (const int config_i) {
     // memory for reading perambulators
     std::complex<double>* perambulator_read =
         new std::complex<double>[size_perambulator_entry];
-    char temp[9];
+    char temp[100];
 
     if(verbose){
       printf("reading perambulators from files:\n");
@@ -459,10 +406,18 @@ void ReadWrite::read_perambulators_from_file (const int config_i) {
     }
 
     for(int rnd_vec_i = 0; rnd_vec_i < number_of_rnd_vec; ++rnd_vec_i){
-      // data path
-      sprintf(temp, "cnfg%d/rnd_vec_%01d/", config_i, rnd_vec_i);
-      std::string filename = global_data->get_path_perambulators() + "/"
-          + temp;
+      //data path for christians perambulators
+      std::string filename = global_data->get_path_perambulators() + "/";
+
+      // data path for qbig contractions
+//      sprintf(temp, "cnfg%d/rnd_vec_%01d/", config_i, rnd_vec_i);
+//      std::string filename = global_data->get_path_perambulators() + "/"
+//          + temp;
+
+      // data path for juqueen contractions
+//      sprintf(temp, "cnfg%d/", config_i);
+//      std::string filename = global_data->get_path_perambulators() + "/"
+//          + temp;
 
       //TODO: sink dilution is  hard-coded at the moment
       sprintf(infile,
@@ -539,7 +494,7 @@ void ReadWrite::read_rnd_vectors_from_file (const int config_i) {
     // memory for reading random vectors
     std::complex<double>* rnd_vec_read =
         new std::complex<double>[rnd_vec_length];
-    char temp[9];
+    char temp[100];
 
     if(verbose){
       printf("reading random vectors from files:\n");
@@ -551,10 +506,18 @@ void ReadWrite::read_rnd_vectors_from_file (const int config_i) {
     int check_read_in = 0;
 
     for(int rnd_vec_i = 0; rnd_vec_i < number_of_rnd_vec; ++rnd_vec_i){
-      // data path
-      sprintf(temp, "cnfg%d/rnd_vec_%01d/", config_i, rnd_vec_i);
-      std::string filename = global_data->get_path_perambulators()
-				+ "/" + temp;
+      // data path Christians perambulators
+      std::string filename = global_data->get_path_perambulators() + "/";
+
+      // data path for qbig contractions
+//      sprintf(temp, "cnfg%d/rnd_vec_%01d/", config_i, rnd_vec_i);
+//      std::string filename = global_data->get_path_perambulators()
+//				+ "/" + temp;
+
+      // data path for juqueen contractions
+//      sprintf(temp, "cnfg%d/", config_i);
+//      std::string filename = global_data->get_path_perambulators()
+//				+ "/" + temp;
 
       // read random vector
       sprintf(infile, "%srandomvector.rndvecnb%02d.u.nbev%04d.%04d", 
@@ -593,8 +556,6 @@ void ReadWrite::read_rnd_vectors_from_file (const int config_i) {
 /******************************************************************************/
 /******************************************************************************/
 /******************************************************************************/
-
-#if 0
 
 // Christophers function to read in the gauge fields. Don't ask me for comments on 
 // what this does
@@ -750,5 +711,4 @@ void ReadWrite::read_lime_gauge_field_doubleprec_timeslices(const int config_i) 
   }
 
 }
-#endif
 

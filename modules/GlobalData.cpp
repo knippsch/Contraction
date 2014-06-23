@@ -75,7 +75,8 @@ quark make_quark (const std::string& quark_string) {
 
 // *****************************************************************************
 // simplifies and cleans read_parameters function
-static void lattice_input_data_handling (int Lt, int Lx, int Ly, int Lz) {
+static void lattice_input_data_handling (const std::string path_output,
+    const std::string name_lattice, int Lt, int Lx, int Ly, int Lz) {
 	try{
 		if(Lt < 1){
 			std::cout << "\ninput file error:\n" << "\toption \"Lt\""
@@ -107,11 +108,13 @@ static void lattice_input_data_handling (int Lt, int Lx, int Ly, int Lz) {
 		if(Lz < 1){
 			std::cout << "\ninput file error:\n" << "\toption \"Lz\""
 					<< " is mandatory and its value must be an integer greater than 0!"
-					<< "\n\n";
+					<< "\n\n\n";
 			exit(0);
 		}
 		else std::cout << "\tspatial lattice extend in z direction .... " << Lz
 				<< "\n\n";
+		std::cout << "\tResults will be saved to path:\n\t\t"
+				<< path_output << "/" << name_lattice << "/\n";
 	}
 	catch(std::exception& e){
 		std::cout << e.what() << "\n";
@@ -154,9 +157,9 @@ static void momentum_input_data_handling (const int number_of_max_mom,
 		const int max_mom_in_one_dir) {
 
 	try{
-		if(number_of_max_mom < 1){
+		if(number_of_max_mom < 0){
 			std::cout << "\ninput file error:\n" << "\toption \"number_of_max_mom\""
-					<< " is mandatory and its value must be an integer greater than 0!"
+					<< " is mandatory and its value must be an integer greater or equal 0!"
 					<< "\n\n";
 			exit(0);
 		}
@@ -164,7 +167,7 @@ static void momentum_input_data_handling (const int number_of_max_mom,
 				<< number_of_max_mom << "\n";
 		if(max_mom_in_one_dir < 0){
 			std::cout << "\ninput file error:\n" << "\toption \"max_mom_in_one_dir\""
-					<< " is mandatory and its value must be an integer greater or equal than 0!"
+					<< " is mandatory and its value must be an integer greater or equal 0!"
 					<< "\n\n";
 			exit(0);
 		}
@@ -178,13 +181,69 @@ static void momentum_input_data_handling (const int number_of_max_mom,
 }
 // *****************************************************************************
 // simplifies and cleans read_parameters function
+static void dirac_input_data_handling (const int dirac_min,
+		const int dirac_max) {
+
+	try{
+		if(dirac_min < 0 || dirac_min > 15){
+			std::cout << "\ninput file error:\n" << "\toption \"dirac_min\""
+					<< " is mandatory and its value must be an integer greater or equal 0 and smaller 16!"
+					<< "\n\n";
+			exit(0);
+		}
+		else std::cout << "\tdirac_min = "
+				<< dirac_min << "\n";
+		if(dirac_max < 0 || dirac_max > 15){
+			std::cout << "\ninput file error:\n" << "\toption \"dirac_max\""
+					<< " is mandatory and its value must be an integer greater or equal 0 and smaller 16!"
+					<< "\n\n";
+			exit(0);
+		}
+		else std::cout << "\tdirac_max = "
+				<< dirac_max << "\n\n";
+  }
+	catch(std::exception& e){
+		std::cout << e.what() << "\n";
+		exit(0);
+	}
+}
+// *****************************************************************************
+// simplifies and cleans read_parameters function
+static void displacement_input_data_handling (const int displ_min,
+		const int displ_max) {
+
+	try{
+		if(displ_min < 0 || displ_min > 3){
+			std::cout << "\ninput file error:\n" << "\toption \"displ_min\""
+					<< " is mandatory and its value must be an integer greater or equal 0 and smaller 4!"
+					<< "\n\n";
+			exit(0);
+		}
+		else std::cout << "\tdispl_min = "
+				<< displ_min << "\n";
+		if(displ_max < 0 || displ_max > 3){
+			std::cout << "\ninput file error:\n" << "\toption \"displ_max\""
+					<< " is mandatory and its value must be an integer greater or equal 0 and smaller 4!"
+					<< "\n\n";
+			exit(0);
+		}
+		else std::cout << "\tdispl_max = "
+				<< displ_max << "\n\n";
+  }
+	catch(std::exception& e){
+		std::cout << e.what() << "\n";
+		exit(0);
+	}
+}
+// *****************************************************************************
+// simplifies and cleans read_parameters function
 static void config_input_data_handling (const int start_config,
 		const int end_config, const int delta_config) {
 
 	try{
-		if(start_config < 1){
+		if(start_config < 0){
 			std::cout << "\ninput file error:\n" << "\toption \"start config\""
-					<< " is mandatory and its value must be an integer greater than 0!"
+					<< " is mandatory and its value must be an integer greater or equal 0!"
 					<< "\n\n";
 			exit(0);
 		}
@@ -298,7 +357,12 @@ void GlobalData::read_parameters (int ac, char* av[]) {
 		// allowed both on command line and in input file
 		po::options_description config("Input file options");
 		// lattice options
-		config.add_options()("Lt", po::value<int>(&Lt)->default_value(0),
+		config.add_options()("output_path",
+        po::value<std::string>(&path_output)->default_value("../../contractions"),
+        "path for output")
+        ("lattice", po::value<std::string>(&name_lattice)->
+        default_value("lattice"),"Codename of the lattice")("Lt", 
+        po::value<int>(&Lt)->default_value(0),
 				"Lt: temporal lattice extend")("Lx",
 				po::value<int>(&Lx)->default_value(0),
 				"Lx: lattice extend in x direction")("Ly",
@@ -335,13 +399,25 @@ void GlobalData::read_parameters (int ac, char* av[]) {
 						" dil type Dirac:number of dil Dirac");
 		// momentum options
 		config.add_options()("number_of_max_mom",
-				po::value<int>(&number_of_max_mom)->default_value(0),
-				"Number of all momenta")("max_mom_in_one_dir",
+				po::value<int>(&number_of_max_mom)->default_value(-1),
+				"Maximum momentum squared")("max_mom_in_one_dir",
 				po::value<int>(&max_mom_in_one_dir)->default_value(-1),
-				"Maximum momentum in one direction");
-		// configuration options
+			  "Maximum momentum in one direction");
+	  // dirac options
+		config.add_options()("dirac_min",
+				po::value<int>(&dirac_min)->default_value(-1),
+				"dirac_min")("dirac_max",
+				po::value<int>(&dirac_max)->default_value(-1),
+				"dirac_max");
+	  // displacement options
+		config.add_options()("displ_min",
+				po::value<int>(&displ_min)->default_value(-1),
+				"displ_min")("displ_max",
+				po::value<int>(&displ_max)->default_value(-1),
+				"displ_max");
+	  // configuration options
 		config.add_options()("start_config",
-				po::value<int>(&start_config)->default_value(0), "First configuration")(
+				po::value<int>(&start_config)->default_value(-1), "First configuration")(
 				"end_config", po::value<int>(&end_config)->default_value(0),
 				"Last configuration")("delta_config",
 				po::value<int>(&delta_config)->default_value(0),
@@ -390,7 +466,7 @@ void GlobalData::read_parameters (int ac, char* av[]) {
 
 		// input file options ******************************************************
 		//
-		lattice_input_data_handling(Lt, Lx, Ly, Lz);
+		lattice_input_data_handling(path_output, name_lattice, Lt, Lx, Ly, Lz);
 		//
 		eigenvec_perambulator_input_data_handling(number_of_eigen_vec,
 				path_eigenvectors, name_eigenvectors, path_perambulators,
@@ -399,6 +475,10 @@ void GlobalData::read_parameters (int ac, char* av[]) {
 		quark_input_data_handling(quark_configs);
 		//
 		momentum_input_data_handling(number_of_max_mom, max_mom_in_one_dir);
+		//
+		dirac_input_data_handling(dirac_min, dirac_max);
+		//
+		displacement_input_data_handling(displ_min, displ_max);
 		//
 		config_input_data_handling(start_config, end_config, delta_config);
 

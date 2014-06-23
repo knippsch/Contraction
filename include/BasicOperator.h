@@ -41,8 +41,10 @@ public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 	BasicOperator ();
 	virtual ~BasicOperator ();
-  void init_operator (const int t_source, const int t_sink, ReadWrite* rewr, 
-      const char dilution, const char charge, const int p, const int displ);
+  void init_operator_charged (const int t_source, const int t_sink, 
+      ReadWrite* rewr, const char dilution, const int p, const int displ);
+  void init_operator_uncharged (const int t_source, const int t_sink, 
+      ReadWrite* rewr, const char dilution, const int p, const int displ);
   void get_operator_charged(Eigen::MatrixXcd**& op_1, ReadWrite* rewr, 
       const int dirac, const int t_sink);
   void get_operator_g5(Eigen::MatrixXcd*& op_1, const int dirac);
@@ -53,7 +55,9 @@ protected:
 //  void create_gamma(struct lookup* gamma, const int dirac);
   Eigen::MatrixXcd*** contraction;
   Eigen::MatrixXcd** contraction_dagger;
+  Eigen::MatrixXcd** contraction_uncharged;
   Eigen::MatrixXcd*** s_charged;
+  Eigen::MatrixXcd** s_uncharged;
   struct lookup*  gamma;
 };
 

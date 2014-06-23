@@ -8,8 +8,8 @@ Lz = 24
 
 # configuration handling:
 start_config = 1370
-end_config   = 1378
-delta_config = 8
+end_config   = 1370
+delta_config = 4
 
 # eigenvector handling:
 number_of_eigen_vec = 120
@@ -20,11 +20,11 @@ path_perambulators  = /hiskp2/knippsch/A40
 name_perambulators  = perambulator
 
 # momentum handling:
-number_of_max_mom  = 1
-max_mom_in_one_dir = 1
+number_of_max_mom  = 2
+max_mom_in_one_dir = 2
 
 [quarks]
-quark = u:3:TI:2:EI:6:DI:4
+quark = u:5:TI:2:EI:6:DI:4
 
 
 
