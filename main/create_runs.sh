@@ -1,11 +1,11 @@
 #!/bin/bash
 
-outpath="/hiskp2/werner/LapH/correlators"
-lattice="E420"
+outpath="/hiskp2/werner/LapH/correlators_test"
+lattice="A40.20"
 
-start_config=200
-end_config=400
-delta_config=4
+start_config=1300
+end_config=1300
+delta_config=6
 stepping=1
 
 number_of_max_mom=2
@@ -41,5 +41,7 @@ for i in $(seq $start_config $(($stepping * delta_config)) $end_config); do
 done
 
 cd ../../
+mkdir $outpath
 mkdir $outpath"/"$lattice
 mkdir $outpath"/"$lattice"/dirac_"$dirac_min"_"$dirac_max"_p_0_"$number_of_max_mom"_displ_"$displ_min"_"$displ_max
+mkdir $outpath"/"$lattice"/dirac_"$dirac_min"_"$dirac_max"_p_0_0_displ_"$displ_min"_"$displ_max

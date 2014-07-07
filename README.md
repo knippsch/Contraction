@@ -10,6 +10,8 @@ in LapHs.cpp
 - implemented C2 and C4
 - transferred read_eigenvectors_from_file() to build_source_matrix()
 - implemented get_operator_uncharged for neutral particles
+- introduced Corr to hold traces for all momenta, dirac structures, times
+  and randomvectors. Build C2, C4_1, C4_2 from Corr to save ca. 25% time
 
 in Basicoperator.cpp:
 - changed layout of perambulator and basicoperator to reflect blockdiagonal

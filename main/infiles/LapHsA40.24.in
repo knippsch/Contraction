@@ -7,8 +7,8 @@ Ly = 24
 Lz = 24
 
 # configuration handling:
-start_config = 1370
-end_config   = 1370
+start_config = 1522
+end_config   = 1602
 delta_config = 4
 
 # eigenvector handling:
@@ -18,10 +18,19 @@ name_eigenvectors   = eigenvectors
 # perambulator handling
 path_perambulators  = /hiskp2/knippsch/A40
 name_perambulators  = perambulator
+#output path
+output_path = /hiskp2/werner/LapH/correlators
+lattice = A40.24
 
 # momentum handling:
 number_of_max_mom  = 2
 max_mom_in_one_dir = 2
+# dirac structure
+dirac_min = 5
+dirac_max = 5
+# displacements
+displ_min = 0
+displ_max = 0
 
 [quarks]
 quark = u:5:TI:2:EI:6:DI:4

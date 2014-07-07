@@ -8,7 +8,7 @@ Lz = 20
 
 # configuration handling:
 start_config = 1300
-end_config   = 1420
+end_config   = 1300
 delta_config = 6
 
 # eigenvector handling:
@@ -23,8 +23,8 @@ output_path = /hiskp2/werner/LapH/correlators
 lattice = A40.20
 
 # momentum handling:
-number_of_max_mom  = 1
-max_mom_in_one_dir = 1
+number_of_max_mom  = 2
+max_mom_in_one_dir = 2
 # dirac structure
 dirac_min = 5
 dirac_max = 5

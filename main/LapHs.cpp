@@ -105,6 +105,32 @@ int main (int ac, char* av[]) {
 		}
 	}
 
+  std::complex<double>******** Corr = 
+      new std::complex<double>*******[rewr->number_of_momenta];
+  for(int p1 = 0; p1 < rewr->number_of_momenta; ++p1){
+    Corr[p1] = new std::complex<double>******[rewr->number_of_momenta];
+    for(int p2 = 0; p2 < rewr->number_of_momenta; ++p2){
+      Corr[p1][p2] = new std::complex<double>*****[16];
+      for(int dirac1 = 5; dirac1 < 6; ++dirac1){
+        Corr[p1][p2][dirac1] = new std::complex<double>****[16];
+        for(int dirac2 = 5; dirac2 < 6; ++dirac2){
+          Corr[p1][p2][dirac1][dirac2] = new std::complex<double>***[Lt];
+          for(int t1 = 0; t1 < Lt; t1++){
+            Corr[p1][p2][dirac1][dirac2][t1] = new std::complex<double>**[Lt];
+            for(int t2 = 0; t2 < Lt; t2++){
+              Corr[p1][p2][dirac1][dirac2][t1][t2] = 
+                  new std::complex<double>*[number_of_rnd_vec];
+              for(int rnd1 = 0; rnd1 < number_of_rnd_vec; rnd1++){
+                Corr[p1][p2][dirac1][dirac2][t1][t2][rnd1] = 
+                    new std::complex<double>[number_of_rnd_vec];
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
 	// intermidiate memory for traces
 	double part1[number_of_rnd_vec][number_of_rnd_vec];
 	double part2[number_of_rnd_vec][number_of_rnd_vec];
@@ -203,16 +229,28 @@ int main (int ac, char* av[]) {
 
 
 		// *************************************************************************
-		// CONNECTED CONTRACTION 1 *************************************************
+		// TWO PT CONTRACTION 1 ****************************************************
 		// *************************************************************************
 
 		// setting the correlation function to zero
 		std::cout << "\n\tcomputing the connected contribution of pi_+/-:\n";
 		time = clock();
+
 		for(int p = 0; p < rewr->number_of_momenta; ++p)
 			for(int dirac = 0; dirac < 16; ++dirac)
 				for(int t1 = 0; t1 < Lt; ++t1)
 					C2_mes[p][dirac][t1] = std::complex<double>(0.0, 0.0);
+
+		for(int p1 = 0; p1 < rewr->number_of_momenta; ++p1)
+		  for(int p2 = 0; p2 < rewr->number_of_momenta; ++p2)
+			  for(int dirac1 = 5; dirac1 < 6; ++dirac1)
+			    for(int dirac2 = 5; dirac2 < 6; ++dirac2)
+				    for(int t1 = 0; t1 < Lt; ++t1)
+				      for(int t2 = 0; t2 < Lt; ++t2)
+                for(int rnd1 = 0; rnd1 < number_of_rnd_vec; rnd1++)
+                  for(int rnd2 = 0; rnd2 < number_of_rnd_vec; rnd2++)
+                    Corr[p1][p2][dirac1][dirac2][t1][t2][rnd1][rnd2] = 
+                        std::complex<double>(0.0, 0.0);
 
 #if 0
 		for(int p = 0; p < rewr->number_of_momenta; ++p)
@@ -273,10 +311,40 @@ int main (int ac, char* av[]) {
                   // C2 = tr(D_d^-1 Gamma D_u^-1 Gamma)
                   // TODO: find signflip of imaginary part
                   // TODO: is C2_mes[dirac][p] better?
-                  C2_mes[p][dirac][abs((t_sink - t_source - Lt) % Lt)] += 
-                      (op_2[rnd2] * op_1[rnd1][rnd2]).trace();
+                Corr[p][p][dirac][dirac][t_source][t_sink][rnd1][rnd2] = 
+                    std::real((op_2[rnd2] * op_1[rnd1][rnd2]).trace());
+
+
               }
             }   
+
+          }
+        }
+
+      }
+    }
+
+
+
+		for(int t_source = 0; t_source < Lt; ++t_source){
+			for(int t_sink = 0; t_sink < Lt; ++t_sink){
+
+        for(int dirac = dirac_min; dirac < dirac_max + 1; ++dirac){
+	        for(int p = p_min; p < p_max; ++p) {
+
+            for(int rnd1 = 0; rnd1 < number_of_rnd_vec; ++rnd1){
+              for(int rnd2 = rnd1 + 1; rnd2 < number_of_rnd_vec; ++rnd2){
+
+                C2_mes[p][dirac][abs((t_sink - t_source - Lt) % Lt)] += 
+                    Corr[p][p][dirac][dirac][t_source][t_sink][rnd1][rnd2];
+              }
+            }
+
+          }
+        }
+
+      }
+    }
 
 #if 0
 // code for pi0 
@@ -299,13 +367,13 @@ int main (int ac, char* av[]) {
 
               }
             }   
-#endif
 
           }
 			  }
 
       }
 		}
+#endif
 
 		double norm3 = Lt * number_of_rnd_vec * (number_of_rnd_vec - 1) * 0.5;
 		for(int t = 0; t < Lt; ++t)
@@ -323,6 +391,16 @@ int main (int ac, char* av[]) {
 	  for(int dirac = dirac_min; dirac < dirac_max + 1; ++dirac)
 		  for(int p = 0; p < rewr->number_of_momenta; ++p)
 				fwrite((double*) C2_mes[p][dirac], sizeof(double), 2 * Lt, fp);
+		fclose(fp);
+
+		sprintf(outfile, 
+        "%s/dirac_%02d_%02d_p_0_%01d_displ_%01d_%01d/C2_pi+-_conf%04d.dat", 
+        outpath.c_str(), dirac_min, dirac_max, 0, 
+        displ_min, displ_max, config_i);
+		if((fp = fopen(outfile, "wb")) == NULL)
+			std::cout << "fail to open outputfile" << std::endl;
+	  for(int dirac = dirac_min; dirac < dirac_max + 1; ++dirac)
+		  fwrite((double*) C2_mes[rewr->number_of_momenta/2][dirac], sizeof(double), 2 * Lt, fp);
 		fclose(fp);
 
 #if 0
@@ -383,34 +461,34 @@ int main (int ac, char* av[]) {
         for(int dirac = dirac_min; dirac < dirac_max + 1; ++dirac) {
           for(int p = p_min; p < p_max; ++p) {
 
-            basic->init_operator_charged(t_source_1, t_sink_1, rewr, 'b', p, 0);
-    
-            basic->get_operator_charged(op_1, rewr, dirac, t_sink_1);
-            basic->get_operator_g5(op_2, dirac);
-    
-            basic->init_operator_charged(t_source, t_sink, rewr, 'b', 
-                rewr->number_of_momenta - p - 1, 0);
-    
-            basic->get_operator_charged(op_3, rewr, dirac, t_sink);
-            basic->get_operator_g5(op_4, dirac);
-    
-            // first trace
-            for(int rnd1 = 0; rnd1 < number_of_rnd_vec; ++rnd1){
-              // first u quark: t_source_1 -> t_sink_1
-              for(int rnd3 = rnd1 + 1; rnd3 < number_of_rnd_vec; ++rnd3){
-                // first d quark: t_sink_1 -> t_source_1
-                part1[rnd1][rnd3] = std::real((op_2[rnd3] * op_1[rnd1][rnd3]).trace());
-              }
-            }
-    
-            // second trace
-            for(int rnd2 = 0; rnd2 < number_of_rnd_vec; ++rnd2){			
-              // second u quark: t_source -> t_sink
-              for(int rnd4 = rnd2 + 1; rnd4 < number_of_rnd_vec; ++rnd4){
-                // second d quark: t_sink -> t_source
-                part2[rnd2][rnd4] = std::real((op_4[rnd4] * op_3[rnd2][rnd4]).trace());
-              }
-            }
+//            basic->init_operator_charged(t_source_1, t_sink_1, rewr, 'b', p, 0);
+//    
+//            basic->get_operator_charged(op_1, rewr, dirac, t_sink_1);
+//            basic->get_operator_g5(op_2, dirac);
+//    
+//            basic->init_operator_charged(t_source, t_sink, rewr, 'b', 
+//                rewr->number_of_momenta - p - 1, 0);
+//    
+//            basic->get_operator_charged(op_3, rewr, dirac, t_sink);
+//            basic->get_operator_g5(op_4, dirac);
+//    
+//            // first trace
+//            for(int rnd1 = 0; rnd1 < number_of_rnd_vec; ++rnd1){
+//              // first u quark: t_source_1 -> t_sink_1
+//              for(int rnd3 = rnd1 + 1; rnd3 < number_of_rnd_vec; ++rnd3){
+//                // first d quark: t_sink_1 -> t_source_1
+//                part1[rnd1][rnd3] = std::real((op_2[rnd3] * op_1[rnd1][rnd3]).trace());
+//              }
+//            }
+//    
+//            // second trace
+//            for(int rnd2 = 0; rnd2 < number_of_rnd_vec; ++rnd2){			
+//              // second u quark: t_source -> t_sink
+//              for(int rnd4 = rnd2 + 1; rnd4 < number_of_rnd_vec; ++rnd4){
+//                // second d quark: t_sink -> t_source
+//                part2[rnd2][rnd4] = std::real((op_4[rnd4] * op_3[rnd2][rnd4]).trace());
+//              }
+//            }
     
             // complete diagramm
             // every quark line must have its own random vec
@@ -420,8 +498,14 @@ int main (int ac, char* av[]) {
           				if((rnd2 != rnd1) && (rnd2 != rnd3)){
     					      for(int rnd4 = rnd2 + 1; rnd4 < number_of_rnd_vec; ++rnd4){
     						      if((rnd4 != rnd1) && (rnd4 != rnd3)){
-    							      C2_mes[p][dirac][abs((t_sink - t_source - Lt) % Lt)] += 
-                            part1[rnd1][rnd3] * part2[rnd2][rnd4];
+                        C2_mes[p][dirac][abs((t_sink - t_source - Lt) % Lt)] +=
+                            Corr[p][p][dirac][dirac][t_source_1]
+                                [t_sink_1][rnd1][rnd3] *
+                            Corr[rewr->number_of_momenta - p - 1]
+                                [rewr->number_of_momenta - p - 1][dirac][dirac]
+                                [t_source][t_sink][rnd2][rnd4];
+//    							      C2_mes[p][dirac][abs((t_sink - t_source - Lt) % Lt)] += 
+//                            part1[rnd1][rnd3] * part2[rnd2][rnd4];
     						      }
     					      }
                   }
@@ -450,6 +534,16 @@ int main (int ac, char* av[]) {
 		for(int dirac = dirac_min; dirac < dirac_max + 1; ++dirac)
 		  for(int p = 0; p < rewr->number_of_momenta; ++p)
 				fwrite((double*) C2_mes[p][dirac], sizeof(double), 2 * Lt, fp);
+		fclose(fp);
+
+		sprintf(outfile, 
+        "%s/dirac_%02d_%02d_p_0_%01d_displ_%01d_%01d/C4_1_conf%04d.dat", 
+        outpath.c_str(), dirac_min, dirac_max, 0, displ_min, 
+        displ_max, config_i);
+		if((fp = fopen(outfile, "wb")) == NULL)
+			std::cout << "fail to open outputfile" << std::endl;
+		for(int dirac = dirac_min; dirac < dirac_max + 1; ++dirac)
+			fwrite((double*) C2_mes[rewr->number_of_momenta/2][dirac], sizeof(double), 2 * Lt, fp);
 		fclose(fp);
 
     // output to terminal
@@ -493,34 +587,34 @@ int main (int ac, char* av[]) {
         for(int dirac = dirac_min; dirac < dirac_max + 1; ++dirac) {
           for(int p = p_min; p < p_max; ++p) {
 
-            basic->init_operator_charged(t_source_1, t_sink, rewr, 'b', p, 0);
-    
-            basic->get_operator_charged(op_1, rewr, dirac, t_sink);
-            basic->get_operator_g5(op_2, dirac);
-    
-            basic->init_operator_charged(t_source, t_sink_1, rewr, 'b', 
-                rewr->number_of_momenta - p - 1, 0);
-    
-            basic->get_operator_charged(op_3, rewr, dirac, t_sink_1);
-            basic->get_operator_g5(op_4, dirac);
-    
-            // first trace
-            for(int rnd1 = 0; rnd1 < number_of_rnd_vec; ++rnd1){
-              // first u quark: t_source_1 -> t_sink
-              for(int rnd3 = rnd1 + 1; rnd3 < number_of_rnd_vec; ++rnd3){
-                // first d quark: t_sink -> t_source_1
-                part1[rnd1][rnd3] = std::real((op_2[rnd3] * op_1[rnd1][rnd3]).trace());
-              }
-            }
-    
-            // second trace
-            for(int rnd2 = 0; rnd2 < number_of_rnd_vec; ++rnd2){			
-              // second u quark: t_source -> t_sink_1
-              for(int rnd4 = rnd2 + 1; rnd4 < number_of_rnd_vec; ++rnd4){
-                // second d quark: t_sink_1 -> t_source
-                part2[rnd2][rnd4] = std::real((op_4[rnd4] * op_3[rnd2][rnd4]).trace());
-              }
-            }
+//            basic->init_operator_charged(t_source_1, t_sink, rewr, 'b', p, 0);
+//    
+//            basic->get_operator_charged(op_1, rewr, dirac, t_sink);
+//            basic->get_operator_g5(op_2, dirac);
+//    
+//            basic->init_operator_charged(t_source, t_sink_1, rewr, 'b', 
+//                rewr->number_of_momenta - p - 1, 0);
+//    
+//            basic->get_operator_charged(op_3, rewr, dirac, t_sink_1);
+//            basic->get_operator_g5(op_4, dirac);
+//    
+//            // first trace
+//            for(int rnd1 = 0; rnd1 < number_of_rnd_vec; ++rnd1){
+//              // first u quark: t_source_1 -> t_sink
+//              for(int rnd3 = rnd1 + 1; rnd3 < number_of_rnd_vec; ++rnd3){
+//                // first d quark: t_sink -> t_source_1
+//                part1[rnd1][rnd3] = std::real((op_2[rnd3] * op_1[rnd1][rnd3]).trace());
+//              }
+//            }
+//    
+//            // second trace
+//            for(int rnd2 = 0; rnd2 < number_of_rnd_vec; ++rnd2){			
+//              // second u quark: t_source -> t_sink_1
+//              for(int rnd4 = rnd2 + 1; rnd4 < number_of_rnd_vec; ++rnd4){
+//                // second d quark: t_sink_1 -> t_source
+//                part2[rnd2][rnd4] = std::real((op_4[rnd4] * op_3[rnd2][rnd4]).trace());
+//              }
+//            }
     
             // complete diagramm
             // every quark line must have its own random vec
@@ -530,8 +624,14 @@ int main (int ac, char* av[]) {
           				if((rnd2 != rnd1) && (rnd2 != rnd3)){
     					      for(int rnd4 = rnd2 + 1; rnd4 < number_of_rnd_vec; ++rnd4){
     						      if((rnd4 != rnd1) && (rnd4 != rnd3)){
-    							      C2_mes[p][dirac][abs((t_sink - t_source - Lt) % Lt)] += 
-                            part1[rnd1][rnd3] * part2[rnd2][rnd4];
+                        C2_mes[p][dirac][abs((t_sink - t_source - Lt) % Lt)] +=
+                            Corr[p][p][dirac][dirac]
+                                [t_source_1][t_sink][rnd1][rnd3] *
+                            Corr[rewr->number_of_momenta - p - 1]
+                                [rewr->number_of_momenta - p - 1][dirac][dirac]
+                                [t_source][t_sink_1][rnd2][rnd4];
+//    							      C2_mes[p][dirac][abs((t_sink - t_source - Lt) % Lt)] += 
+//                            part1[rnd1][rnd3] * part2[rnd2][rnd4];
     						      }
     					      }
                   }
@@ -560,6 +660,16 @@ int main (int ac, char* av[]) {
 	  for(int dirac = dirac_min; dirac < dirac_max + 1; ++dirac)
 		  for(int p = 0; p < rewr->number_of_momenta; ++p)
 				fwrite((double*) C2_mes[p][dirac], sizeof(double), 2 * Lt, fp);
+		fclose(fp);
+
+    sprintf(outfile, 
+        "%s/dirac_%02d_%02d_p_0_%01d_displ_%01d_%01d/C4_2_conf%04d.dat", 
+        outpath.c_str(), dirac_min, dirac_max, 0, displ_min, 
+        displ_max, config_i);
+		if((fp = fopen(outfile, "wb")) == NULL)
+			std::cout << "fail to open outputfile" << std::endl;
+	  for(int dirac = dirac_min; dirac < dirac_max + 1; ++dirac)
+			fwrite((double*) C2_mes[rewr->number_of_momenta/2][dirac], sizeof(double), 2 * Lt, fp);
 		fclose(fp);
 
     // output to terminal
@@ -595,6 +705,7 @@ int main (int ac, char* av[]) {
 				for(int t1 = 0; t1 < Lt; ++t1)
 					C2_mes[p][dirac][t1] = std::complex<double>(0.0, 0.0);
 
+#if 0
 		for(int t_source = 0; t_source < Lt; ++t_source){
 			for(int t_sink = 0; t_sink < Lt; ++t_sink){
 
@@ -664,6 +775,7 @@ int main (int ac, char* av[]) {
 			for(int p = 0; p < rewr->number_of_momenta; ++p)
 				for(int dirac = dirac_min; dirac < dirac_max + 1; ++dirac)
 					C2_mes[p][dirac][t] /= norm1;
+#endif
 
     // output to binary file
 		sprintf(outfile, 
@@ -675,6 +787,16 @@ int main (int ac, char* av[]) {
 		for(int dirac = dirac_min; dirac < dirac_max + 1; ++dirac)
 		  for(int p = 0; p < rewr->number_of_momenta; ++p)
 				fwrite((double*) C2_mes[p][dirac], sizeof(double), 2 * Lt, fp);
+		fclose(fp);
+
+		sprintf(outfile, 
+        "%s/dirac_%02d_%02d_p_0_%01d_displ_%01d_%01d/C4_3_conf%04d.dat", 
+        outpath.c_str(), dirac_min, dirac_max, 0, displ_min, 
+        displ_max, config_i);
+		if((fp = fopen(outfile, "wb")) == NULL)
+			std::cout << "fail to open outputfile" << std::endl;
+		for(int dirac = dirac_min; dirac < dirac_max + 1; ++dirac)
+			fwrite((double*) C2_mes[rewr->number_of_momenta/2][dirac], sizeof(double), 2 * Lt, fp);
 		fclose(fp);
 
     // output to terminal

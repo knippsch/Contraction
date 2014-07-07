@@ -407,12 +407,12 @@ void ReadWrite::read_perambulators_from_file (const int config_i) {
 
     for(int rnd_vec_i = 0; rnd_vec_i < number_of_rnd_vec; ++rnd_vec_i){
       //data path for christians perambulators
-      std::string filename = global_data->get_path_perambulators() + "/";
+//      std::string filename = global_data->get_path_perambulators() + "/";
 
       // data path for qbig contractions
-//      sprintf(temp, "cnfg%d/rnd_vec_%01d/", config_i, rnd_vec_i);
-//      std::string filename = global_data->get_path_perambulators() + "/"
-//          + temp;
+      sprintf(temp, "cnfg%d/rnd_vec_%01d/", config_i, rnd_vec_i);
+      std::string filename = global_data->get_path_perambulators() + "/"
+          + temp;
 
       // data path for juqueen contractions
 //      sprintf(temp, "cnfg%d/", config_i);
@@ -507,12 +507,12 @@ void ReadWrite::read_rnd_vectors_from_file (const int config_i) {
 
     for(int rnd_vec_i = 0; rnd_vec_i < number_of_rnd_vec; ++rnd_vec_i){
       // data path Christians perambulators
-      std::string filename = global_data->get_path_perambulators() + "/";
+//      std::string filename = global_data->get_path_perambulators() + "/";
 
       // data path for qbig contractions
-//      sprintf(temp, "cnfg%d/rnd_vec_%01d/", config_i, rnd_vec_i);
-//      std::string filename = global_data->get_path_perambulators()
-//				+ "/" + temp;
+      sprintf(temp, "cnfg%d/rnd_vec_%01d/", config_i, rnd_vec_i);
+      std::string filename = global_data->get_path_perambulators()
+				+ "/" + temp;
 
       // data path for juqueen contractions
 //      sprintf(temp, "cnfg%d/", config_i);

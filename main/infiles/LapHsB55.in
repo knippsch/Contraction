@@ -7,8 +7,8 @@ Ly = 32
 Lz = 32
 
 # configuration handling:
-start_config = 0
-end_config   = 800
+start_config = 816
+end_config   = 1392
 delta_config = 16
 
 # eigenvector handling:
@@ -18,10 +18,19 @@ name_eigenvectors   = eigenvectors
 # perambulator handling
 path_perambulators  = /hiskp2/perambulators/B55
 name_perambulators  = perambulator
+#output path
+output_path = /hiskp2/werner/LapH/correlators
+lattice = B55
 
 # momentum handling:
-number_of_max_mom  = 1
+number_of_max_mom  = 0
 max_mom_in_one_dir = 0
+# dirac structure
+dirac_min = 5
+dirac_max = 5
+# displacements
+displ_min = 0
+displ_max = 0
 
 [quarks]
 quark = u:5:TI:2:EI:4:DI:4
