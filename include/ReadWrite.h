@@ -45,6 +45,7 @@ public:
 	Eigen::MatrixXcd* perambulator;
 	Eigen::MatrixXcd*** basicoperator;
 	Eigen::VectorXcd* rnd_vec;
+  int* mom_squared;
   int number_of_momenta;
 
 protected:

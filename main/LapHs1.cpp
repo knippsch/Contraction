@@ -39,7 +39,6 @@ int main (int ac, char* av[]) {
 	const int start_config = global_data->get_start_config();
 	const int number_of_eigen_vec = global_data->get_number_of_eigen_vec();
   const int number_of_max_mom = global_data->get_number_of_max_mom();
-  const int max_mom_squared = number_of_max_mom * number_of_max_mom;
 
 	const std::vector<quark> quarks = global_data->get_quarks();
 	const int number_of_rnd_vec = quarks[0].number_of_rnd_vec;
@@ -258,6 +257,7 @@ int main (int ac, char* av[]) {
 //    rewr->read_lime_gauge_field_doubleprec_timeslices(config_i);
     rewr->build_source_matrix(config_i, p_min, p_max);
 
+#if 0
 
 		// *************************************************************************
 		// TWO PT CONTRACTION 1 ****************************************************
@@ -421,44 +421,23 @@ int main (int ac, char* av[]) {
 #endif
 
 		double norm3 = Lt * number_of_rnd_vec * (number_of_rnd_vec - 1) * 0.5;
-		for(int t = 0; t < Lt; ++t){
-      for(int dirac = dirac_min; dirac < dirac_max + 1; ++dirac){
-        for(int p_u = p_min; p_u < p_max; ++p_u) {
-          for(int p_d = p_min; p_d < p_max; ++p_d) {
-					  C2_mes[p_u][p_d][dirac][t] /= norm3;
-          }
-        }
-      }
-    }
+		for(int t = 0; t < Lt; ++t)
+			for(int dirac = dirac_min; dirac < dirac_max + 1; ++dirac)
+			  for(int p = 0; p < rewr->number_of_momenta; ++p)
+					C2_mes[p][p][dirac][t] /= norm3;
 
     // output to binary file
 		sprintf(outfile, 
         "%s/dirac_%02d_%02d_p_0_%01d_displ_%01d_%01d/C2_pi+-_conf%04d.dat", 
-        outpath.c_str(), dirac_min, dirac_max, max_mom_squared, 
+        outpath.c_str(), dirac_min, dirac_max, number_of_max_mom, 
         displ_min, displ_max, config_i);
 		if((fp = fopen(outfile, "wb")) == NULL)
 			std::cout << "fail to open outputfile" << std::endl;
-    for(int dirac = dirac_min; dirac < dirac_max + 1; ++dirac){
-      for(int p = 0; p <= max_mom_squared; p++){
-        for(int p_u = p_min; p_u < p_max; ++p_u){
-          if(rewr->mom_squared[p_u] == p){
-		        fwrite((double*) C2_mes[p_u][p_u][dirac], sizeof(double), 2 * Lt, fp);
-          }
-        }
-      }
-
-      for(int p = 1; p <= max_mom_squared; p++){
-        for(int p_u = p_min; p_u < p_max; ++p_u){
-          if(rewr->mom_squared[p_u] == p){
-			      fwrite((double*) C2_mes[rewr->number_of_momenta / 2][p_u][dirac], sizeof(double), 2 * Lt, fp);
-          }
-        }
-      }
-
-    }
+	  for(int dirac = dirac_min; dirac < dirac_max + 1; ++dirac)
+		  for(int p = 0; p < rewr->number_of_momenta; ++p)
+				fwrite((double*) C2_mes[p][p][dirac], sizeof(double), 2 * Lt, fp);
 		fclose(fp);
 
-#if 0
 		sprintf(outfile, 
         "%s/dirac_%02d_%02d_p_0_%01d_displ_%01d_%01d/C2_pi+-_conf%04d.dat", 
         outpath.c_str(), dirac_min, dirac_max, 0, 
@@ -470,6 +449,7 @@ int main (int ac, char* av[]) {
           [rewr->number_of_momenta/2][dirac], sizeof(double), 2 * Lt, fp);
 		fclose(fp);
 
+#if 0
     for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i) {
   		sprintf(outfile, 
           "%s/dirac_%02d_%02d_p_0_%01d_displ_%01d_%01d/C2_dis_u_rnd%02d_conf%04d.dat", 
@@ -487,42 +467,19 @@ int main (int ac, char* av[]) {
 
     // output to terminal
 		printf("\n");
-    for(int dirac = dirac_min; dirac < dirac_max + 1; ++dirac){
+		for(int dirac = dirac_min; dirac < dirac_max + 1; ++dirac){
 		  printf("\tdirac    = %02d\n", dirac);
-      for(int p = 0; p <= max_mom_squared; p++){
-        printf("\tmomentum_u = %02d\n", p);
-        printf("\tmomentum_d = %02d\n", p);
-        for(int p_u = p_min; p_u < p_max; ++p_u){
-          if((rewr->mom_squared[p_u] == p)){
-      			//printf(
-      			//  	"\t t\tRe(C2_con)\tIm(C2_con)\n\t----------------------------------\n");
-//            		  for(int t1 = 0; t1 < Lt; ++t1){
-//            			  printf("\t%02d\t%.5e\t%.5e\n", t1, real(C2_mes[p_u][p_u][dirac][t1]),
-//            			      imag(C2_mes[p_u][p_u][dirac][t1]));
-//            		  }
-            printf("\n");
-            printf("p_u = %02d\n", p_u);
-          }
-        }
-      }
-
-      for(int p = 1; p <= max_mom_squared; p++){
-        printf("\tmomentum_u = %02d\n", 0);
-        printf("\tmomentum_d = %02d\n", p);
-        for(int p_u = p_min; p_u < p_max; ++p_u){
-          if((rewr->mom_squared[p_u] == p)){
-      			//printf(
-      			//  	"\t t\tRe(C2_con)\tIm(C2_con)\n\t----------------------------------\n");
-//            		  for(int t1 = 0; t1 < Lt; ++t1){
-//            			  printf("\t%02d\t%.5e\t%.5e\n", t1, real(C2_mes[p_u][p_u][dirac][t1]),
-//            			      imag(C2_mes[p_u][p_u][dirac][t1]));
-//            		  }
-            printf("\n");
-            printf("p_u = %02d\n", p_u);
-          }
-        }
-      }
-
+      for(int p = p_min; p < p_max; ++p) {
+        printf("\tmomentum = %02d\n", p);
+			  //printf(
+				//  	"\t t\tRe(C2_con)\tIm(C2_con)\n\t----------------------------------\n");
+			  for(int t1 = 0; t1 < Lt; ++t1){
+				  printf("\t%02d\t%.5e\t%.5e\n", t1, real(C2_mes[p][p][dirac][t1]),
+				      imag(C2_mes[p][p][dirac][t1]));
+			  }
+			  printf("\n");
+		  }
+		  printf("\n");
     }
 
     time = clock() - time;
@@ -596,11 +553,11 @@ int main (int ac, char* av[]) {
           						      if((rnd4 != rnd1) && (rnd4 != rnd3)){
                               C4_mes[p_u][p_d][dirac_u][dirac_d]
                                   [abs((t_sink - t_source - Lt) % Lt)] +=
-                                (Corr[p_u]
+                                std::real(Corr[p_u]
                                   [rewr->number_of_momenta - p_d - 1]
                                   [dirac_u][dirac_d]
                                   [t_source_1][t_sink_1][rnd1][rnd3]) *
-                                (Corr[rewr->number_of_momenta - p_u - 1]
+                                std::real(Corr[rewr->number_of_momenta - p_u - 1]
                                   [p_d][dirac_u][dirac_d]
                                   [t_source][t_sink][rnd2][rnd4]);
       //    							      C2_mes[p][dirac][abs((t_sink - t_source - Lt) % Lt)] += 
@@ -637,51 +594,23 @@ int main (int ac, char* av[]) {
 
 
     // output to binary file
-    sprintf(outfile, 
-        "%s/dirac_%02d_%02d_p_0_%01d_displ_%01d_%01d/C4_1_conf%04d_diag.dat", 
-        outpath.c_str(), dirac_min, dirac_max, max_mom_squared, displ_min, 
-        displ_max, config_i);
-    if((fp = fopen(outfile, "wb")) == NULL)
-      std::cout << "fail to open outputfile" << std::endl;
     for(int dirac_u = dirac_min; dirac_u < dirac_max + 1; ++dirac_u){
       for(int dirac_d = dirac_min; dirac_d < dirac_max + 1; ++dirac_d){
-        for(int p = 0; p <= max_mom_squared; p++){
-          for(int p_u = p_min; p_u < p_max; ++p_u){
-            if(rewr->mom_squared[p_u] == p){
-          		fwrite((double*) C4_mes[p_u][p_u][dirac_u][dirac_d], sizeof(double), 2 * Lt, fp);
-            }
-          }
-        }
-      }
-    }
-		fclose(fp);
+   	    for(int p_u = p_min; p_u < p_max; ++p_u){
+          for(int p_d = p_min; p_d < p_max; ++p_d){
+        		sprintf(outfile, 
+                "%s/test/dirac_%02d_%02d_p_%01d_%01d_displ_%01d_%01d_C4_1_conf%04d.dat", 
+                outpath.c_str(), dirac_min, dirac_max, p_u, p_d, displ_min, 
+                displ_max, config_i);
+            if((fp = fopen(outfile, "wb")) == NULL)
+        	    std::cout << "fail to open outputfile" << std::endl;
 
-    sprintf(outfile, 
-        "%s/dirac_%02d_%02d_p_0_%01d_displ_%01d_%01d/C4_1_conf%04d_all.dat", 
-        outpath.c_str(), dirac_min, dirac_max, max_mom_squared, displ_min, 
-        displ_max, config_i);
-    if((fp = fopen(outfile, "wb")) == NULL)
-      std::cout << "fail to open outputfile" << std::endl;
-    for(int dirac_u = dirac_min; dirac_u < dirac_max + 1; ++dirac_u){
-      for(int dirac_d = dirac_min; dirac_d < dirac_max + 1; ++dirac_d){
-        for(int offset = 0; offset <= max_mom_squared; offset++){
-          for(int p = 0; p <= max_mom_squared; p++){
-            if((p + offset) <= max_mom_squared){
-              for(int p_u = p_min; p_u < p_max; ++p_u){
-                if(rewr->mom_squared[p_u] == p){
-                  for(int p_d = p_min; p_d < p_max; ++p_d){
-                    if(rewr->mom_squared[p_d] == (p + offset)){
-            			    fwrite((double*) C4_mes[p_u][p_d][dirac_u][dirac_d], sizeof(double), 2 * Lt, fp);
-                    }
-                  }
-                }
-              }
-            }
+  			    fwrite((double*) C4_mes[p_u][p_d][dirac_u][dirac_d], sizeof(double), 2 * Lt, fp);
+		        fclose(fp);
           }
         }
       }
     }
-		fclose(fp);
 
 //		sprintf(outfile, 
 //        "%s/dirac_%02d_%02d_p_0_%01d_displ_%01d_%01d/C4_1_conf%04d.dat", 
@@ -695,34 +624,19 @@ int main (int ac, char* av[]) {
 
     // output to terminal
 		printf("\n");
-    for(int dirac = dirac_min; dirac < dirac_max + 1; ++dirac){
-		  printf("\tdirac    = %02d\n", dirac);
-      for(int offset = 0; offset <= max_mom_squared; offset++){
-        for(int p = 0; p <= max_mom_squared; p++){
-          if((p + offset) <= max_mom_squared){
-            printf("\tmomentum_u = %02d\n", p);
-            printf("\tmomentum_d = %02d\n", p + offset);
-            for(int p_u = p_min; p_u < p_max; ++p_u){
-              if((rewr->mom_squared[p_u] == p) && ((p + offset) <= max_mom_squared)){
-                for(int p_d = p_min; p_d < p_max; ++p_d){
-                  if(rewr->mom_squared[p_d] == (p + offset)){
-            			  //printf(
-            				//  	"\t t\tRe(C4_1_con)\tIm(C4_1_con)\n\t----------------------------------\n");
-//            			  for(int t1 = 0; t1 < Lt; ++t1){
-//            				  printf("\t%02d\t%.5e\t%.5e\n", t1, real(C4_mes[p_u][p_d][dirac][dirac][t1]),
-//            				      imag(C4_mes[p_u][p_d][dirac][dirac][t1]));
-//            			  }
-            			printf("\n");
-                  printf("p_u = %02d\tp_d = %02d\n", p_u, p_d);
-            		  }
-                }
-              }
-            }
-          }
-        printf("\n");
-        }
-      }
-    printf("\n");
+		for(int dirac = dirac_min; dirac < dirac_max + 1; ++dirac){
+			printf("\tdirac    = %02d\n", dirac);
+      for(int p = p_min; p < p_max; ++p) {
+        printf("\tmomentum = %02d\n", p);
+			  //printf(
+				//  	"\t t\tRe(C4_1_con)\tIm(C4_1_con)\n\t----------------------------------\n");
+			  for(int t1 = 0; t1 < Lt; ++t1){
+				  printf("\t%02d\t%.5e\t%.5e\n", t1, real(C4_mes[p][p][dirac][dirac][t1]),
+				      imag(C4_mes[p][p][dirac][dirac][t1]));
+			  }
+			  printf("\n");
+		  }
+		  printf("\n");
     }
 
     time = clock() - time;
@@ -795,9 +709,9 @@ int main (int ac, char* av[]) {
           						      if((rnd4 != rnd1) && (rnd4 != rnd3)){
                               C4_mes[p_u][p_d][dirac_u][dirac_d]
                                   [abs((t_sink - t_source - Lt) % Lt)] +=
-                                (Corr[p_u][rewr->number_of_momenta - p_d - 1]
+                                std::real(Corr[p_u][rewr->number_of_momenta - p_d - 1]
                                   [dirac_u][dirac_d][t_source_1][t_sink][rnd1][rnd3]) *
-                                (Corr[rewr->number_of_momenta - p_u - 1][p_d]
+                                std::real(Corr[rewr->number_of_momenta - p_u - 1][p_d]
                                   [dirac_u][dirac_d][t_source][t_sink_1][rnd2][rnd4]);
           						      }
           					      }
@@ -830,51 +744,23 @@ int main (int ac, char* av[]) {
     }
 
     // output to binary file
-    sprintf(outfile, 
-        "%s/dirac_%02d_%02d_p_0_%01d_displ_%01d_%01d/C4_2_conf%04d_diag.dat", 
-        outpath.c_str(), dirac_min, dirac_max, max_mom_squared, displ_min, 
-        displ_max, config_i);
-    if((fp = fopen(outfile, "wb")) == NULL)
-    	    std::cout << "fail to open outputfile" << std::endl;
     for(int dirac_u = dirac_min; dirac_u < dirac_max + 1; ++dirac_u){
       for(int dirac_d = dirac_min; dirac_d < dirac_max + 1; ++dirac_d){
-        for(int p = 0; p <= max_mom_squared; p++){
-          for(int p_u = p_min; p_u < p_max; ++p_u){
-            if(rewr->mom_squared[p_u] == p){
-              fwrite((double*) C4_mes[p_u][p_u][dirac_u][dirac_d], sizeof(double), 2 * Lt, fp);
-            }
-          }
-        }
-      }
-    }
-    fclose(fp);
+   	    for(int p_u = p_min; p_u < p_max; ++p_u){
+          for(int p_d = p_min; p_d < p_max; ++p_d){
+        		sprintf(outfile, 
+                "%s/test/dirac_%02d_%02d_p_%01d_%01d_displ_%01d_%01d_C4_2_conf%04d.dat", 
+                outpath.c_str(), dirac_min, dirac_max, p_u, p_d, displ_min, 
+                displ_max, config_i);
+            if((fp = fopen(outfile, "wb")) == NULL)
+        	    std::cout << "fail to open outputfile" << std::endl;
 
-    sprintf(outfile, 
-        "%s/dirac_%02d_%02d_p_0_%01d_displ_%01d_%01d/C4_2_conf%04d_all.dat", 
-        outpath.c_str(), dirac_min, dirac_max, max_mom_squared, displ_min, 
-        displ_max, config_i);
-    if((fp = fopen(outfile, "wb")) == NULL)
-    	    std::cout << "fail to open outputfile" << std::endl;
-    for(int dirac_u = dirac_min; dirac_u < dirac_max + 1; ++dirac_u){
-      for(int dirac_d = dirac_min; dirac_d < dirac_max + 1; ++dirac_d){
-        for(int offset = 0; offset <= max_mom_squared; offset++){
-          for(int p = 0; p <= max_mom_squared; p++){
-            if((p + offset) <= max_mom_squared){
-              for(int p_u = p_min; p_u < p_max; ++p_u){
-                if(rewr->mom_squared[p_u] == p){
-                  for(int p_d = p_min; p_d < p_max; ++p_d){
-                    if(rewr->mom_squared[p_d] == (p + offset)){
-                      fwrite((double*) C4_mes[p_u][p_d][dirac_u][dirac_d], sizeof(double), 2 * Lt, fp);
-                    }
-                  }
-                }
-              }
-            }
+  			    fwrite((double*) C4_mes[p_u][p_d][dirac_u][dirac_d], sizeof(double), 2 * Lt, fp);
+		        fclose(fp);
           }
         }
       }
     }
-		fclose(fp);
 
 //		sprintf(outfile, 
 //        "%s/dirac_%02d_%02d_p_0_%01d_displ_%01d_%01d/C4_2_conf%04d.dat", 
@@ -888,39 +774,24 @@ int main (int ac, char* av[]) {
 
     // output to terminal
 		printf("\n");
-    for(int dirac = dirac_min; dirac < dirac_max + 1; ++dirac){
-		  printf("\tdirac    = %02d\n", dirac);
-      for(int offset = 0; offset <= max_mom_squared; offset++){
-        for(int p = 0; p <= max_mom_squared; p++){
-          if((p + offset) <= max_mom_squared){
-            printf("\tmomentum_u = %02d\n", p);
-            printf("\tmomentum_d = %02d\n", p + offset);
-            for(int p_u = p_min; p_u < p_max; ++p_u){
-              if((rewr->mom_squared[p_u] == p) && ((p + offset) <= max_mom_squared)){
-                for(int p_d = p_min; p_d < p_max; ++p_d){
-                  if(rewr->mom_squared[p_d] == (p + offset)){
-            			  //printf(
-            				//  	"\t t\tRe(C4_2_con)\tIm(C4_2_con)\n\t----------------------------------\n");
-//            			  for(int t1 = 0; t1 < Lt; ++t1){
-//            				  printf("\t%02d\t%.5e\t%.5e\n", t1, real(C4_mes[p][p][dirac][dirac][t1]),
-//            				      imag(C4_mes[p][p][dirac][dirac][t1]));
-//                    }
-            			  printf("\n");
-                    printf("p_u = %02d\tp_d = %02d\n", p_u, p_d);
-            		  }
-                }
-              }
-            }
-          }
-          printf("\n");
-        }
-      }
-      printf("\n");
+		for(int dirac = dirac_min; dirac < dirac_max + 1; ++dirac){
+			printf("\tdirac    = %02d\n", dirac);
+      for(int p = p_min; p < p_max; ++p) {
+        printf("\tmomentum = %02d\n", p);
+			  //printf(
+				//  	"\t t\tRe(C4_2_con)\tIm(C4_2_con)\n\t----------------------------------\n");
+			  for(int t1 = 0; t1 < Lt; ++t1){
+				  printf("\t%02d\t%.5e\t%.5e\n", t1, real(C4_mes[p][p][dirac][dirac][t1]),
+				      imag(C4_mes[p][p][dirac][dirac][t1]));
+			  }
+			  printf("\n");
+		  }
+		  printf("\n");
     }
 
     time = clock() - time;
 		printf("\t\tSUCCESS - %.1f seconds\n", ((float) time)/CLOCKS_PER_SEC);
-
+#endif
 
 		// *************************************************************************
 		// FOUR PT CONTRACTION 3 ***************************************************
@@ -1036,58 +907,21 @@ int main (int ac, char* av[]) {
 
 		for(int t = 0; t < Lt; ++t)
 			for(int p = 0; p < rewr->number_of_momenta; ++p)
-			  for(int p1 = 0; p1 < rewr->number_of_momenta; ++p1)
 				for(int dirac = dirac_min; dirac < dirac_max + 1; ++dirac)
-					C4_mes[p][p1][dirac][dirac][t] /= norm1;
+					C4_mes[p][p][dirac][dirac][t] /= norm1;
 
     // output to binary file
 		sprintf(outfile, 
-        "%s/dirac_%02d_%02d_p_0_%01d_displ_%01d_%01d/C4_3_conf%04d_diag.dat", 
-        outpath.c_str(), dirac_min, dirac_max, max_mom_squared, displ_min, 
+        "%s/dirac_%02d_%02d_p_0_%01d_displ_%01d_%01d/C4_3_conf%04d.dat", 
+        outpath.c_str(), dirac_min, dirac_max, number_of_max_mom, displ_min, 
         displ_max, config_i);
 		if((fp = fopen(outfile, "wb")) == NULL)
 			std::cout << "fail to open outputfile" << std::endl;
-    for(int dirac_u = dirac_min; dirac_u < dirac_max + 1; ++dirac_u){
-      for(int dirac_d = dirac_min; dirac_d < dirac_max + 1; ++dirac_d){
-        for(int p = 0; p <= max_mom_squared; p++){
-          for(int p_u = p_min; p_u < p_max; ++p_u){
-            if(rewr->mom_squared[p_u] == p){
-              fwrite((double*) C4_mes[p_u][p_u][dirac_u][dirac_d], sizeof(double), 2 * Lt, fp);
-            }
-          }
-        }
-      }
-    }
+		for(int dirac = dirac_min; dirac < dirac_max + 1; ++dirac)
+		  for(int p = 0; p < rewr->number_of_momenta; ++p)
+				fwrite((double*) C4_mes[p][p][dirac][dirac], sizeof(double), 2 * Lt, fp);
 		fclose(fp);
 
-		sprintf(outfile, 
-        "%s/dirac_%02d_%02d_p_0_%01d_displ_%01d_%01d/C4_3_conf%04d_all.dat", 
-        outpath.c_str(), dirac_min, dirac_max, max_mom_squared, displ_min, 
-        displ_max, config_i);
-		if((fp = fopen(outfile, "wb")) == NULL)
-			std::cout << "fail to open outputfile" << std::endl;
-    for(int dirac_u = dirac_min; dirac_u < dirac_max + 1; ++dirac_u){
-      for(int dirac_d = dirac_min; dirac_d < dirac_max + 1; ++dirac_d){
-        for(int offset = 0; offset <= max_mom_squared; offset++){
-          for(int p = 0; p <= max_mom_squared; p++){
-            if((p + offset) <= max_mom_squared){
-              for(int p_u = p_min; p_u < p_max; ++p_u){
-                if(rewr->mom_squared[p_u] == p){
-                  for(int p_d = p_min; p_d < p_max; ++p_d){
-                    if(rewr->mom_squared[p_d] == (p + offset)){
-				              fwrite((double*) C4_mes[p_u][p_d][dirac_u][dirac_d], sizeof(double), 2 * Lt, fp);
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-		fclose(fp);
-
-#if 0
 		sprintf(outfile, 
         "%s/dirac_%02d_%02d_p_0_%01d_displ_%01d_%01d/C4_3_conf%04d.dat", 
         outpath.c_str(), dirac_min, dirac_max, 0, displ_min, 
@@ -1098,7 +932,6 @@ int main (int ac, char* av[]) {
 			fwrite((double*) C4_mes[rewr->number_of_momenta/2]
           [rewr->number_of_momenta/2][dirac][dirac], sizeof(double), 2 * Lt, fp);
 		fclose(fp);
-#endif
 
     // output to terminal
 		printf("\n");

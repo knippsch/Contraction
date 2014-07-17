@@ -39,25 +39,26 @@ class BasicOperator {
 
 public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-	BasicOperator ();
+	BasicOperator (ReadWrite* rewr);
 	virtual ~BasicOperator ();
-  void init_operator_charged (const int t_source, const int t_sink, 
-      ReadWrite* rewr, const char dilution, const int p, const int displ);
-  void init_operator_uncharged (const int t_source, const int t_sink, 
-      ReadWrite* rewr, const char dilution, const int p, const int displ);
-  void get_operator_charged(Eigen::MatrixXcd**& op_1, ReadWrite* rewr, 
-      const int dirac, const int t_sink);
-  void get_operator_g5(Eigen::MatrixXcd*& op_1, const int dirac);
-  void get_operator_uncharged(Eigen::MatrixXcd*& op_1, const int dirac);
+  void init_operator_u (const int particle_no, const int t_source, 
+      const int t_sink, ReadWrite* rewr, const char dilution, const int p, 
+      const int displ);
+  void init_operator_d (const int particle_no, const int t_source, 
+      const int t_sink, ReadWrite* rewr, const char dilution, const int p, 
+      const int displ);
+  void get_operator_charged(Eigen::MatrixXcd**& op_1, const int particle_no,
+      const int t_sink, ReadWrite* rewr, const int dirac, const int p);
+  void get_operator_g5(Eigen::MatrixXcd*& op_1, const int particle_no, 
+      const int dirac, const int p);
+  void get_operator_uncharged(Eigen::MatrixXcd*& op_1, const int particle_no, 
+      const int dirac, const int p);
 
 
 protected:
 //  void create_gamma(struct lookup* gamma, const int dirac);
-  Eigen::MatrixXcd*** contraction;
-  Eigen::MatrixXcd** contraction_dagger;
-  Eigen::MatrixXcd** contraction_uncharged;
-  Eigen::MatrixXcd*** s_charged;
-  Eigen::MatrixXcd** s_uncharged;
+  Eigen::MatrixXcd**** contraction_dagger;
+  Eigen::MatrixXcd**** contraction;
   struct lookup*  gamma;
 };
 

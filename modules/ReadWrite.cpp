@@ -9,7 +9,7 @@ namespace { // some internal namespace
 
 static const std::complex<double> I(0.0, 1.0);
 
-static void create_momenta (std::complex<double>** momentum) {
+static void create_momenta (std::complex<double>** momentum, int* mom_squared) {
 
   try{
     const int Lx = global_data->get_Lx();
@@ -31,6 +31,7 @@ static void create_momenta (std::complex<double>** momentum) {
           if((ipx * ipx + ipy * ipy + ipz * ipz) > max_mom_squared) {
             continue;
           }
+          mom_squared[p] = ipx * ipx + ipy * ipy + ipz * ipz;
 
           //TODO: for Lx == Ly == Lz ipxH and ipxHipyH may be integers and px, 
           //py get multiplied in the exponential
@@ -75,7 +76,7 @@ int check_momenta() {
           if((ipx * ipx + ipy * ipy + ipz * ipz) > max_mom_squared) {
             continue;
           }
-          //std::cout << "p = " << p << ", entspricht (" << ipx << ", " << ipy << ", " << ipz << ")" << std::endl;
+          std::cout << "p = " << p << ", entspricht (" << ipx << ", " << ipy << ", " << ipz << ")" << std::endl;
           p++;
         }
       }
@@ -118,10 +119,11 @@ ReadWrite::ReadWrite () {
     number_of_momenta = check_momenta();
     std::cout << "\tNumber of momenta:\t " << number_of_momenta << 
     " momenta" << std::endl;
+    mom_squared = new int[number_of_momenta];
     momentum = new std::complex<double>*[number_of_momenta];
     for(int p = 0; p < number_of_momenta; ++p)
       momentum[p] = new std::complex<double>[Vs];
-    create_momenta(momentum);
+    create_momenta(momentum, mom_squared);
 
     // memory for the perambulator, random vector and basic operator
     basicoperator = new Eigen::MatrixXcd**[number_of_momenta];
@@ -324,7 +326,7 @@ void ReadWrite::build_source_matrix (const int config_i, const int p_min,
 void ReadWrite::read_eigenvectors_from_file (Eigen::MatrixXcd& V, const int config_i, const int t) {
 
   try{
-    clock_t time = clock();
+    //clock_t time = clock();
     const int Lt = global_data->get_Lt();
     const int dim_row = global_data->get_dim_row();
     const int verbose = global_data->get_verbose();
@@ -335,9 +337,9 @@ void ReadWrite::read_eigenvectors_from_file (Eigen::MatrixXcd& V, const int conf
     //buffer for read in
     std::complex<double>* eigen_vec = new std::complex<double>[dim_row];
 
-    if(verbose) printf("reading eigen vectors from files:\n");
-    else printf("\treading eigenvectors:");
-    fflush(stdout);
+    //if(verbose) printf("reading eigen vectors from files:\n");
+    //else printf("\treading eigenvectors:");
+    //fflush(stdout);
 
     //setting up file
     char name[200];
@@ -360,8 +362,8 @@ void ReadWrite::read_eigenvectors_from_file (Eigen::MatrixXcd& V, const int conf
     }   
 
     delete[] eigen_vec;
-    time = clock() - time;
-    if(!verbose) printf("\t\tSUCCESS - %.1f seconds\n", ((float) time)/CLOCKS_PER_SEC);
+    //time = clock() - time;
+    //if(!verbose) printf("\t\tSUCCESS - %.1f seconds\n", ((float) time)/CLOCKS_PER_SEC);
   }
   catch(std::exception& e){
     std::cout << e.what() << "in: ReadWrite::read_eigenvectors_from_file\n";

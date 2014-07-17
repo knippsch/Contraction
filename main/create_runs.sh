@@ -1,15 +1,15 @@
 #!/bin/bash
 
-outpath="/hiskp2/werner/LapH/correlators_test"
-lattice="A40.20"
+outpath="/hiskp2/werner/LapH/correlators_all"
+lattice="A40.24"
 
-start_config=1300
-end_config=1300
-delta_config=6
+start_config=1930
+end_config=2330
+delta_config=4
 stepping=1
 
-number_of_max_mom=2
-max_mom_in_one_dir=2
+number_of_max_mom=1
+max_mom_in_one_dir=1
 dirac_min=05
 dirac_max=05
 displ_min=0

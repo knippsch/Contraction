@@ -44,7 +44,7 @@ LIBPATH = /hiskp2/jost/boost_1_54_0/stage/lib/ /hiskp2/jost/lime-1.3.2/lib/
 
 
 # scheduling and optimization options
-CFLAGS = -Wall -O3 -fopenmp -march=native -std=c++0x
+CFLAGS = -Wall -O3 -fopenmp -march=native -std=c++0x -mtune=native
 
 ############################## do not change ###################################
 

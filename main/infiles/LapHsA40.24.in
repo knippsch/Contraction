@@ -16,15 +16,15 @@ number_of_eigen_vec = 120
 path_eigenvectors   = /hiskp2/eigensystems/A40.24_L24_T48_beta190_mul0040_musig150_mudel190_kappa1632700/hyp_062_058_3/nev_120/
 name_eigenvectors   = eigenvectors
 # perambulator handling
-path_perambulators  = /hiskp2/knippsch/A40
+path_perambulators  = /hiskp2/perambulators/A40.24/u_quark
 name_perambulators  = perambulator
 #output path
-output_path = /hiskp2/werner/LapH/correlators
+output_path = /hiskp2/werner/LapH/correlators_all
 lattice = A40.24
 
 # momentum handling:
-number_of_max_mom  = 2
-max_mom_in_one_dir = 2
+number_of_max_mom  = 1
+max_mom_in_one_dir = 1
 # dirac structure
 dirac_min = 5
 dirac_max = 5
