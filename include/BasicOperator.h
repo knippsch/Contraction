@@ -60,6 +60,7 @@ protected:
   Eigen::MatrixXcd**** contraction_dagger;
   Eigen::MatrixXcd**** contraction;
   struct lookup*  gamma;
+  BasicOperator ();
 };
 
 #endif /* BASICOPERATOR_H_ */

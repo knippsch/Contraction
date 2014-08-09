@@ -227,7 +227,7 @@ static void create_gamma (struct lookup* gamma, const int i) {
 /******************************************************************************/
 /******************************************************************************/
 
-BasicOperator::BasicOperator (ReadWrite* rewr) {
+BasicOperator::BasicOperator (ReadWrite* rewr){
   try{
     const int number_of_eigen_vec = global_data->get_number_of_eigen_vec();
     const std::vector<quark> quarks = global_data->get_quarks();
@@ -290,6 +290,9 @@ BasicOperator::BasicOperator (ReadWrite* rewr) {
   }
 }
 
+BasicOperator::BasicOperator() {
+}
+
 /******************************************************************************/
 /******************************************************************************/
 // destructor *****************************************************************/
@@ -298,12 +301,24 @@ BasicOperator::BasicOperator (ReadWrite* rewr) {
 
 BasicOperator::~BasicOperator () {
   try{
-
+//    const std::vector<quark> quarks = global_data->get_quarks();
+//    const int number_of_rnd_vec = quarks[0].number_of_rnd_vec;
     delete[] gamma;
-    delete[] contraction;
-    delete[] contraction_dagger;
-
-    gamma = NULL;
+    for(int particle_no = 0; particle_no < 2; particle_no++){
+      //TODO somehow number_of_momenta has to be accessed!
+//      for(int p = 0; p < rewr->number_of_momenta; p++){
+//        for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i){
+//          delete [] contraction[particle_no][p][rnd_i];
+//          delete [] contraction_dagger[particle_no][p][rnd_i];
+//        }
+//        delete [] contraction[particle_no][p];
+//        delete [] contraction_dagger[particle_no][p];
+//      }
+      delete [] contraction[particle_no];
+      delete [] contraction_dagger[particle_no];
+    }
+    delete [] contraction;
+    delete [] contraction_dagger;
   }
   catch(std::exception& e){
     std::cout << e.what() << "in: BasicOperator::~BasicOperator\n";
@@ -348,7 +363,7 @@ void BasicOperator::init_operator_u (const int particle_no, const int t_source,
   // s contains diluted basicoperator
   Eigen::MatrixXcd** s = new Eigen::MatrixXcd*[number_of_rnd_vec];
   for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i){
-    s[rnd_i] = new Eigen::MatrixXcd[number_of_rnd_vec];
+    s[rnd_i] = new Eigen::MatrixXcd[4];
     for(int blocknr = 0; blocknr < 4; blocknr++){
       s[rnd_i][blocknr] = 
           Eigen::MatrixXcd::Zero(quarks[0].number_of_dilution_E, 
@@ -400,6 +415,11 @@ void BasicOperator::init_operator_u (const int particle_no, const int t_source,
     }
 
   }
+
+  for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i){
+    delete[] s[rnd_i];
+  }
+  delete [] s;
 
   t = clock() - t;
   //printf("\t\tSUCCESS - %.1f seconds\n", ((float) t)/CLOCKS_PER_SEC);

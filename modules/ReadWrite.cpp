@@ -10,7 +10,6 @@ namespace { // some internal namespace
 static const std::complex<double> I(0.0, 1.0);
 
 static void create_momenta (std::complex<double>** momentum, int* mom_squared) {
-
   try{
     const int Lx = global_data->get_Lx();
     const int Ly = global_data->get_Ly();
@@ -179,12 +178,34 @@ ReadWrite::ReadWrite () {
 /******************************************************************************/
 
 ReadWrite::~ReadWrite() {
-
   try{
-    delete[] perambulator;
-    delete[] basicoperator;
-    delete[] rnd_vec;
-    delete[] momentum;
+    const int Lt = global_data->get_Lt();
+    const int Lx = global_data->get_Lx();
+    const int Ly = global_data->get_Ly();
+    const int Lz = global_data->get_Lz();
+    const int Vs = Lx * Ly * Lz;
+    delete [] perambulator;
+    delete [] rnd_vec;
+    for(int p = 0; p < number_of_momenta; ++p) {
+      for(int t = 0; t < Lt; ++t){
+        delete [] basicoperator[p][t];
+      }
+      delete [] basicoperator[p];
+    }   
+    delete [] basicoperator;
+    for(int p = 0; p < number_of_momenta; ++p)
+      delete [] momentum[p];
+    delete [] momentum;
+    for (int i = 0; i < Vs; ++i ) {
+      delete [] eigen_timeslice[i];
+      delete [] iup[i];
+      delete [] idown[i];
+    }
+    delete [] eigen_timeslice;
+    delete [] iup;
+    delete [] idown;
+    delete [] mom_squared;
+    delete [] gaugefield;
   }
   catch(std::exception& e){
     std::cout << e.what() << "in: ReadWrite::~ReadWrite\n";
@@ -445,14 +466,14 @@ void ReadWrite::read_perambulators_from_file (const int config_i) {
 
       // copy into matrix structure
       int col_i, row_i;
-#pragma omp parallel for private(col_i, row_i) schedule(guided)
-      for(int t1 = 0; t1 < Lt; ++t1)
-        for(int ev1 = 0; ev1 < number_of_eigen_vec; ++ev1)
-          for(int dirac1 = 0; dirac1 < 4; ++dirac1)
-            for(int t2 = 0; t2 < (Lt / quarks[0].number_of_dilution_T); ++t2)
-              for(int ev2 = 0; ev2 < quarks[0].number_of_dilution_E; ++ev2)
-                for(int dirac2 = 0; dirac2 < quarks[0].number_of_dilution_D; 
-                    ++dirac2){
+      int t1, t2, ev1, ev2, dirac1, dirac2;
+#pragma omp parallel for private(col_i, row_i, t1, t2, ev1, ev2, dirac1, dirac2) schedule(guided)
+      for(t1 = 0; t1 < Lt; ++t1)
+        for(ev1 = 0; ev1 < number_of_eigen_vec; ++ev1)
+          for(dirac1 = 0; dirac1 < 4; ++dirac1)
+            for(t2 = 0; t2 < (Lt / quarks[0].number_of_dilution_T); ++t2)
+              for(ev2 = 0; ev2 < quarks[0].number_of_dilution_E; ++ev2)
+                for(dirac2 = 0; dirac2 < quarks[0].number_of_dilution_D; ++dirac2){
                   row_i = 4 * number_of_eigen_vec * t1 + 4 * ev1 + dirac1;
                   col_i = quarks[0].number_of_dilution_D * 
                       quarks[0].number_of_dilution_E * t2 + 
@@ -463,7 +484,7 @@ void ReadWrite::read_perambulators_from_file (const int config_i) {
                         quarks[0].number_of_dilution_D * t2 + 
                         quarks[0].number_of_dilution_E * dirac2 + ev2) = 
                   perambulator_read[row_i * number_of_inversions + col_i];
-            }
+                }
       fclose(fp);
     }
     delete[] perambulator_read;

@@ -63,9 +63,9 @@ void hopping3d(int** iup, int** idown){
       }//end loop x2
     }//end loop x1
   }//end loop x0
-  delete x0_h;
-  delete x1_h;
-  delete x2_h;
+  delete [] x0_h;
+  delete [] x1_h;
+  delete [] x2_h;
 }
 
 //Get SU(3)-Matrices from timeslice and sort them into Eigen Array
