@@ -40,9 +40,11 @@ int main (int ac, char* av[]) {
   const int number_of_eigen_vec = global_data->get_number_of_eigen_vec();
   const int number_of_max_mom = global_data->get_number_of_max_mom();
   const int max_mom_squared = number_of_max_mom * number_of_max_mom;
+  const int number_of_momenta = global_data->get_number_of_momenta();
 
   const std::vector<quark> quarks = global_data->get_quarks();
   const int number_of_rnd_vec = quarks[0].number_of_rnd_vec;
+  const std::vector<int> mom_squared = global_data->get_momentum_squared();
   //const int number_of_inversions = quarks[0].number_of_dilution_T
   //      * quarks[0].number_of_dilution_E * quarks[0].number_of_dilution_D;
 
@@ -57,7 +59,7 @@ int main (int ac, char* av[]) {
   ReadWrite* rewr = new ReadWrite;
 
   // everything for operator handling
-  BasicOperator* basic = new BasicOperator(rewr);
+  BasicOperator* basic = new BasicOperator();
 
   // ***************************************************************************
   // memory allocation *********************************************************
@@ -96,10 +98,10 @@ int main (int ac, char* av[]) {
 
   // memory for the correlation function
   std::complex<double>**** C2_mes = 
-      new std::complex<double>***[rewr->number_of_momenta];
-  for(int p_u = 0; p_u < rewr->number_of_momenta; ++p_u){
-    C2_mes[p_u] = new std::complex<double>**[rewr->number_of_momenta];
-    for(int p_d = 0; p_d < rewr->number_of_momenta; ++p_d){
+      new std::complex<double>***[number_of_momenta];
+  for(int p_u = 0; p_u < number_of_momenta; ++p_u){
+    C2_mes[p_u] = new std::complex<double>**[number_of_momenta];
+    for(int p_d = 0; p_d < number_of_momenta; ++p_d){
       C2_mes[p_u][p_d] = new std::complex<double>*[16]; // 16 Dirac matrices
       for(int dirac = 0; dirac < 16; ++dirac){
         C2_mes[p_u][p_d][dirac] = new std::complex<double>[Lt];
@@ -108,8 +110,8 @@ int main (int ac, char* av[]) {
   }
 
 //  std::complex<double>**** C2_dis = 
-//      new std::complex<double>***[rewr->number_of_momenta];
-//  for(int p = 0; p < rewr->number_of_momenta; ++p){
+//      new std::complex<double>***[number_of_momenta];
+//  for(int p = 0; p < number_of_momenta; ++p){
 //    C2_dis[p] = new std::complex<double>**[16]; // 16 Dirac matrices
 //    for(int dirac = 0; dirac < 16; ++dirac){
 //      C2_dis[p][dirac] = new std::complex<double>*[number_of_rnd_vec];
@@ -120,10 +122,10 @@ int main (int ac, char* av[]) {
 //  }
 //
 //  std::complex<double>***** C4_mes = 
-//      new std::complex<double>****[rewr->number_of_momenta];
-//  for(int p_u = 0; p_u < rewr->number_of_momenta; p_u++){
-//    C4_mes[p_u] = new std::complex<double>***[rewr->number_of_momenta];
-//    for(int p_d = 0; p_d < rewr->number_of_momenta; p_d++){
+//      new std::complex<double>****[number_of_momenta];
+//  for(int p_u = 0; p_u < number_of_momenta; p_u++){
+//    C4_mes[p_u] = new std::complex<double>***[number_of_momenta];
+//    for(int p_d = 0; p_d < number_of_momenta; p_d++){
 //      C4_mes[p_u][p_d] = new std::complex<double>**[16];
 //      for(int dirac_u = 0; dirac_u < 16; ++dirac_u){
 //        C4_mes[p_u][p_d][dirac_u] = new std::complex<double>*[16];
@@ -135,10 +137,10 @@ int main (int ac, char* av[]) {
 //  }
 //
   std::complex<double>******** Corr = 
-      new std::complex<double>*******[rewr->number_of_momenta];
-  for(int p1 = 0; p1 < rewr->number_of_momenta; ++p1){
-    Corr[p1] = new std::complex<double>******[rewr->number_of_momenta];
-    for(int p2 = 0; p2 < rewr->number_of_momenta; ++p2){
+      new std::complex<double>*******[number_of_momenta];
+  for(int p1 = 0; p1 < number_of_momenta; ++p1){
+    Corr[p1] = new std::complex<double>******[number_of_momenta];
+    for(int p2 = 0; p2 < number_of_momenta; ++p2){
       Corr[p1][p2] = new std::complex<double>*****[16];
       for(int dirac1 = 5; dirac1 < 6; ++dirac1){
         Corr[p1][p2][dirac1] = new std::complex<double>****[16];
@@ -234,8 +236,8 @@ int main (int ac, char* av[]) {
   const int displ_min = global_data->get_displ_min();
   const int displ_max = global_data->get_displ_max();
 
-  const int p_min = 0; //rewr->number_of_momenta/2;
-  const int p_max = rewr->number_of_momenta;
+  const int p_min = 0; //number_of_momenta/2;
+  const int p_max = number_of_momenta;
 
 //  std::string outpath = global_data->get_output_path() + "/" + global_data->
 //      get_name_lattice();
@@ -267,14 +269,14 @@ int main (int ac, char* av[]) {
     std::cout << "\n\tcomputing the connected contribution of pi_+/-:\n";
     time = clock();
 
-    for(int p_u = 0; p_u < rewr->number_of_momenta; ++p_u)
-      for(int p_d = 0; p_d < rewr->number_of_momenta; ++p_d)
+    for(int p_u = 0; p_u < number_of_momenta; ++p_u)
+      for(int p_d = 0; p_d < number_of_momenta; ++p_d)
         for(int dirac = 0; dirac < 16; ++dirac)
           for(int t1 = 0; t1 < Lt; ++t1)
             C2_mes[p_u][p_d][dirac][t1] = std::complex<double>(0.0, 0.0);
 
-    for(int p1 = 0; p1 < rewr->number_of_momenta; ++p1)
-      for(int p2 = 0; p2 < rewr->number_of_momenta; ++p2)
+    for(int p1 = 0; p1 < number_of_momenta; ++p1)
+      for(int p2 = 0; p2 < number_of_momenta; ++p2)
         for(int dirac1 = 5; dirac1 < 6; ++dirac1)
           for(int dirac2 = 5; dirac2 < 6; ++dirac2)
             for(int t1 = 0; t1 < Lt; ++t1)
@@ -285,7 +287,7 @@ int main (int ac, char* av[]) {
                         std::complex<double>(0.0, 0.0);
 
 
-//    for(int p = 0; p < rewr->number_of_momenta; ++p)
+//    for(int p = 0; p < number_of_momenta; ++p)
 //      for(int dirac = 0; dirac < 16; ++dirac)
 //        for(int rnd1 = 0; rnd1 < number_of_rnd_vec; rnd1++)
 //          for(int t1 = 0; t1 < Lt; ++t1)
@@ -338,7 +340,7 @@ int main (int ac, char* av[]) {
 
             for(int dirac_d = dirac_min; dirac_d < dirac_max + 1; ++dirac_d){
               for(int p_d = p_min; p_d < p_max; ++p_d) {
-                if(rewr->mom_squared[p_u] <= rewr->mom_squared[p_d]){
+                if(mom_squared[p_u] <= mom_squared[p_d]){
   
                   // same as get_operator but with gamma_5 trick. D_u^-1 is
                   // daggered and multipied with gamma_5 from left and right
@@ -380,7 +382,7 @@ int main (int ac, char* av[]) {
                 for(int rnd2 = rnd1 + 1; rnd2 < number_of_rnd_vec; ++rnd2){
       
                   C2_mes[p_u][p_d][dirac][abs((t_sink - t_source - Lt) % Lt)] += 
-                      Corr[p_u][rewr->number_of_momenta - p_d - 1][dirac][dirac]
+                      Corr[p_u][number_of_momenta - p_d - 1][dirac][dirac]
                       [t_source][t_sink][rnd1][rnd2];
                 }
               }
@@ -399,7 +401,7 @@ int main (int ac, char* av[]) {
             basic->get_operator_uncharged(op_5, dirac);
     
             basic->init_operator_uncharged(t_sink, t_source, rewr, 'b', 
-                rewr->number_of_momenta - p - 1, 0);
+                number_of_momenta - p - 1, 0);
             basic->get_operator_uncharged(op_6, dirac);            
 
             for(int rnd1 = 0; rnd1 < number_of_rnd_vec; ++rnd1){
@@ -445,7 +447,7 @@ int main (int ac, char* av[]) {
     for(int dirac = dirac_min; dirac < dirac_max + 1; ++dirac){
       for(int p = 0; p <= max_mom_squared; p++){
         for(int p_u = p_min; p_u < p_max; ++p_u){
-          if(rewr->mom_squared[p_u] == p){
+          if(mom_squared[p_u] == p){
             fwrite((double*) C2_mes[p_u][p_u][dirac], sizeof(double), 2 * Lt, fp);
           }
         }
@@ -454,8 +456,8 @@ int main (int ac, char* av[]) {
 #if 0
       for(int p = 1; p <= max_mom_squared; p++){
         for(int p_u = p_min; p_u < p_max; ++p_u){
-          if(rewr->mom_squared[p_u] == p){
-            fwrite((double*) C2_mes[rewr->number_of_momenta / 2][p_u][dirac], sizeof(double), 2 * Lt, fp);
+          if(mom_squared[p_u] == p){
+            fwrite((double*) C2_mes[number_of_momenta / 2][p_u][dirac], sizeof(double), 2 * Lt, fp);
           }
         }
       }
@@ -472,8 +474,8 @@ int main (int ac, char* av[]) {
     if((fp = fopen(outfile, "wb")) == NULL)
       std::cout << "fail to open outputfile" << std::endl;
     for(int dirac = dirac_min; dirac < dirac_max + 1; ++dirac)
-      fwrite((double*) C2_mes[rewr->number_of_momenta/2]
-          [rewr->number_of_momenta/2][dirac], sizeof(double), 2 * Lt, fp);
+      fwrite((double*) C2_mes[number_of_momenta/2]
+          [number_of_momenta/2][dirac], sizeof(double), 2 * Lt, fp);
     fclose(fp);
 
     for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i) {
@@ -484,7 +486,7 @@ int main (int ac, char* av[]) {
       if((fp = fopen(outfile, "wb")) == NULL)
         std::cout << "fail to open outputfile" << std::endl;
       for(int dirac = dirac_min; dirac < dirac_max + 1; ++dirac)
-        for(int p = 0; p < rewr->number_of_momenta; ++p)
+        for(int p = 0; p < number_of_momenta; ++p)
           fwrite((double*) C2_dis[p][dirac][rnd_i], sizeof(double), 2 * Lt, fp);
       fclose(fp);
     }
@@ -499,7 +501,7 @@ int main (int ac, char* av[]) {
         printf("\tmomentum_u = %02d\n", p);
         printf("\tmomentum_d = %02d\n", p);
         for(int p_u = p_min; p_u < p_max; ++p_u){
-          if((rewr->mom_squared[p_u] == p)){
+          if((mom_squared[p_u] == p)){
             //printf(
             //    "\t t\tRe(C2_con)\tIm(C2_con)\n\t----------------------------------\n");
 //                  for(int t1 = 0; t1 < Lt; ++t1){
@@ -516,7 +518,7 @@ int main (int ac, char* av[]) {
         printf("\tmomentum_u = %02d\n", 0);
         printf("\tmomentum_d = %02d\n", p);
         for(int p_u = p_min; p_u < p_max; ++p_u){
-          if((rewr->mom_squared[p_u] == p)){
+          if((mom_squared[p_u] == p)){
             //printf(
             //    "\t t\tRe(C2_con)\tIm(C2_con)\n\t----------------------------------\n");
 //                  for(int t1 = 0; t1 < Lt; ++t1){
@@ -543,8 +545,8 @@ int main (int ac, char* av[]) {
     std::cout << "\n\tcomputing the connected contribution of C4_1:\n";
     time = clock();
 
-    for(int p_u = 0; p_u < rewr->number_of_momenta; ++p_u)
-      for(int p_d = 0; p_d < rewr->number_of_momenta; ++p_d)
+    for(int p_u = 0; p_u < number_of_momenta; ++p_u)
+      for(int p_d = 0; p_d < number_of_momenta; ++p_d)
         for(int dirac_u = 0; dirac_u < 16; ++dirac_u)
           for(int dirac_d = 0; dirac_d < 16; ++dirac_d)
             for(int t1 = 0; t1 < Lt; ++t1)
@@ -560,7 +562,7 @@ int main (int ac, char* av[]) {
           for(int dirac_d = dirac_min; dirac_d < dirac_max + 1; ++dirac_d){
              for(int p_u = p_min; p_u < p_max; ++p_u) {
                for(int p_d = p_min; p_d < p_max; ++p_d) {
-                if(rewr->mom_squared[p_u] <= rewr->mom_squared[p_d]){
+                if(mom_squared[p_u] <= mom_squared[p_d]){
 
   
       //            basic->init_operator_charged(t_source_1, t_sink_1, rewr, 'b', p, 0);
@@ -569,7 +571,7 @@ int main (int ac, char* av[]) {
       //            basic->get_operator_g5(op_2, dirac);
       //    
       //            basic->init_operator_charged(t_source, t_sink, rewr, 'b', 
-      //                rewr->number_of_momenta - p - 1, 0);
+      //                number_of_momenta - p - 1, 0);
       //    
       //            basic->get_operator_charged(op_3, rewr, dirac, t_sink);
       //            basic->get_operator_g5(op_4, dirac);
@@ -603,10 +605,10 @@ int main (int ac, char* av[]) {
                               C4_mes[p_u][p_d][dirac_u][dirac_d]
                                   [abs((t_sink - t_source - Lt) % Lt)] +=
                                 (Corr[p_u]
-                                  [rewr->number_of_momenta - p_d - 1]
+                                  [number_of_momenta - p_d - 1]
                                   [dirac_u][dirac_d]
                                   [t_source_1][t_sink_1][rnd1][rnd3]) *
-                                (Corr[rewr->number_of_momenta - p_u - 1]
+                                (Corr[number_of_momenta - p_u - 1]
                                   [p_d][dirac_u][dirac_d]
                                   [t_source][t_sink][rnd2][rnd4]);
       //                        C2_mes[p][dirac][abs((t_sink - t_source - Lt) % Lt)] += 
@@ -632,7 +634,7 @@ int main (int ac, char* av[]) {
         for(int dirac_d = dirac_min; dirac_d < dirac_max + 1; ++dirac_d){
            for(int p_u = p_min; p_u < p_max; ++p_u) {
              for(int p_d = p_min; p_d < p_max; ++p_d) {
-              if(rewr->mom_squared[p_u] <= rewr->mom_squared[p_d]){
+              if(mom_squared[p_u] <= mom_squared[p_d]){
                 C4_mes[p_u][p_d][dirac_u][dirac_d][t] /= norm1;
               }
             }
@@ -653,7 +655,7 @@ int main (int ac, char* av[]) {
       for(int dirac_d = dirac_min; dirac_d < dirac_max + 1; ++dirac_d){
         for(int p = 0; p <= max_mom_squared; p++){
           for(int p_u = p_min; p_u < p_max; ++p_u){
-            if(rewr->mom_squared[p_u] == p){
+            if(mom_squared[p_u] == p){
               fwrite((double*) C4_mes[p_u][p_u][dirac_u][dirac_d], sizeof(double), 2 * Lt, fp);
             }
           }
@@ -674,9 +676,9 @@ int main (int ac, char* av[]) {
           for(int p = 0; p <= max_mom_squared; p++){
             if((p + offset) <= max_mom_squared){
               for(int p_u = p_min; p_u < p_max; ++p_u){
-                if(rewr->mom_squared[p_u] == p){
+                if(mom_squared[p_u] == p){
                   for(int p_d = p_min; p_d < p_max; ++p_d){
-                    if(rewr->mom_squared[p_d] == (p + offset)){
+                    if(mom_squared[p_d] == (p + offset)){
                       fwrite((double*) C4_mes[p_u][p_d][dirac_u][dirac_d], sizeof(double), 2 * Lt, fp);
                     }
                   }
@@ -696,7 +698,7 @@ int main (int ac, char* av[]) {
 //    if((fp = fopen(outfile, "wb")) == NULL)
 //      std::cout << "fail to open outputfile" << std::endl;
 //    for(int dirac = dirac_min; dirac < dirac_max + 1; ++dirac)
-//      fwrite((double*) C2_mes[rewr->number_of_momenta/2][dirac], sizeof(double), 2 * Lt, fp);
+//      fwrite((double*) C2_mes[number_of_momenta/2][dirac], sizeof(double), 2 * Lt, fp);
 //    fclose(fp);
 
     // output to terminal
@@ -709,9 +711,9 @@ int main (int ac, char* av[]) {
             printf("\tmomentum_u = %02d\n", p);
             printf("\tmomentum_d = %02d\n", p + offset);
             for(int p_u = p_min; p_u < p_max; ++p_u){
-              if((rewr->mom_squared[p_u] == p) && ((p + offset) <= max_mom_squared)){
+              if((mom_squared[p_u] == p) && ((p + offset) <= max_mom_squared)){
                 for(int p_d = p_min; p_d < p_max; ++p_d){
-                  if(rewr->mom_squared[p_d] == (p + offset)){
+                  if(mom_squared[p_d] == (p + offset)){
                     //printf(
                     //    "\t t\tRe(C4_1_con)\tIm(C4_1_con)\n\t----------------------------------\n");
 //                    for(int t1 = 0; t1 < Lt; ++t1){
@@ -742,8 +744,8 @@ int main (int ac, char* av[]) {
     std::cout << "\n\tcomputing the connected contribution of C4_2:\n";
     time = clock();
 
-    for(int p_u = 0; p_u < rewr->number_of_momenta; ++p_u)
-      for(int p_d = 0; p_d < rewr->number_of_momenta; ++p_d)
+    for(int p_u = 0; p_u < number_of_momenta; ++p_u)
+      for(int p_d = 0; p_d < number_of_momenta; ++p_d)
         for(int dirac_u = 0; dirac_u < 16; ++dirac_u)
           for(int dirac_d = 0; dirac_d < 16; ++dirac_d)
             for(int t1 = 0; t1 < Lt; ++t1)
@@ -759,7 +761,7 @@ int main (int ac, char* av[]) {
           for(int dirac_d = dirac_min; dirac_d < dirac_max + 1; ++dirac_d){
              for(int p_u = p_min; p_u < p_max; ++p_u) {
                for(int p_d = p_min; p_d < p_max; ++p_d) {
-                if(rewr->mom_squared[p_u] <= rewr->mom_squared[p_d]){
+                if(mom_squared[p_u] <= mom_squared[p_d]){
 
 
       //            basic->init_operator_charged(t_source_1, t_sink, rewr, 'b', p, 0);
@@ -768,7 +770,7 @@ int main (int ac, char* av[]) {
       //            basic->get_operator_g5(op_2, dirac);
       //    
       //            basic->init_operator_charged(t_source, t_sink_1, rewr, 'b', 
-      //                rewr->number_of_momenta - p - 1, 0);
+      //                number_of_momenta - p - 1, 0);
       //    
       //            basic->get_operator_charged(op_3, rewr, dirac, t_sink_1);
       //            basic->get_operator_g5(op_4, dirac);
@@ -801,9 +803,9 @@ int main (int ac, char* av[]) {
                             if((rnd4 != rnd1) && (rnd4 != rnd3)){
                               C4_mes[p_u][p_d][dirac_u][dirac_d]
                                   [abs((t_sink - t_source - Lt) % Lt)] +=
-                                (Corr[p_u][rewr->number_of_momenta - p_d - 1]
+                                (Corr[p_u][number_of_momenta - p_d - 1]
                                   [dirac_u][dirac_d][t_source_1][t_sink][rnd1][rnd3]) *
-                                (Corr[rewr->number_of_momenta - p_u - 1][p_d]
+                                (Corr[number_of_momenta - p_u - 1][p_d]
                                   [dirac_u][dirac_d][t_source][t_sink_1][rnd2][rnd4]);
                             }
                           }
@@ -826,7 +828,7 @@ int main (int ac, char* av[]) {
         for(int dirac_d = dirac_min; dirac_d < dirac_max + 1; ++dirac_d){
            for(int p_u = p_min; p_u < p_max; ++p_u) {
              for(int p_d = p_min; p_d < p_max; ++p_d) {
-              if(rewr->mom_squared[p_u] <= rewr->mom_squared[p_d]){
+              if(mom_squared[p_u] <= mom_squared[p_d]){
                 C4_mes[p_u][p_d][dirac_u][dirac_d][t] /= norm1;
               }
             }
@@ -846,7 +848,7 @@ int main (int ac, char* av[]) {
       for(int dirac_d = dirac_min; dirac_d < dirac_max + 1; ++dirac_d){
         for(int p = 0; p <= max_mom_squared; p++){
           for(int p_u = p_min; p_u < p_max; ++p_u){
-            if(rewr->mom_squared[p_u] == p){
+            if(mom_squared[p_u] == p){
               fwrite((double*) C4_mes[p_u][p_u][dirac_u][dirac_d], sizeof(double), 2 * Lt, fp);
             }
           }
@@ -867,9 +869,9 @@ int main (int ac, char* av[]) {
           for(int p = 0; p <= max_mom_squared; p++){
             if((p + offset) <= max_mom_squared){
               for(int p_u = p_min; p_u < p_max; ++p_u){
-                if(rewr->mom_squared[p_u] == p){
+                if(mom_squared[p_u] == p){
                   for(int p_d = p_min; p_d < p_max; ++p_d){
-                    if(rewr->mom_squared[p_d] == (p + offset)){
+                    if(mom_squared[p_d] == (p + offset)){
                       fwrite((double*) C4_mes[p_u][p_d][dirac_u][dirac_d], sizeof(double), 2 * Lt, fp);
                     }
                   }
@@ -889,7 +891,7 @@ int main (int ac, char* av[]) {
 //    if((fp = fopen(outfile, "wb")) == NULL)
 //      std::cout << "fail to open outputfile" << std::endl;
 //    for(int dirac = dirac_min; dirac < dirac_max + 1; ++dirac)
-//      fwrite((double*) C2_mes[rewr->number_of_momenta/2][dirac], sizeof(double), 2 * Lt, fp);
+//      fwrite((double*) C2_mes[number_of_momenta/2][dirac], sizeof(double), 2 * Lt, fp);
 //    fclose(fp);
 
     // output to terminal
@@ -902,9 +904,9 @@ int main (int ac, char* av[]) {
             printf("\tmomentum_u = %02d\n", p);
             printf("\tmomentum_d = %02d\n", p + offset);
             for(int p_u = p_min; p_u < p_max; ++p_u){
-              if((rewr->mom_squared[p_u] == p) && ((p + offset) <= max_mom_squared)){
+              if((mom_squared[p_u] == p) && ((p + offset) <= max_mom_squared)){
                 for(int p_d = p_min; p_d < p_max; ++p_d){
-                  if(rewr->mom_squared[p_d] == (p + offset)){
+                  if(mom_squared[p_d] == (p + offset)){
                     //printf(
                     //    "\t t\tRe(C4_2_con)\tIm(C4_2_con)\n\t----------------------------------\n");
 //                    for(int t1 = 0; t1 < Lt; ++t1){
@@ -935,8 +937,8 @@ int main (int ac, char* av[]) {
     // setting the correlation function to zero
     std::cout << "\n\tcomputing the connected contribution of C4_3:\n";
     time = clock();
-    for(int p_u = 0; p_u < rewr->number_of_momenta; ++p_u)
-      for(int p_d = 0; p_d < rewr->number_of_momenta; ++p_d)
+    for(int p_u = 0; p_u < number_of_momenta; ++p_u)
+      for(int p_d = 0; p_d < number_of_momenta; ++p_d)
         for(int dirac_u = 0; dirac_u < 16; ++dirac_u)
           for(int dirac_d = 0; dirac_d < 16; ++dirac_d)
             for(int t1 = 0; t1 < Lt; ++t1)
@@ -955,7 +957,7 @@ int main (int ac, char* av[]) {
           for(int p_u = p_min; p_u < p_max; ++p_u){
             basic->init_operator_u(0, t_source, t_sink, rewr, 'b', p_u, 0);
             basic->init_operator_u(1, t_source_1, t_sink_1, rewr, 'b', 
-                rewr->number_of_momenta - p_u - 1, 0);
+                number_of_momenta - p_u - 1, 0);
             }
         }
 
@@ -964,7 +966,7 @@ int main (int ac, char* av[]) {
           for(int p_d = p_min; p_d < p_max; ++p_d){
             basic->init_operator_d(0, t_source_1, t_sink, rewr, 'b', p_d, 0);
             basic->init_operator_d(1, t_source, t_sink_1, rewr, 'b', 
-                rewr->number_of_momenta - p_d - 1, 0);
+                number_of_momenta - p_d - 1, 0);
           }
         }
 
@@ -972,12 +974,12 @@ int main (int ac, char* av[]) {
            for(int p_u = p_min; p_u < p_max; ++p_u) {
             for(int dirac_d = dirac_min; dirac_d < dirac_max + 1; ++dirac_d){
                for(int p_d = p_min; p_d < p_max; ++p_d) {
-                if(rewr->mom_squared[p_u] <= rewr->mom_squared[p_d]){
+                if(mom_squared[p_u] <= mom_squared[p_d]){
 
                   basic->get_operator_g5(op_2, 0, dirac_d, 
-                      rewr->number_of_momenta - p_d - 1);
+                      number_of_momenta - p_d - 1);
                   basic->get_operator_charged(op_3, 1, t_sink_1, rewr, dirac_u, 
-                      rewr->number_of_momenta - p_u - 1);
+                      number_of_momenta - p_u - 1);
       
                   // first part
                   for(int rnd3 = 1; rnd3 < number_of_rnd_vec; ++rnd3){
@@ -1041,8 +1043,8 @@ int main (int ac, char* av[]) {
     }
 
     for(int t = 0; t < Lt; ++t)
-      for(int p = 0; p < rewr->number_of_momenta; ++p)
-        for(int p1 = 0; p1 < rewr->number_of_momenta; ++p1)
+      for(int p = 0; p < number_of_momenta; ++p)
+        for(int p1 = 0; p1 < number_of_momenta; ++p1)
         for(int dirac = dirac_min; dirac < dirac_max + 1; ++dirac)
           C4_mes[p][p1][dirac][dirac][t] /= norm1;
 
@@ -1057,7 +1059,7 @@ int main (int ac, char* av[]) {
       for(int dirac_d = dirac_min; dirac_d < dirac_max + 1; ++dirac_d){
         for(int p = 0; p <= max_mom_squared; p++){
           for(int p_u = p_min; p_u < p_max; ++p_u){
-            if(rewr->mom_squared[p_u] == p){
+            if(mom_squared[p_u] == p){
               fwrite((double*) C4_mes[p_u][p_u][dirac_u][dirac_d], sizeof(double), 2 * Lt, fp);
             }
           }
@@ -1078,9 +1080,9 @@ int main (int ac, char* av[]) {
           for(int p = 0; p <= max_mom_squared; p++){
             if((p + offset) <= max_mom_squared){
               for(int p_u = p_min; p_u < p_max; ++p_u){
-                if(rewr->mom_squared[p_u] == p){
+                if(mom_squared[p_u] == p){
                   for(int p_d = p_min; p_d < p_max; ++p_d){
-                    if(rewr->mom_squared[p_d] == (p + offset)){
+                    if(mom_squared[p_d] == (p + offset)){
                       fwrite((double*) C4_mes[p_u][p_d][dirac_u][dirac_d], sizeof(double), 2 * Lt, fp);
                     }
                   }
@@ -1101,8 +1103,8 @@ int main (int ac, char* av[]) {
     if((fp = fopen(outfile, "wb")) == NULL)
       std::cout << "fail to open outputfile" << std::endl;
     for(int dirac = dirac_min; dirac < dirac_max + 1; ++dirac)
-      fwrite((double*) C4_mes[rewr->number_of_momenta/2]
-          [rewr->number_of_momenta/2][dirac][dirac], sizeof(double), 2 * Lt, fp);
+      fwrite((double*) C4_mes[number_of_momenta/2]
+          [number_of_momenta/2][dirac][dirac], sizeof(double), 2 * Lt, fp);
     fclose(fp);
 #endif
 
@@ -1136,8 +1138,8 @@ int main (int ac, char* av[]) {
   } // loop over configs ends here
 
   // TODO: freeing all memory!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  for(int p_u = 0; p_u < rewr->number_of_momenta; ++p_u){
-    for(int p_d = 0; p_d < rewr->number_of_momenta; ++p_d){
+  for(int p_u = 0; p_u < number_of_momenta; ++p_u){
+    for(int p_d = 0; p_d < number_of_momenta; ++p_d){
       for(int dirac = 0; dirac < 16; ++dirac){
         delete [] C2_mes[p_u][p_d][dirac];
       }
@@ -1147,7 +1149,7 @@ int main (int ac, char* av[]) {
   }
   delete [] C2_mes;
 
-//  for(int p = 0; p < rewr->number_of_momenta; ++p){
+//  for(int p = 0; p < number_of_momenta; ++p){
 //    for(int dirac = 0; dirac < 16; ++dirac){
 //      for(int rnd1 = 0; rnd1 < number_of_rnd_vec; rnd1++) {
 //        delete [] C2_dis[p][dirac][rnd1];
@@ -1158,8 +1160,8 @@ int main (int ac, char* av[]) {
 //  }
 //  delete [] C2_dis;
 
-//  for(int p_u = 0; p_u < rewr->number_of_momenta; p_u++){
-//    for(int p_d = 0; p_d < rewr->number_of_momenta; p_d++){
+//  for(int p_u = 0; p_u < number_of_momenta; p_u++){
+//    for(int p_d = 0; p_d < number_of_momenta; p_d++){
 //      for(int dirac_u = 0; dirac_u < 16; ++dirac_u){
 //        for(int dirac_d = 0; dirac_d < 16; ++dirac_d){
 //          delete [] C4_mes[p_u][p_d][dirac_u][dirac_d];
@@ -1172,8 +1174,8 @@ int main (int ac, char* av[]) {
 //  }
 //  delete [] C4_mes;
 
-  for(int p1 = 0; p1 < rewr->number_of_momenta; ++p1){
-    for(int p2 = 0; p2 < rewr->number_of_momenta; ++p2){
+  for(int p1 = 0; p1 < number_of_momenta; ++p1){
+    for(int p2 = 0; p2 < number_of_momenta; ++p2){
       for(int dirac1 = 5; dirac1 < 6; ++dirac1){
         for(int dirac2 = 5; dirac2 < 6; ++dirac2){
           for(int t1 = 0; t1 < Lt; t1++){

@@ -38,13 +38,13 @@ struct lookup {
 class BasicOperator {
 
 public:
-	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-	BasicOperator (ReadWrite* rewr);
-	virtual ~BasicOperator ();
-  void init_operator_u (const int particle_no, const int t_source, 
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+  BasicOperator();
+  virtual ~BasicOperator ();
+  void init_operator_u(const int particle_no, const int t_source, 
       const int t_sink, ReadWrite* rewr, const char dilution, const int p, 
       const int displ);
-  void init_operator_d (const int particle_no, const int t_source, 
+  void init_operator_d(const int particle_no, const int t_source, 
       const int t_sink, ReadWrite* rewr, const char dilution, const int p, 
       const int displ);
   void get_operator_charged(Eigen::MatrixXcd**& op_1, const int particle_no,
@@ -60,7 +60,6 @@ protected:
   Eigen::MatrixXcd**** contraction_dagger;
   Eigen::MatrixXcd**** contraction;
   struct lookup*  gamma;
-  BasicOperator ();
 };
 
 #endif /* BASICOPERATOR_H_ */

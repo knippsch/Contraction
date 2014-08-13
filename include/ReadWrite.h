@@ -42,15 +42,23 @@ public:
   void read_rnd_vectors_from_file (const int config_i);
   void read_lime_gauge_field_doubleprec_timeslices(const int config_i);
 
-  Eigen::MatrixXcd* perambulator;
-  Eigen::MatrixXcd*** basicoperator;
-  Eigen::VectorXcd* rnd_vec;
-  int* mom_squared;
-  int number_of_momenta;
+  inline Eigen::MatrixXcd* get_perambulator() {
+    return perambulator;
+  }
+  inline Eigen::MatrixXcd*** get_basicoperator() {
+    return basicoperator;
+  }
+  inline Eigen::VectorXcd* get_random_vector() {
+    return rnd_vec;
+  }
+//  int* mom_squared;
+//  int number_of_momenta;
 
 protected:
+  Eigen::MatrixXcd* perambulator;
+  Eigen::VectorXcd* rnd_vec;
+  Eigen::MatrixXcd*** basicoperator;
   std::complex<double>** momentum;
-
   Eigen::Matrix3cd** eigen_timeslice;
   double* gaugefield;
   int** iup;

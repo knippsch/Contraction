@@ -9,7 +9,7 @@ namespace { // some internal namespace
 
 static const std::complex<double> I(0.0, 1.0);
 
-static void create_momenta (std::complex<double>** momentum, int* mom_squared) {
+static void create_momenta (std::complex<double>** momentum) {
   try{
     const int Lx = global_data->get_Lx();
     const int Ly = global_data->get_Ly();
@@ -30,12 +30,8 @@ static void create_momenta (std::complex<double>** momentum, int* mom_squared) {
           if((ipx * ipx + ipy * ipy + ipz * ipz) > max_mom_squared) {
             continue;
           }
-          mom_squared[p] = ipx * ipx + ipy * ipy + ipz * ipz;
-
           //TODO: for Lx == Ly == Lz ipxH and ipxHipyH may be integers and px, 
           //py get multiplied in the exponential
-          //std::cout << "p = " << p << ", entspricht (" << ipx << ", " << 
-          //ipy << ", " << ipz << ")" << std::endl;
           // running over all lattice points
           for(int x = 0; x < Lx; ++x){
             const int xH = x * Ly * Lz; // helper variable
@@ -59,35 +55,35 @@ static void create_momenta (std::complex<double>** momentum, int* mom_squared) {
   }
 }
 
-int check_momenta() {
-  try {
-
-    const int number_of_max_mom = global_data->get_number_of_max_mom();
-    const int max_mom_in_one_dir = global_data->get_max_mom_in_one_dir();
-
-    int p = 0;
-    int max_mom_squared = number_of_max_mom * number_of_max_mom;
-
-    // running over all momentum components
-    for(int ipx = -max_mom_in_one_dir; ipx <= max_mom_in_one_dir; ++ipx){
-      for(int ipy = -max_mom_in_one_dir; ipy <= max_mom_in_one_dir; ++ipy){
-        for(int ipz = -max_mom_in_one_dir; ipz <= max_mom_in_one_dir; ++ipz){
-          if((ipx * ipx + ipy * ipy + ipz * ipz) > max_mom_squared) {
-            continue;
-          }
-          std::cout << "p = " << p << ", entspricht (" << ipx << ", " << ipy << ", " << ipz << ")" << std::endl;
-          p++;
-        }
-      }
-    }
-
-    return p;
-  }
-  catch(std::exception& e) {
-    std::cout << e.what() << "in: ReadWrite::check_momenta\n";
-    exit(0);
-  }
-}
+//int check_momenta() {
+//  try {
+//
+//    const int number_of_max_mom = global_data->get_number_of_max_mom();
+//    const int max_mom_in_one_dir = global_data->get_max_mom_in_one_dir();
+//
+//    int p = 0;
+//    int max_mom_squared = number_of_max_mom * number_of_max_mom;
+//
+//    // running over all momentum components
+//    for(int ipx = -max_mom_in_one_dir; ipx <= max_mom_in_one_dir; ++ipx){
+//      for(int ipy = -max_mom_in_one_dir; ipy <= max_mom_in_one_dir; ++ipy){
+//        for(int ipz = -max_mom_in_one_dir; ipz <= max_mom_in_one_dir; ++ipz){
+//          if((ipx * ipx + ipy * ipy + ipz * ipz) > max_mom_squared) {
+//            continue;
+//          }
+//          std::cout << "p = " << p << ", entspricht (" << ipx << ", " << ipy << ", " << ipz << ")" << std::endl;
+//          p++;
+//        }
+//      }
+//    }
+//
+//    return p;
+//  }
+//  catch(std::exception& e) {
+//    std::cout << e.what() << "in: ReadWrite::check_momenta\n";
+//    exit(0);
+//  }
+//}
 
 /******************************************************************************/
 /******************************************************************************/
@@ -113,16 +109,18 @@ ReadWrite::ReadWrite () {
     const int number_of_inversions = (Lt / quarks[0].number_of_dilution_T)
         * quarks[0].number_of_dilution_E * quarks[0].number_of_dilution_D;
     const int V_for_lime = global_data->get_V_for_lime();
+    const int number_of_momenta = global_data->get_number_of_momenta();
+    const std::vector<int> mom_squared = global_data->get_momentum_squared();
 
     // momentum creation
-    number_of_momenta = check_momenta();
-    std::cout << "\tNumber of momenta:\t " << number_of_momenta << 
-    " momenta" << std::endl;
-    mom_squared = new int[number_of_momenta];
+//    number_of_momenta = check_momenta();
+//    std::cout << "\tNumber of momenta:\t " << number_of_momenta << 
+//    " momenta" << std::endl;
+//    mom_squared = new int[number_of_momenta];
     momentum = new std::complex<double>*[number_of_momenta];
     for(int p = 0; p < number_of_momenta; ++p)
       momentum[p] = new std::complex<double>[Vs];
-    create_momenta(momentum, mom_squared);
+    create_momenta(momentum);
 
     // memory for the perambulator, random vector and basic operator
     basicoperator = new Eigen::MatrixXcd**[number_of_momenta];
@@ -184,6 +182,7 @@ ReadWrite::~ReadWrite() {
     const int Ly = global_data->get_Ly();
     const int Lz = global_data->get_Lz();
     const int Vs = Lx * Ly * Lz;
+    const int number_of_momenta = global_data->get_number_of_momenta();
     delete [] perambulator;
     delete [] rnd_vec;
     for(int p = 0; p < number_of_momenta; ++p) {
@@ -204,7 +203,6 @@ ReadWrite::~ReadWrite() {
     delete [] eigen_timeslice;
     delete [] iup;
     delete [] idown;
-    delete [] mom_squared;
     delete [] gaugefield;
   }
   catch(std::exception& e){
@@ -229,6 +227,7 @@ void ReadWrite::build_source_matrix (const int config_i, const int p_min,
   const int dim_row = global_data->get_dim_row();
   const int displ_min = global_data->get_displ_min();
   const int displ_max = global_data->get_displ_max();
+  const int number_of_momenta = global_data->get_number_of_momenta();
 
   // creating basic operator
 
@@ -242,10 +241,8 @@ void ReadWrite::build_source_matrix (const int config_i, const int p_min,
         // TODO: implement switch case for displacement
         // case no displacement
         if(dir == 0) {
-      
           // TODO: checking the order of loops - enhancement might be possible
           // e.g. by reordering basicoperator with t faster than rnd_i
-      
       
           // for p = 0, s is the unit matrix. Thus, the V.adjoint() * V multiplication
           // can be omitted
@@ -258,9 +255,7 @@ void ReadWrite::build_source_matrix (const int config_i, const int p_min,
               }
             }
           
-          }
-    
-          else {
+          } else {
     
             // momentum vector contains exp(-i p x)
             // Divisor 3 for colour index. All three colours on same lattice site get
@@ -276,10 +271,8 @@ void ReadWrite::build_source_matrix (const int config_i, const int p_min,
     
           }
     
-        }
-    
         // case displacement
-        else {
+        } else {
       
           Eigen::MatrixXcd W_t = Eigen::MatrixXcd::Zero(dim_row, number_of_eigen_vec);
 
@@ -300,9 +293,8 @@ void ReadWrite::build_source_matrix (const int config_i, const int p_min,
             
             basicoperator[number_of_momenta/2][t][dir] = V_t.adjoint() * W_t
                 - W_t.adjoint() * V_t;
-          }
-  
-          else {   
+
+          } else {   
 
             // momentum vector contains exp(-i p x)
             // Divisor 3 for colour index. All three colours on same lattice site get
@@ -320,13 +312,12 @@ void ReadWrite::build_source_matrix (const int config_i, const int p_min,
                 W_t.adjoint() * mom.asDiagonal() * V_t;
             basicoperator[number_of_momenta - p - 1][t][dir] = 
                 (-1) *  (basicoperator[p][t][dir]).adjoint();
-        
           
           }
-        }
+        } // end if displacement
   
-      }
-    }
+      } // end for momentum
+    } // end for displacement
 
   } // loop over time ends here
 
@@ -535,12 +526,12 @@ void ReadWrite::read_rnd_vectors_from_file (const int config_i) {
       // data path for qbig contractions
       sprintf(temp, "cnfg%d/rnd_vec_%01d/", config_i, rnd_vec_i);
       std::string filename = global_data->get_path_perambulators()
-				+ "/" + temp;
+        + "/" + temp;
 
       // data path for juqueen contractions
 //      sprintf(temp, "cnfg%d/", config_i);
 //      std::string filename = global_data->get_path_perambulators()
-//				+ "/" + temp;
+//        + "/" + temp;
 
       // read random vector
       sprintf(infile, "%srandomvector.rndvecnb%02d.u.nbev%04d.%04d", 
