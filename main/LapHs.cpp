@@ -30,7 +30,7 @@ int main (int ac, char* av[]) {
 	GlobalData* global_data = GlobalData::Instance();
 	global_data->read_parameters(ac, av);
 
-	Eigen::setNbThreads(4);
+	Eigen::setNbThreads(1);
 
 	// global variables from input file needed in main function
 	const int Lt = global_data->get_Lt();
@@ -636,28 +636,28 @@ int main (int ac, char* av[]) {
     }
 
 
-    // output to binary file
-    sprintf(outfile, 
-        "%s/dirac_%02d_%02d_p_0_%01d_displ_%01d_%01d/C4_1_conf%04d_diag.dat", 
-        outpath.c_str(), dirac_min, dirac_max, max_mom_squared, displ_min, 
-        displ_max, config_i);
-    if((fp = fopen(outfile, "wb")) == NULL)
-      std::cout << "fail to open outputfile" << std::endl;
-    for(int dirac_u = dirac_min; dirac_u < dirac_max + 1; ++dirac_u){
-      for(int dirac_d = dirac_min; dirac_d < dirac_max + 1; ++dirac_d){
-        for(int p = 0; p <= max_mom_squared; p++){
-          for(int p_u = p_min; p_u < p_max; ++p_u){
-            if(rewr->mom_squared[p_u] == p){
-          		fwrite((double*) C4_mes[p_u][p_u][dirac_u][dirac_d], sizeof(double), 2 * Lt, fp);
-            }
-          }
-        }
-      }
-    }
-		fclose(fp);
+//    // output to binary file
+//    sprintf(outfile, 
+//        "%s/dirac_%02d_%02d_p_0_%01d_displ_%01d_%01d/C4_1_conf%04d_diag.dat", 
+//        outpath.c_str(), dirac_min, dirac_max, max_mom_squared, displ_min, 
+//        displ_max, config_i);
+//    if((fp = fopen(outfile, "wb")) == NULL)
+//      std::cout << "fail to open outputfile" << std::endl;
+//    for(int dirac_u = dirac_min; dirac_u < dirac_max + 1; ++dirac_u){
+//      for(int dirac_d = dirac_min; dirac_d < dirac_max + 1; ++dirac_d){
+//        for(int p = 0; p <= max_mom_squared; p++){
+//          for(int p_u = p_min; p_u < p_max; ++p_u){
+//            if(rewr->mom_squared[p_u] == p){
+//          		fwrite((double*) C4_mes[p_u][p_u][dirac_u][dirac_d], sizeof(double), 2 * Lt, fp);
+//            }
+//          }
+//        }
+//      }
+//    }
+//		fclose(fp);
 
     sprintf(outfile, 
-        "%s/dirac_%02d_%02d_p_0_%01d_displ_%01d_%01d/C4_1_conf%04d_all.dat", 
+        "%s/dirac_%02d_%02d_p_0_%01d_displ_%01d_%01d/C4_1_conf%04d.dat", 
         outpath.c_str(), dirac_min, dirac_max, max_mom_squared, displ_min, 
         displ_max, config_i);
     if((fp = fopen(outfile, "wb")) == NULL)
@@ -830,27 +830,27 @@ int main (int ac, char* av[]) {
     }
 
     // output to binary file
-    sprintf(outfile, 
-        "%s/dirac_%02d_%02d_p_0_%01d_displ_%01d_%01d/C4_2_conf%04d_diag.dat", 
-        outpath.c_str(), dirac_min, dirac_max, max_mom_squared, displ_min, 
-        displ_max, config_i);
-    if((fp = fopen(outfile, "wb")) == NULL)
-    	    std::cout << "fail to open outputfile" << std::endl;
-    for(int dirac_u = dirac_min; dirac_u < dirac_max + 1; ++dirac_u){
-      for(int dirac_d = dirac_min; dirac_d < dirac_max + 1; ++dirac_d){
-        for(int p = 0; p <= max_mom_squared; p++){
-          for(int p_u = p_min; p_u < p_max; ++p_u){
-            if(rewr->mom_squared[p_u] == p){
-              fwrite((double*) C4_mes[p_u][p_u][dirac_u][dirac_d], sizeof(double), 2 * Lt, fp);
-            }
-          }
-        }
-      }
-    }
-    fclose(fp);
+//    sprintf(outfile, 
+//        "%s/dirac_%02d_%02d_p_0_%01d_displ_%01d_%01d/C4_2_conf%04d_diag.dat", 
+//        outpath.c_str(), dirac_min, dirac_max, max_mom_squared, displ_min, 
+//        displ_max, config_i);
+//    if((fp = fopen(outfile, "wb")) == NULL)
+//    	    std::cout << "fail to open outputfile" << std::endl;
+//    for(int dirac_u = dirac_min; dirac_u < dirac_max + 1; ++dirac_u){
+//      for(int dirac_d = dirac_min; dirac_d < dirac_max + 1; ++dirac_d){
+//        for(int p = 0; p <= max_mom_squared; p++){
+//          for(int p_u = p_min; p_u < p_max; ++p_u){
+//            if(rewr->mom_squared[p_u] == p){
+//              fwrite((double*) C4_mes[p_u][p_u][dirac_u][dirac_d], sizeof(double), 2 * Lt, fp);
+//            }
+//          }
+//        }
+//      }
+//    }
+//    fclose(fp);
 
     sprintf(outfile, 
-        "%s/dirac_%02d_%02d_p_0_%01d_displ_%01d_%01d/C4_2_conf%04d_all.dat", 
+        "%s/dirac_%02d_%02d_p_0_%01d_displ_%01d_%01d/C4_2_conf%04d.dat", 
         outpath.c_str(), dirac_min, dirac_max, max_mom_squared, displ_min, 
         displ_max, config_i);
     if((fp = fopen(outfile, "wb")) == NULL)
@@ -942,7 +942,7 @@ int main (int ac, char* av[]) {
 				int t_source_1 = (t_source + 1) % Lt;
 				int t_sink_1 = (t_sink + 1) % Lt;
 
-        std::cout << "\tt_source = " << t_source << "\tt_sink = " << t_sink << std::endl;
+//        std::cout << "\tt_source = " << t_source << "\tt_sink = " << t_sink << std::endl;
 
 
         for(int dirac_u = dirac_min; dirac_u < dirac_max + 1; ++dirac_u){
@@ -1040,28 +1040,28 @@ int main (int ac, char* av[]) {
 				for(int dirac = dirac_min; dirac < dirac_max + 1; ++dirac)
 					C4_mes[p][p1][dirac][dirac][t] /= norm1;
 
-    // output to binary file
-		sprintf(outfile, 
-        "%s/dirac_%02d_%02d_p_0_%01d_displ_%01d_%01d/C4_3_conf%04d_diag.dat", 
-        outpath.c_str(), dirac_min, dirac_max, max_mom_squared, displ_min, 
-        displ_max, config_i);
-		if((fp = fopen(outfile, "wb")) == NULL)
-			std::cout << "fail to open outputfile" << std::endl;
-    for(int dirac_u = dirac_min; dirac_u < dirac_max + 1; ++dirac_u){
-      for(int dirac_d = dirac_min; dirac_d < dirac_max + 1; ++dirac_d){
-        for(int p = 0; p <= max_mom_squared; p++){
-          for(int p_u = p_min; p_u < p_max; ++p_u){
-            if(rewr->mom_squared[p_u] == p){
-              fwrite((double*) C4_mes[p_u][p_u][dirac_u][dirac_d], sizeof(double), 2 * Lt, fp);
-            }
-          }
-        }
-      }
-    }
-		fclose(fp);
+//    // output to binary file
+//		sprintf(outfile, 
+//        "%s/dirac_%02d_%02d_p_0_%01d_displ_%01d_%01d/C4_3_conf%04d_diag.dat", 
+//        outpath.c_str(), dirac_min, dirac_max, max_mom_squared, displ_min, 
+//        displ_max, config_i);
+//		if((fp = fopen(outfile, "wb")) == NULL)
+//			std::cout << "fail to open outputfile" << std::endl;
+//    for(int dirac_u = dirac_min; dirac_u < dirac_max + 1; ++dirac_u){
+//      for(int dirac_d = dirac_min; dirac_d < dirac_max + 1; ++dirac_d){
+//        for(int p = 0; p <= max_mom_squared; p++){
+//          for(int p_u = p_min; p_u < p_max; ++p_u){
+//            if(rewr->mom_squared[p_u] == p){
+//              fwrite((double*) C4_mes[p_u][p_u][dirac_u][dirac_d], sizeof(double), 2 * Lt, fp);
+//            }
+//          }
+//        }
+//      }
+//    }
+//		fclose(fp);
 
 		sprintf(outfile, 
-        "%s/dirac_%02d_%02d_p_0_%01d_displ_%01d_%01d/C4_3_conf%04d_all.dat", 
+        "%s/dirac_%02d_%02d_p_0_%01d_displ_%01d_%01d/C4_3_conf%04d.dat", 
         outpath.c_str(), dirac_min, dirac_max, max_mom_squared, displ_min, 
         displ_max, config_i);
 		if((fp = fopen(outfile, "wb")) == NULL)

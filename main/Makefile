@@ -32,7 +32,8 @@ LOGOPTION =
 
 
 # additional include directories
-INCPATH = /hiskp2/jost/code/eigen /hiskp2/jost/boost_1_54_0/ /hiskp2/jost/lime-1.3.2/include ../include 
+INCPATH = /hiskp2/werner/Libraries/eigen-eigen-1306d75b4a21/ /hiskp2/werner/Libraries/boost_1_55_0/ ../include 
+#hiskp2/jost/lime-1.3.2/include/  
 #INCPATH = /hiskp2/jost/eigen-eigen-ffa86ffb5570 /hiskp2/jost/boost_1_54_0/ /hiskp2/jost/lime-1.3.2/include ../include 
 
 
@@ -40,11 +41,11 @@ INCPATH = /hiskp2/jost/code/eigen /hiskp2/jost/boost_1_54_0/ /hiskp2/jost/lime-1
 
 LIBS = lime boost_program_options
 
-LIBPATH = /hiskp2/jost/boost_1_54_0/stage/lib/ /hiskp2/jost/lime-1.3.2/lib/
+LIBPATH =  /hiskp2/werner/Libraries/lime/lib/ /hiskp2/werner/Libraries/boost_1_55_0/stage/lib/
 
 
 # scheduling and optimization options
-CFLAGS = -Wall -O3 -fopenmp -march=native -std=c++0x -mtune=native
+CFLAGS = -Wall -pedantic -std=c++0x -O3 -fopenmp -march=native #-g #
 
 ############################## do not change ###################################
 

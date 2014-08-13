@@ -1,0 +1,43 @@
+# This is an example input file
+
+# lattice parameters:
+Lt = 48
+Lx = 24
+Ly = 24
+Lz = 24
+
+# configuration handling:
+start_config = 2078 
+end_config = 2078 
+delta_config = 4
+
+# eigenvector handling:
+number_of_eigen_vec = 120
+path_eigenvectors   = /hiskp2/eigensystems/A40.24_L24_T48_beta190_mul0040_musig150_mudel190_kappa1632700/hyp_062_058_3/nev_120/
+name_eigenvectors   = eigenvectors
+# perambulator handling
+path_perambulators  = /hiskp2/perambulators/A40.24/u_quark
+name_perambulators  = perambulator
+#output path
+output_path = /hiskp2/werner/LapH/correlators
+lattice = A40.24
+
+# momentum handling:
+number_of_max_mom = 0 
+max_mom_in_one_dir = 0 
+# dirac structure
+dirac_min = 05 
+dirac_max = 05 
+# displacements
+displ_min = 0 
+displ_max = 0 
+
+[quarks]
+quark = u:5:TI:2:EI:6:DI:4
+
+
+
+
+
+
+
