@@ -9,7 +9,7 @@ namespace { // some internal namespace
 
 static const std::complex<double> I(0.0, 1.0);
 
-static void create_momenta (std::complex<double>** momentum, int* mom_squared) {
+static void create_momenta (dim2_array momentum, std::vector<int> mom_squared) {
 
   try{
     const int Lx = global_data->get_Lx();
@@ -101,7 +101,7 @@ int check_momenta() {
 /******************************************************************************/
 /******************************************************************************/
 
-ReadWrite::ReadWrite () {
+ReadWrite::ReadWrite () : basicoperator(), perambulator(), rnd_vec() {
   try{
     const int Lt = global_data->get_Lt();
     const int Lx = global_data->get_Lx();
@@ -118,25 +118,21 @@ ReadWrite::ReadWrite () {
 
     // momentum creation
     number_of_momenta = check_momenta();
-    std::cout << "\tNumber of momenta:\t " << number_of_momenta << 
-    " momenta" << std::endl;
-    mom_squared = new int[number_of_momenta];
-    momentum = new std::complex<double>*[number_of_momenta];
-    memset(momentum, 0, 8*number_of_momenta);
-
-    momentum[0] = new std::complex<double>[Vs];
-
-    for(int p = 1; p < number_of_momenta; ++p){
-      momentum[p] = new std::complex<double>[Vs];
+    if(number_of_momenta == 1){
+      std::cout << "\tNumber of momenta:\t 1 momentum" << std::endl;
     }
+    else{
+      std::cout << "\tNumber of momenta:\t " << number_of_momenta << 
+      " momenta" << std::endl;
+    }
+    mom_squared.resize(number_of_momenta);
+    momentum.resize(boost::extents[number_of_momenta][Vs]);
     create_momenta(momentum, mom_squared);
 
     // memory for the perambulator, random vector and basic operator
-    basicoperator = new Eigen::MatrixXcd**[number_of_momenta];
+    basicoperator.resize(boost::extents[number_of_momenta][Lt][4]);
     for(int p = 0; p < number_of_momenta; ++p) {
-      basicoperator[p] = new Eigen::MatrixXcd*[Lt];
       for(int t = 0; t < Lt; ++t){
-        basicoperator[p][t] = new Eigen::MatrixXcd[4];
         // changed to case of no displacement. Else dir < 4
         for(int dir = 0; dir < 4; dir++) {
           // blocks in Basicoperator are on diagonal in the beginning. 
@@ -147,8 +143,8 @@ ReadWrite::ReadWrite () {
       }
     }   
 
-    perambulator = new Eigen::MatrixXcd[number_of_rnd_vec];
-    rnd_vec = new Eigen::VectorXcd[number_of_rnd_vec];
+    perambulator.resize(number_of_rnd_vec);
+    rnd_vec.resize(number_of_rnd_vec);
     for(int i = 0; i < number_of_rnd_vec; ++i){
       perambulator[i] = Eigen::MatrixXcd::Zero(4 * number_of_eigen_vec * Lt,
           number_of_inversions);
@@ -180,25 +176,6 @@ ReadWrite::ReadWrite () {
   }
 }
 
-/******************************************************************************/
-/******************************************************************************/
-// destructor *****************************************************************/
-/******************************************************************************/
-/******************************************************************************/
-
-ReadWrite::~ReadWrite() {
-
-  try{
-    delete[] perambulator;
-    delete[] basicoperator;
-    delete[] rnd_vec;
-    delete[] momentum;
-  }
-  catch(std::exception& e){
-    std::cout << e.what() << "in: ReadWrite::~ReadWrite\n";
-    exit(0);
-  }
-}
 /******************************************************************************/
 /******************************************************************************/
 /******************************************************************************/
@@ -324,10 +301,6 @@ void ReadWrite::build_source_matrix (const int config_i, const int p_min,
 //          << std::endl << "\n" << s.block(0,0,6,6) << std::endl;
 //      std::cout << std::endl;
 
-//  delete [] V_t;
-//  delete [] W_t;
-//  delete [] mom;
-
   t2 = clock() - t2;
   printf("\t\tSUCCESS - %.1f seconds\n", ((float) t2)/CLOCKS_PER_SEC);
   fflush(stdout);  
@@ -350,7 +323,7 @@ void ReadWrite::read_eigenvectors_from_file (Eigen::MatrixXcd& V, const int conf
     std::string filename = global_data->get_path_eigenvectors() + "/"
         + global_data->get_name_eigenvectors();
     //buffer for read in
-    std::complex<double>* eigen_vec = new std::complex<double>[dim_row];
+    vec eigen_vec(dim_row);
 
     //if(verbose) printf("reading eigen vectors from files:\n");
     //else printf("\treading eigenvectors:");
@@ -363,7 +336,7 @@ void ReadWrite::read_eigenvectors_from_file (Eigen::MatrixXcd& V, const int conf
     std::ifstream infile(name, std::ifstream::binary);
   
     for (int nev = 0; nev < number_of_eigen_vec; ++nev) {
-      infile.read( (char*) eigen_vec, 2*dim_row*sizeof(double));
+      infile.read( (char*) &(eigen_vec[0]), 2*dim_row*sizeof(double));
       for(int nrow = 0; nrow < dim_row; ++nrow)
       V(nrow, nev) = eigen_vec[nrow];
     }
@@ -376,7 +349,6 @@ void ReadWrite::read_eigenvectors_from_file (Eigen::MatrixXcd& V, const int conf
           << (V.adjoint() * V).sum() << std::endl;
     }   
 
-    delete[] eigen_vec;
     //time = clock() - time;
     //if(!verbose) printf("\t\tSUCCESS - %.1f seconds\n", ((float) time)/CLOCKS_PER_SEC);
   return;
@@ -412,8 +384,7 @@ void ReadWrite::read_perambulators_from_file (const int config_i) {
         * number_of_eigen_vec;
 
     // memory for reading perambulators
-    std::complex<double>* perambulator_read =
-        new std::complex<double>[size_perambulator_entry];
+    vec perambulator_read(size_perambulator_entry);
     char temp[100];
 
     if(verbose){
@@ -456,7 +427,7 @@ void ReadWrite::read_perambulators_from_file (const int config_i) {
 //      read_lime_spinor((double*) perambulator_read, infile, 0,
 //          number_of_inversions * Lt, 2 * Lt * number_of_eigen_vec * 4);
       //TODO: MUST BE CHANGED TO LIME STUFF!!
-      fread(perambulator_read, sizeof(std::complex<double>),
+      fread(&(perambulator_read[0]), sizeof(std::complex<double>),
           size_perambulator_entry, fp);
 
       // copy into matrix structure
@@ -482,7 +453,6 @@ void ReadWrite::read_perambulators_from_file (const int config_i) {
             }
       fclose(fp);
     }
-    delete[] perambulator_read;
     t = clock() - t;
     if(!verbose) printf("\t\tSUCCESS - %.1f seconds\n", ((float) t)/CLOCKS_PER_SEC);
   return;
@@ -512,8 +482,7 @@ void ReadWrite::read_rnd_vectors_from_file (const int config_i) {
     const int rnd_vec_length = Lt * number_of_eigen_vec * 4;
 
     // memory for reading random vectors
-    std::complex<double>* rnd_vec_read =
-        new std::complex<double>[rnd_vec_length];
+    vec rnd_vec_read(rnd_vec_length);
     char temp[100];
 
     if(verbose){
@@ -554,7 +523,7 @@ void ReadWrite::read_rnd_vectors_from_file (const int config_i) {
         std::cout << "failed to open file: " << infile << "\n" << std::endl;
         exit(0);
       }
-      check_read_in += fread(rnd_vec_read, sizeof(std::complex<double>),
+      check_read_in += fread(&(rnd_vec_read[0]), sizeof(std::complex<double>),
           rnd_vec_length, fp);
 
       // copy into matrix structure
@@ -563,7 +532,6 @@ void ReadWrite::read_rnd_vectors_from_file (const int config_i) {
       }
       fclose(fp);
     }
-    delete[] rnd_vec_read;
     t = clock() - t;
     if(!verbose) printf("\t\tSUCCESS - %.1f seconds\n", ((float) t)/CLOCKS_PER_SEC);
     return;

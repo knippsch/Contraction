@@ -8,14 +8,14 @@
 #ifndef BASICOPERATOR_H_
 #define BASICOPERATOR_H_
 
-#include <iostream>
-#include <complex>
 #include <cmath>
+#include <complex>
 #include <cstdio>
 #include <cstdlib>
 #include <ctime>
-#include <typeinfo>
 #include <fstream>
+#include <iostream>
+#include <typeinfo>
 #include <vector>
 
 #include <Eigen/Dense>
@@ -28,9 +28,9 @@
 #include "propagator_io.h"
 #include "quark.h"
 
-typedef boost::multi_array<Eigen::MatrixXcd, 2> 2dim_eigen_array;
-typedef boost::multi_array<Eigen::MatrixXcd, 4> 4dim_eigen_array;
-typedef std::vector<Eigen::MatrixXcd> vec;
+typedef boost::multi_array<Eigen::MatrixXcd, 2> dim2_eigen_array;
+typedef boost::multi_array<Eigen::MatrixXcd, 4> dim4_eigen_array;
+typedef std::vector<Eigen::MatrixXcd> vec_eigen;
 // struct for Look-up table in create_gamma and get_operator. To read as
 // "in column i the row[i]-element is non-zero and its value is value[i]"
 // As Gamma matrices are 4x4 matrices, row and value are 4-vectors
@@ -45,25 +45,25 @@ class BasicOperator {
 public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 	BasicOperator (ReadWrite* rewr);
-	virtual ~BasicOperator ();
+//	virtual ~BasicOperator ();
   void init_operator_u (const int particle_no, const int t_source, 
       const int t_sink, ReadWrite* rewr, const char dilution, const int p, 
       const int displ);
   void init_operator_d (const int particle_no, const int t_source, 
       const int t_sink, ReadWrite* rewr, const char dilution, const int p, 
       const int displ);
-  void get_operator_charged(2dim_eigen_array& op_1, const int particle_no, const int t_sink, 
+  void get_operator_charged(dim2_eigen_array& op_1, const int particle_no, const int t_sink, 
                             ReadWrite* rewr, const int dirac, const int p) const;
-  void get_operator_g5(vec& op_1, const int particle_no, 
+  void get_operator_g5(vec_eigen& op_1, const int particle_no, 
                        const int dirac, const int p) const;
-  void get_operator_uncharged(vec& op_1, const int particle_no, 
+  void get_operator_uncharged(vec_eigen& op_1, const int particle_no, 
                               const int dirac, const int p) const;
 
 
 protected:
 //  void create_gamma(struct lookup* gamma, const int dirac);
-  4dim_eigen_array contraction_dagger;
-  4dim_eigen_array contraction;
+  dim4_eigen_array contraction_dagger;
+  dim4_eigen_array contraction;
   std::vector<struct lookup>  gamma;
 };
 

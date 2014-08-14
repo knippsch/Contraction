@@ -17,7 +17,7 @@ static const std::complex<double> I(0.0, 1.0);
 // Look-up table for gamma matrices. For every Gamma structure (currently 0-15)
 // the four non-zero values are specified.
 
-static void create_gamma (struct lookup* gamma, const int i) {
+static void create_gamma (std::vector<struct lookup>& gamma, const int i) {
   try {
     switch(i) {
     case 0: // gamma_0
@@ -314,7 +314,7 @@ void BasicOperator::init_operator_u (const int particle_no, const int t_source,
   // for charged particles dilute u quark V^dagger*V in rows and cols
   // memory for (P^(b) rho V)^dagger exp(-ipx) V P^(b) rho to build u quark in 
   // s contains diluted basicoperator
-  2dim_eigen_array s(boost::extents[number_of_rnd_vec][4]);
+  dim2_eigen_array s(boost::extents[number_of_rnd_vec][4]);
   for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i){
     for(int blocknr = 0; blocknr < 4; blocknr++){
       s[rnd_i][blocknr] = 
@@ -468,7 +468,7 @@ void BasicOperator::init_operator_d (const int particle_no, const int t_source,
 
 // returns D_u^-1 Gamma
 
-void BasicOperator::get_operator_charged (2dim_eigen_array& op_1, 
+void BasicOperator::get_operator_charged (dim2_eigen_array& op_1, 
     const int particle_no, const int t_sink, ReadWrite* rewr, const int dirac, 
     const int p) const {
 
@@ -531,7 +531,7 @@ void BasicOperator::get_operator_charged (2dim_eigen_array& op_1,
 
 //returns D_d^-1 Gamma
 
-void BasicOperator::get_operator_g5 (vec& op_1, 
+void BasicOperator::get_operator_g5 (vec_eigen& op_1, 
     const int particle_no, const int dirac, const int p) const{
 
   const int number_of_eigen_vec = global_data->get_number_of_eigen_vec();
@@ -587,7 +587,7 @@ void BasicOperator::get_operator_g5 (vec& op_1,
 
 // returns D_u^-1 Gamma
 
-void BasicOperator::get_operator_uncharged (vec& op_1, 
+void BasicOperator::get_operator_uncharged (vec_eigen& op_1, 
     const int particle_no, const int dirac, const int p) const{
 
   const int number_of_eigen_vec = global_data->get_number_of_eigen_vec();
