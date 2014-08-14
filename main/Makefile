@@ -18,7 +18,7 @@ all: rmxeq mkdep mkxeq
 
 # main programs and modules to be compiled
 
-MAIN = LapHs1
+MAIN = LapHs_Christopher
 
 GENERAL = GlobalData BasicOperator ReadWrite io_utils propagator_io config_utils
 MODULES = $(GENERAL)
