@@ -102,7 +102,7 @@ ReadWrite::ReadWrite () {
     const int Ly = global_data->get_Ly();
     const int Lz = global_data->get_Lz();
     const int Vs = Lx * Ly * Lz;
-    const int dim_row = global_data->get_dim_row();
+//    const int dim_row = global_data->get_dim_row();
     const std::vector<quark> quarks = global_data->get_quarks();
     const int number_of_eigen_vec = global_data->get_number_of_eigen_vec();
     const int number_of_rnd_vec = quarks[0].number_of_rnd_vec;
@@ -219,7 +219,7 @@ void ReadWrite::build_source_matrix (const int config_i, const int p_min,
     const int p_max) {
 
   clock_t t2 = clock();
-  printf("\tbuild source matrix:\n");
+  printf("\tbuild source matrix:");
   fflush(stdout);
 
   const int Lt = global_data->get_Lt();
@@ -339,7 +339,7 @@ void ReadWrite::read_eigenvectors_from_file (Eigen::MatrixXcd& V, const int conf
 
   try{
     //clock_t time = clock();
-    const int Lt = global_data->get_Lt();
+ //   const int Lt = global_data->get_Lt();
     const int dim_row = global_data->get_dim_row();
     const int verbose = global_data->get_verbose();
     const int number_of_eigen_vec = global_data->get_number_of_eigen_vec();

@@ -23,14 +23,35 @@
 #include "ReadWrite.h"
 
 int main (int ac, char* av[]) {
+  // ***************************************************************************
+  // ***************************************************************************
+  // initialization ************************************************************
+  // ***************************************************************************
+  // ***************************************************************************
 
+  // initialization of eigen OMP paralization
   Eigen::initParallel();
+  // set numer of threads used by eigen
+  // first line sets number of threads directly
+  // second line lets OMP decide on the number of threads,
+  // e. g. via OMP_NUM_THREADS
+  //Eigen::setNbThreads(4);
+  Eigen::setNbThreads(0);
+  //check the number of threads used
+  const int nthreads = Eigen::nbThreads();
 
-  // Reading in global parameters from input file
+  std::cout << "contraction code for stochastic dilution" << std::endl;
+  std::cout << "using " << nthreads << " threads for eigen\n" << std::endl;
+
+  // reading in global parameters from input file
   GlobalData* global_data = GlobalData::Instance();
   global_data->read_parameters(ac, av);
 
-  Eigen::setNbThreads(4);
+  // reading in of data
+  ReadWrite* rewr = new ReadWrite;
+
+  // everything for operator handling
+  BasicOperator* basic = new BasicOperator();
 
   // global variables from input file needed in main function
   const int Lt = global_data->get_Lt();
@@ -45,9 +66,19 @@ int main (int ac, char* av[]) {
   const std::vector<quark> quarks = global_data->get_quarks();
   const int number_of_rnd_vec = quarks[0].number_of_rnd_vec;
   const std::vector<int> mom_squared = global_data->get_momentum_squared();
-  //const int number_of_inversions = quarks[0].number_of_dilution_T
-  //      * quarks[0].number_of_dilution_E * quarks[0].number_of_dilution_D;
 
+  const int dirac_min = global_data->get_dirac_min();
+  const int dirac_max = global_data->get_dirac_max();
+
+  const int displ_min = global_data->get_displ_min();
+  const int displ_max = global_data->get_displ_max();
+
+  const int p_min = 0; //number_of_momenta/2;
+  const int p_max = number_of_momenta;
+
+  std::string outpath = global_data->get_output_path() + "/";
+
+  // other variables
   clock_t time;
 
   const std::complex<double> I(0.0, 1.0);
@@ -55,24 +86,19 @@ int main (int ac, char* av[]) {
   char outfile[400];
   FILE *fp = NULL;
 
-  // everything for Input files
-  ReadWrite* rewr = new ReadWrite;
-
-  // everything for operator handling
-  BasicOperator* basic = new BasicOperator();
-
+  // ***************************************************************************
   // ***************************************************************************
   // memory allocation *********************************************************
-  // memory for the operator in Dirac and eigenvector space and in time
   // ***************************************************************************
   // ***************************************************************************
 
-  Eigen::MatrixXcd op_D_tsource = Eigen::MatrixXcd::Zero(
-      quarks[0].number_of_dilution_E * quarks[0].number_of_dilution_D,
-      4 * number_of_eigen_vec);
-  Eigen::MatrixXcd op_D_tsource_1 = Eigen::MatrixXcd::Zero(
-      quarks[0].number_of_dilution_E * quarks[0].number_of_dilution_D,
-      4 * number_of_eigen_vec);
+  // memory for operators (old)
+//  Eigen::MatrixXcd op_D_tsource = Eigen::MatrixXcd::Zero(
+//      quarks[0].number_of_dilution_E * quarks[0].number_of_dilution_D,
+//      4 * number_of_eigen_vec);
+//  Eigen::MatrixXcd op_D_tsource_1 = Eigen::MatrixXcd::Zero(
+//      quarks[0].number_of_dilution_E * quarks[0].number_of_dilution_D,
+//      4 * number_of_eigen_vec);
 //  Eigen::MatrixXcd op_D_tsink = Eigen::MatrixXcd::Zero(
 //      quarks[0].number_of_dilution_E * quarks[0].number_of_dilution_D,
 //      4 * number_of_eigen_vec);
@@ -135,7 +161,7 @@ int main (int ac, char* av[]) {
 //      }
 //    }
 //  }
-//
+
   std::complex<double>******** Corr = 
       new std::complex<double>*******[number_of_momenta];
   for(int p1 = 0; p1 < number_of_momenta; ++p1){
@@ -162,10 +188,10 @@ int main (int ac, char* av[]) {
     }
   }
 
-  // intermidiate memory for traces
+  // memory for traces
 //  double part1[number_of_rnd_vec][number_of_rnd_vec];
 //  double part2[number_of_rnd_vec][number_of_rnd_vec];
-//
+
 //  int norm = 0;
 //  for(int rnd1 = 0; rnd1 < number_of_rnd_vec; ++rnd1){
 //    for(int rnd3 = rnd1 + 1; rnd3 < number_of_rnd_vec; ++rnd3){
@@ -181,15 +207,15 @@ int main (int ac, char* av[]) {
 //      }
 //    }
 //  }
-//
+
 //  std::cout << "\n\tNumber of contraction combinations: " << norm << std::endl;
 //  const double norm1 = Lt * norm;
 
-  // Memory for propagation matrices (is that a word?) from t_source to t_sink
-  // (op_1) and vice versa (op_2)
+  // memory for operators
+  // from t_source to t_sink (op_1) and vice versa (op_2)
   // additional t_source to t_sink (op_3) and t_sink to t_source (op_4) for
   // 4-point functions
-  // 1, 3 -> u-quarks; 2, 4 -> d-quarks; 5, 6 -> u quarks for neutral particle
+  // op_5 and op_6 for neutral particles
   Eigen::MatrixXcd** op_1 = new Eigen::MatrixXcd*[number_of_rnd_vec];
 //  Eigen::MatrixXcd** op_3 = new Eigen::MatrixXcd*[number_of_rnd_vec];
   for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i) {
@@ -222,27 +248,6 @@ int main (int ac, char* av[]) {
 
   }
 
-
-  // ***************************************************************************
-  // ***************************************************************************
-  // dirac indices and momenta to calculate ************************************ 
-  // ***************************************************************************
-  // ***************************************************************************
-
-  //TODO: put that into infile and get it in build_source matrix from globaldata
-  const int dirac_min = global_data->get_dirac_min();
-  const int dirac_max = global_data->get_dirac_max();
-
-  const int displ_min = global_data->get_displ_min();
-  const int displ_max = global_data->get_displ_max();
-
-  const int p_min = 0; //number_of_momenta/2;
-  const int p_max = number_of_momenta;
-
-//  std::string outpath = global_data->get_output_path() + "/" + global_data->
-//      get_name_lattice();
-  std::string outpath = global_data->get_output_path() + "/";
-
   // ***************************************************************************
   // ***************************************************************************
   // Loop over all configurations **********************************************
@@ -255,8 +260,8 @@ int main (int ac, char* av[]) {
     std::cout << "\nprocessing configuration: " << config_i << "\n\n";
 
     rewr->read_perambulators_from_file(config_i);
-//    rewr->read_eigenvectors_from_file(config_i);
     rewr->read_rnd_vectors_from_file(config_i);
+//    rewr->read_eigenvectors_from_file(config_i);
 //    rewr->read_lime_gauge_field_doubleprec_timeslices(config_i);
     rewr->build_source_matrix(config_i, p_min, p_max);
 
@@ -323,14 +328,12 @@ int main (int ac, char* av[]) {
           // initialize contraction[rnd_i] = perambulator * basicoperator
           // = D_u^-1
           // choose 'i' for interlace or 'b' for block time dilution scheme
-          // choose 'c' for charged or 'u' for uncharged particles
           basic->init_operator_u(0, t_source, t_sink, rewr, 'b', p, 0);
           basic->init_operator_d(0, t_source, t_sink, rewr, 'b', p, 0);
         }
 
         for(int dirac_u = dirac_min; dirac_u < dirac_max + 1; ++dirac_u){
           for(int p_u = p_min; p_u < p_max; ++p_u) {
-            // code for pi+-
 
             // "multiply contraction[rnd_i] with gamma structure"
             // contraction[rnd_i] are the columns of D_u^-1 which get
@@ -350,26 +353,26 @@ int main (int ac, char* av[]) {
      
                   for(int rnd1 = 0; rnd1 < number_of_rnd_vec; ++rnd1){
                     for(int rnd2 = rnd1 + 1; rnd2 < number_of_rnd_vec; ++rnd2){
-                        // building Correlation function get quite intuitive
-                        // C2 = tr(D_d^-1 Gamma D_u^-1 Gamma)
-                        // TODO: find signflip of imaginary part
-                        // TODO: is C2_mes[dirac][p] better?
+                      // building Correlation function get quite intuitive
+                      // C2 = tr(D_d^-1 Gamma D_u^-1 Gamma)
+                      // TODO: find signflip of imaginary part
+                      // TODO: is C2_mes[dirac][p] better?
                       Corr[p_u][p_d][dirac_u][dirac_d][t_source][t_sink][rnd1][rnd2] = 
                         (op_2[rnd2] * op_1[rnd1][rnd2]).trace();
     
     
-                    }
-                  }   
+                    } // end for rnd2
+                  } // end for rnd1 
   
-                }
-              }
-            }
+                } // end if momentum squared
+              } // end for momentum d-quark
+            } // end for dirac d-quark
 
-          }
-        }
+          } // end for momentum u-quark
+        } // end for dirac u-quark
 
-      }
-    }
+      } // end for t_sink
+    } // end for t_source
 
     for(int t_source = 0; t_source < Lt; ++t_source){
       for(int t_sink = 0; t_sink < Lt; ++t_sink){
@@ -422,7 +425,7 @@ int main (int ac, char* av[]) {
       }
     }
 #endif
-
+    // normalization of correlation function
     double norm3 = Lt * number_of_rnd_vec * (number_of_rnd_vec - 1) * 0.5;
     for(int t = 0; t < Lt; ++t){
       for(int dirac = dirac_min; dirac < dirac_max + 1; ++dirac){
@@ -439,32 +442,30 @@ int main (int ac, char* av[]) {
 //        "%s/dirac_%02d_%02d_p_0_%01d_displ_%01d_%01d/C2_pi+-_conf%04d.dat", 
 //        outpath.c_str(), dirac_min, dirac_max, max_mom_squared, 
 //        displ_min, displ_max, config_i);
-    sprintf(outfile, 
-        "%s/C2_pi+-_conf%04d.dat", 
-        outpath.c_str(), config_i);
+    sprintf(outfile, "%s/C2_pi+-_conf%04d.dat", outpath.c_str(), config_i);
     if((fp = fopen(outfile, "wb")) == NULL)
       std::cout << "fail to open outputfile" << std::endl;
-    for(int dirac = dirac_min; dirac < dirac_max + 1; ++dirac){
-      for(int p = 0; p <= max_mom_squared; p++){
-        for(int p_u = p_min; p_u < p_max; ++p_u){
-          if(mom_squared[p_u] == p){
-            fwrite((double*) C2_mes[p_u][p_u][dirac], sizeof(double), 2 * Lt, fp);
+    else {
+      for(int dirac = dirac_min; dirac < dirac_max + 1; ++dirac){
+        for(int p = 0; p <= max_mom_squared; p++){
+          for(int p_u = p_min; p_u < p_max; ++p_u){
+            if(mom_squared[p_u] == p){
+              fwrite((double*) C2_mes[p_u][p_u][dirac], sizeof(double), 2 * Lt, fp);
+            }
           }
         }
-      }
-
 #if 0
-      for(int p = 1; p <= max_mom_squared; p++){
-        for(int p_u = p_min; p_u < p_max; ++p_u){
-          if(mom_squared[p_u] == p){
-            fwrite((double*) C2_mes[number_of_momenta / 2][p_u][dirac], sizeof(double), 2 * Lt, fp);
+        for(int p = 1; p <= max_mom_squared; p++){
+          for(int p_u = p_min; p_u < p_max; ++p_u){
+            if(mom_squared[p_u] == p){
+              fwrite((double*) C2_mes[number_of_momenta / 2][p_u][dirac], sizeof(double), 2 * Lt, fp);
+            }
           }
         }
-      }
 #endif
-
+      }
+      fclose(fp);
     }
-    fclose(fp);
 
 #if 0
     sprintf(outfile, 

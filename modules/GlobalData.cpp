@@ -113,8 +113,10 @@ static void lattice_input_data_handling (const std::string path_output,
     }
     else std::cout << "\tspatial lattice extend in z direction .... " << Lz
         << "\n\n";
+    std::cout << "\tEnsemble ...................................... " <<
+      name_lattice << std::endl;
     std::cout << "\tResults will be saved to path:\n\t\t"
-        << path_output << "/" << name_lattice << "/\n";
+        << path_output << "/" << std::endl;
   }
   catch(std::exception& e){
     std::cout << e.what() << "\n";
@@ -183,8 +185,8 @@ static void momentum_input_data_handling (const int number_of_max_mom,
             continue;
           }
           mom_squared->push_back(ipx * ipx + ipy * ipy + ipz * ipz);
-          std::cout << "\tmomentum p = " << mom_squared->size()
-            << " corresponds to .. " << " (" 
+          std::cout << "\tmomentum p = " << mom_squared->size() - 1
+            << " corresponds to ............ (" 
             << ipx << ", " << ipy << ", " << ipz << ")\n" << std::endl;
         }
       }
@@ -208,7 +210,7 @@ static void dirac_input_data_handling (const int dirac_min,
           << "\n\n";
       exit(0);
     }
-    else std::cout << "\tdirac_min = "
+    else std::cout << "\tlowest Dirac index used .................. "
         << dirac_min << "\n";
     if(dirac_max < 0 || dirac_max > 15){
       std::cout << "\ninput file error:\n" << "\toption \"dirac_max\""
@@ -216,7 +218,7 @@ static void dirac_input_data_handling (const int dirac_min,
           << "\n\n";
       exit(0);
     }
-    else std::cout << "\tdirac_max = "
+    else std::cout << "\thighest Dirac index used ................. "
         << dirac_max << "\n\n";
   }
   catch(std::exception& e){
@@ -236,7 +238,7 @@ static void displacement_input_data_handling (const int displ_min,
           << "\n\n";
       exit(0);
     }
-    else std::cout << "\tdispl_min = "
+    else std::cout << "\tmimimal displacement used ................ "
         << displ_min << "\n";
     if(displ_max < 0 || displ_max > 3){
       std::cout << "\ninput file error:\n" << "\toption \"displ_max\""
@@ -244,7 +246,7 @@ static void displacement_input_data_handling (const int displ_min,
           << "\n\n";
       exit(0);
     }
-    else std::cout << "\tdispl_max = "
+    else std::cout << "\tmaximal displacement used ................ "
         << displ_max << "\n\n";
   }
   catch(std::exception& e){
