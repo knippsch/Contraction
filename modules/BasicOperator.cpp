@@ -351,6 +351,7 @@ void BasicOperator::init_operator_u (const int particle_no, const int t_source,
   // for charged particles dilute u quark V^dagger*V in rows and cols
   // memory for (P^(b) rho V)^dagger exp(-ipx) V P^(b) rho to build u quark in 
   // s contains diluted basicoperator
+
   dim2_eigen_array s(boost::extents[number_of_rnd_vec][4]);
   for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i){
     for(int blocknr = 0; blocknr < 4; blocknr++){
@@ -386,9 +387,11 @@ void BasicOperator::init_operator_u (const int particle_no, const int t_source,
 
     for(int col = 0; col < 4; ++col) {
       for(int row = 0; row  < 4; ++row){
+
         // propagator D_u^-1 = perambulator(tsource, tsink) * basicoperator(tsink)
         // calculate columns of D_u^-1. gamma structure can be implented by
         // reordering columns and multiplying them with constants
+
         contraction[particle_no][p][rnd_i][col].block(row * number_of_eigen_vec, 0,
             number_of_eigen_vec, number_of_eigen_vec) =
           perambulator[rnd_i].block(4 * number_of_eigen_vec * t_source + 
