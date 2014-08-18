@@ -1,15 +1,15 @@
 #!/bin/bash
 
-outpath="/hiskp2/werner/LapH/correlators_all"
-lattice="A40.24"
+outpath="/hiskp2/werner/LapH/correlators"
+lattice="A80"
 
-start_config=1930
-end_config=2330
-delta_config=4
+start_config=750
+end_config=3198
+delta_config=8
 stepping=1
 
-number_of_max_mom=1
-max_mom_in_one_dir=1
+number_of_max_mom=0
+max_mom_in_one_dir=0
 dirac_min=05
 dirac_max=05
 displ_min=0
@@ -43,5 +43,5 @@ done
 cd ../../
 mkdir $outpath
 mkdir $outpath"/"$lattice
-mkdir $outpath"/"$lattice"/dirac_"$dirac_min"_"$dirac_max"_p_0_"$number_of_max_mom"_displ_"$displ_min"_"$displ_max
-mkdir $outpath"/"$lattice"/dirac_"$dirac_min"_"$dirac_max"_p_0_0_displ_"$displ_min"_"$displ_max
+mkdir $outpath"/"$lattice"/dirac_"$dirac_min"_"$dirac_max"_p_0_"$(($number_of_max_mom * $number_of_max_mom))"_displ_"$displ_min"_"$displ_max
+#mkdir $outpath"/"$lattice"/dirac_"$dirac_min"_"$dirac_max"_p_0_0_displ_"$displ_min"_"$displ_max

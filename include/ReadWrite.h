@@ -9,19 +9,23 @@
 #define _READ_WRITE_H_
 
 // TODO: check if they are all necessary. Doesn't matter much though
-#include <iostream>
-#include <complex>
 #include <cmath>
+#include <complex>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <ctime>
-#include <typeinfo>
 #include <fstream>
+#include <iostream>
+#include <typeinfo>
+#include <vector>
 
-#include <Eigen/Dense>
-#include <Eigen/Core>
-#include <Eigen/SparseCore>
+#include "Eigen/Dense"
+#include "Eigen/Core"
+#include "Eigen/SparseCore"
+#include "boost/multi_array.hpp" 
 
+#include "lime.h"
 #include "GlobalData.h"
 #include "propagator_io.h"
 #include "quark.h"
@@ -30,34 +34,41 @@
 
 /***************************Input from files**********************************/
 
+
+typedef boost::multi_array<Eigen::MatrixXcd, 3> dim3_eigen_array;
+typedef std::vector<Eigen::MatrixXcd> vec_eigen;
+typedef std::complex<double> cmplx;
+typedef std::vector<cmplx> vec;
+typedef boost::multi_array<cmplx, 2> dim2_array;
+
 class ReadWrite {
 
 public:
   //EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   ReadWrite ();
-  virtual ~ReadWrite (); 
+//  virtual ~ReadWrite (); 
   void build_source_matrix (const int config_i);
   void read_perambulators_from_file (const int config_i);
   void read_rnd_vectors_from_file (const int config_i);
   void read_lime_gauge_field_doubleprec_timeslices(const int config_i);
 
-  inline Eigen::MatrixXcd* get_perambulator() {
+  inline vec_eigen get_perambulator() {
     return perambulator;
   }
-  inline Eigen::MatrixXcd*** get_basicoperator() {
+  inline dim3_eigen_array get_basicoperator() {
     return basicoperator;
   }
-  inline Eigen::VectorXcd* get_random_vector() {
+  inline vec_eigen get_random_vector() {
     return rnd_vec;
   }
 //  int* mom_squared;
 //  int number_of_momenta;
 
 protected:
-  Eigen::MatrixXcd* perambulator;
-  Eigen::VectorXcd* rnd_vec;
-  Eigen::MatrixXcd*** basicoperator;
-  std::complex<double>** momentum;
+  vec_eigen perambulator;
+  vec_eigen rnd_vec;
+  dim3_eigen_array basicoperator;
+  dim2_array momentum;
   Eigen::Matrix3cd** eigen_timeslice;
   double* gaugefield;
   int** iup;

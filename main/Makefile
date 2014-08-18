@@ -18,7 +18,7 @@ all: rmxeq mkdep mkxeq
 
 # main programs and modules to be compiled
 
-MAIN = LapHs 
+MAIN = LapHs LapHs_Christopher
 
 GENERAL = GlobalData BasicOperator ReadWrite io_utils propagator_io config_utils
 MODULES = $(GENERAL)
@@ -37,11 +37,8 @@ INCPATH = ${HOME}/ext_lib/eigen ${HOME}/ext_lib/boost_1_55_0/ ${HOME}/ext_lib/li
 
 
 # additional libraries
-
 LIBS = lime boost_program_options
-
 LIBPATH = ${HOME}/ext_lib/boost_1_55_0/stage/lib/ ${HOME}/ext_lib/lime-1.3.2/lib/
-
 
 # scheduling and optimization options
 CFLAGS = -Wall -O3 -fopenmp -march=native -std=c++11 -mtune=native -Wno-unused-local-typedefs

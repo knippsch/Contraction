@@ -9,14 +9,14 @@ namespace { // some internal namespace
 
 static const std::complex<double> I(0.0, 1.0);
 
-static void create_momenta (std::complex<double>** momentum) {
+static void create_momenta (dim2_array momentum) {
   try{
     const int Lx = global_data->get_Lx();
     const int Ly = global_data->get_Ly();
     const int Lz = global_data->get_Lz();
     const int number_of_max_mom = global_data->get_number_of_max_mom();
     const int max_mom_in_one_dir = global_data->get_max_mom_in_one_dir();
-    // helper variables for momenta
+   // helper variables for momenta
     const double px = 2. * M_PI / (double) Lx;
     const double py = 2. * M_PI / (double) Ly;
     const double pz = 2. * M_PI / (double) Lz;
@@ -48,6 +48,7 @@ static void create_momenta (std::complex<double>** momentum) {
         }
       }
     }
+  return;
   }
   catch(std::exception& e){
     std::cout << e.what() << "in: ReadWrite::create_momenta\n";
@@ -65,7 +66,7 @@ static void create_momenta (std::complex<double>** momentum) {
 /******************************************************************************/
 /******************************************************************************/
 
-ReadWrite::ReadWrite () {
+ReadWrite::ReadWrite () : perambulator(), rnd_vec(), basicoperator() {
   try{
     const int Lt = global_data->get_Lt();
     const int Lx = global_data->get_Lx();
@@ -77,22 +78,18 @@ ReadWrite::ReadWrite () {
     const int number_of_rnd_vec = quarks[0].number_of_rnd_vec;
     const int number_of_inversions = (Lt / quarks[0].number_of_dilution_T)
         * quarks[0].number_of_dilution_E * quarks[0].number_of_dilution_D;
-    const int V_for_lime = global_data->get_V_for_lime();
     const int number_of_momenta = global_data->get_number_of_momenta();
     const std::vector<int> mom_squared = global_data->get_momentum_squared();
 
     // memory for momentum matrices
-    momentum = new std::complex<double>*[number_of_momenta];
-    for(int p = 0; p < number_of_momenta; ++p)
-      momentum[p] = new std::complex<double>[Vs];
+    momentum.resize(boost::extents[number_of_momenta][Vs]);
     create_momenta(momentum);
 
     // memory for basic operator
-    basicoperator = new Eigen::MatrixXcd**[number_of_momenta];
+    basicoperator.resize(boost::extents[number_of_momenta][Lt][4]);
     for(int p = 0; p < number_of_momenta; ++p) {
-      basicoperator[p] = new Eigen::MatrixXcd*[Lt];
       for(int t = 0; t < Lt; ++t){
-        basicoperator[p][t] = new Eigen::MatrixXcd[4];
+        // changed to case of no displacement. Else dir < 4
         for(int dir = 0; dir < 4; dir++) {
           // blocks in Basicoperator are on diagonal in the beginning. 
           // non-zero blocks have row = col = blocknr
@@ -103,14 +100,15 @@ ReadWrite::ReadWrite () {
     }   
 
     // memory for perambulator and random vector
-    perambulator = new Eigen::MatrixXcd[number_of_rnd_vec];
-    rnd_vec = new Eigen::VectorXcd[number_of_rnd_vec];
+    perambulator.resize(number_of_rnd_vec);
+    rnd_vec.resize(number_of_rnd_vec);
     for(int i = 0; i < number_of_rnd_vec; ++i){
       perambulator[i] = Eigen::MatrixXcd::Zero(4 * number_of_eigen_vec * Lt,
           number_of_inversions);
       rnd_vec[i] = Eigen::VectorXcd::Zero(Lt * number_of_eigen_vec * 4);
     }
 
+#if 0
     //memory for gauge fields
     gaugefield = new double[V_for_lime];
     //Allocate Eigen Array to hold timeslice
@@ -124,6 +122,7 @@ ReadWrite::ReadWrite () {
     }
 
     hopping3d(iup, idown);
+#endif
 
   std::cout << "\tallocated memory for ReadWrite" << std::endl;
 
@@ -140,42 +139,42 @@ ReadWrite::ReadWrite () {
 /******************************************************************************/
 /******************************************************************************/
 
-ReadWrite::~ReadWrite() {
-  try{
-    const int Lt = global_data->get_Lt();
-    const int Lx = global_data->get_Lx();
-    const int Ly = global_data->get_Ly();
-    const int Lz = global_data->get_Lz();
-    const int Vs = Lx * Ly * Lz;
-    const int number_of_momenta = global_data->get_number_of_momenta();
-    // delete all memory
-    delete [] perambulator;
-    delete [] rnd_vec;
-    for(int p = 0; p < number_of_momenta; ++p) {
-      for(int t = 0; t < Lt; ++t){
-        delete [] basicoperator[p][t];
-      }
-      delete [] basicoperator[p];
-    }   
-    delete [] basicoperator;
-    for(int p = 0; p < number_of_momenta; ++p)
-      delete [] momentum[p];
-    delete [] momentum;
-    for (int i = 0; i < Vs; ++i ) {
-      delete [] eigen_timeslice[i];
-      delete [] iup[i];
-      delete [] idown[i];
-    }
-    delete [] eigen_timeslice;
-    delete [] iup;
-    delete [] idown;
-    delete [] gaugefield;
-  }
-  catch(std::exception& e){
-    std::cout << e.what() << "in: ReadWrite::~ReadWrite\n";
-    exit(0);
-  }
-}
+//ReadWrite::~ReadWrite() {
+//  try{
+//    const int Lt = global_data->get_Lt();
+//    const int Lx = global_data->get_Lx();
+//    const int Ly = global_data->get_Ly();
+//    const int Lz = global_data->get_Lz();
+//    const int Vs = Lx * Ly * Lz;
+//    const int number_of_momenta = global_data->get_number_of_momenta();
+//    // delete all memory
+//    delete [] perambulator;
+//    delete [] rnd_vec;
+//    for(int p = 0; p < number_of_momenta; ++p) {
+//      for(int t = 0; t < Lt; ++t){
+//        delete [] basicoperator[p][t];
+//      }
+//      delete [] basicoperator[p];
+//    }   
+//    delete [] basicoperator;
+//    for(int p = 0; p < number_of_momenta; ++p)
+//      delete [] momentum[p];
+//    delete [] momentum;
+//    for (int i = 0; i < Vs; ++i ) {
+//      delete [] eigen_timeslice[i];
+//      delete [] iup[i];
+//      delete [] idown[i];
+//    }
+//    delete [] eigen_timeslice;
+//    delete [] iup;
+//    delete [] idown;
+//    delete [] gaugefield;
+//  }
+//  catch(std::exception& e){
+//    std::cout << e.what() << "in: ReadWrite::~ReadWrite\n";
+//    exit(0);
+//  }
+//}
 /******************************************************************************/
 /******************************************************************************/
 /******************************************************************************/
@@ -194,9 +193,13 @@ void ReadWrite::build_source_matrix (const int config_i) {
   const int number_of_momenta = global_data->get_number_of_momenta();
 
   // creating basic operator
+  Eigen::MatrixXcd V_t = Eigen::MatrixXcd::Zero(dim_row, number_of_eigen_vec);
+  Eigen::MatrixXcd W_t = Eigen::MatrixXcd::Zero(dim_row, number_of_eigen_vec);
+  Eigen::VectorXcd mom = Eigen::VectorXcd::Zero(dim_row);
+
   for(int t = 0; t < Lt; ++t){
 
-    Eigen::MatrixXcd V_t = Eigen::MatrixXcd::Zero(dim_row, number_of_eigen_vec);
+    (V_t).setZero();
     read_eigenvectors_from_file(V_t, config_i, t);
    
     for(int dir = displ_min; dir < displ_max + 1; dir++) {
@@ -220,7 +223,6 @@ void ReadWrite::build_source_matrix (const int config_i) {
             // momentum vector contains exp(-i p x)
             // Divisor 3 for colour index. All three colours on same lattice site get
             // the same momentum
-            Eigen::VectorXcd mom = Eigen::VectorXcd::Zero(dim_row);
             for(int x = 0; x < dim_row; ++x) {
               mom(x) = momentum[p][x/3];
             }
@@ -231,7 +233,7 @@ void ReadWrite::build_source_matrix (const int config_i) {
         // case displacement
         } else {
       
-          Eigen::MatrixXcd W_t = Eigen::MatrixXcd::Zero(dim_row, number_of_eigen_vec);
+          (W_t).setZero();
 
           //Time Slice of Configuration
           //Factor 3 for second color index, 2 for complex numbers
@@ -256,7 +258,6 @@ void ReadWrite::build_source_matrix (const int config_i) {
             // momentum vector contains exp(-i p x)
             // Divisor 3 for colour index. All three colours on same lattice site get
             // the same momentum
-            Eigen::VectorXcd mom = Eigen::VectorXcd::Zero(dim_row);
             for(int x = 0; x < dim_row; ++x) {
               mom(x) = momentum[p][x/3];
             }
@@ -281,6 +282,7 @@ void ReadWrite::build_source_matrix (const int config_i) {
   t2 = clock() - t2;
   std::cout << "\t\tSUCCESS - " << std::fixed << std::setprecision(1)
     << ((float) t2)/CLOCKS_PER_SEC << " seconds" << std::endl;
+  return;
 }
 
 /******************************************************************************/
@@ -299,7 +301,7 @@ void ReadWrite::read_eigenvectors_from_file (Eigen::MatrixXcd& V, const int conf
     std::string filename = global_data->get_path_eigenvectors() + "/"
         + global_data->get_name_eigenvectors();
     //buffer for read in
-    std::complex<double>* eigen_vec = new std::complex<double>[dim_row];
+    vec eigen_vec(dim_row);
 
     //if(verbose) printf("reading eigen vectors from files:\n");
     //else printf("\treading eigenvectors:");
@@ -312,7 +314,7 @@ void ReadWrite::read_eigenvectors_from_file (Eigen::MatrixXcd& V, const int conf
     std::ifstream infile(name, std::ifstream::binary);
   
     for (int nev = 0; nev < number_of_eigen_vec; ++nev) {
-      infile.read( (char*) eigen_vec, 2*dim_row*sizeof(double));
+      infile.read( (char*) &(eigen_vec[0]), 2*dim_row*sizeof(double));
       for(int nrow = 0; nrow < dim_row; ++nrow)
       V(nrow, nev) = eigen_vec[nrow];
     }
@@ -325,9 +327,9 @@ void ReadWrite::read_eigenvectors_from_file (Eigen::MatrixXcd& V, const int conf
           << (V.adjoint() * V).sum() << std::endl;
     }   
 
-    delete[] eigen_vec;
     //time = clock() - time;
     //if(!verbose) printf("\t\tSUCCESS - %.1f seconds\n", ((float) time)/CLOCKS_PER_SEC);
+  return;
   }
   catch(std::exception& e){
     std::cout << e.what() << "in: ReadWrite::read_eigenvectors_from_file\n";
@@ -359,8 +361,7 @@ void ReadWrite::read_perambulators_from_file (const int config_i) {
         * number_of_eigen_vec;
 
     // memory for reading perambulators
-    std::complex<double>* perambulator_read =
-        new std::complex<double>[size_perambulator_entry];
+    vec perambulator_read(size_perambulator_entry);
     char temp[100];
 
     if(verbose){
@@ -402,7 +403,7 @@ void ReadWrite::read_perambulators_from_file (const int config_i) {
 //      read_lime_spinor((double*) perambulator_read, infile, 0,
 //          number_of_inversions * Lt, 2 * Lt * number_of_eigen_vec * 4);
       //TODO: MUST BE CHANGED TO LIME STUFF!!
-      fread(perambulator_read, sizeof(std::complex<double>),
+      fread(&(perambulator_read[0]), sizeof(std::complex<double>),
           size_perambulator_entry, fp);
 
       // copy into matrix structure
@@ -428,10 +429,10 @@ void ReadWrite::read_perambulators_from_file (const int config_i) {
                 }
       fclose(fp);
     }
-    delete[] perambulator_read;
     t = clock() - t;
     if(!verbose) std::cout << "\t\tSUCCESS - " << std::fixed << std::setprecision(1)
         << ((float) t)/CLOCKS_PER_SEC << " seconds" << std::endl;
+  return;
   }
   catch(std::exception& e){
     std::cout << e.what()
@@ -456,9 +457,9 @@ void ReadWrite::read_rnd_vectors_from_file (const int config_i) {
     const int number_of_rnd_vec = quarks[0].number_of_rnd_vec;
     const int number_of_eigen_vec = global_data->get_number_of_eigen_vec();
     const int rnd_vec_length = Lt * number_of_eigen_vec * 4;
+
     // memory for reading random vectors
-    std::complex<double>* rnd_vec_read =
-        new std::complex<double>[rnd_vec_length];
+    vec rnd_vec_read(rnd_vec_length);
     char temp[100];
 
     if(verbose){
@@ -497,7 +498,7 @@ void ReadWrite::read_rnd_vectors_from_file (const int config_i) {
         std::cout << "failed to open file: " << infile << "\n" << std::endl;
         exit(0);
       }
-      check_read_in += fread(rnd_vec_read, sizeof(std::complex<double>),
+      check_read_in += fread(&(rnd_vec_read[0]), sizeof(std::complex<double>),
           rnd_vec_length, fp);
 
       // copy into matrix structure
@@ -506,10 +507,10 @@ void ReadWrite::read_rnd_vectors_from_file (const int config_i) {
       }
       fclose(fp);
     }
-    delete[] rnd_vec_read;
     t = clock() - t;
     if(!verbose) std::cout << "\t\tSUCCESS - " << std::fixed << std::setprecision(1)
       << ((float) t)/CLOCKS_PER_SEC << " seconds" << std::endl; 
+    return;
   }
   catch(std::exception& e){
     std::cout << e.what() << "in: ReadWrite::read_eigenvectors_from_file\n";

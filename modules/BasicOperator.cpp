@@ -17,7 +17,7 @@ static const std::complex<double> I(0.0, 1.0);
 // Look-up table for gamma matrices. For every Gamma structure (currently 0-15)
 // the four non-zero values are specified.
 
-static void create_gamma (struct lookup* gamma, const int i) {
+static void create_gamma (std::vector<struct lookup>& gamma, const int i) {
   try {
     switch(i) {
     case 0: // gamma_0
@@ -210,6 +210,7 @@ static void create_gamma (struct lookup* gamma, const int i) {
       printf("Dirac component %d not found in BasicOperator::create_gamma\n", i);
       exit(0);
     }
+  return;
   }
   catch(std::exception& e){
     std::cout << e.what() << "in: BasicOperator::create_gamma\n";
@@ -227,7 +228,7 @@ static void create_gamma (struct lookup* gamma, const int i) {
 /******************************************************************************/
 /******************************************************************************/
 
-BasicOperator::BasicOperator (){
+BasicOperator::BasicOperator() : contraction_dagger(), contraction(), gamma() {
   try{
     const int number_of_eigen_vec = global_data->get_number_of_eigen_vec();
     const std::vector<quark> quarks = global_data->get_quarks();
@@ -235,10 +236,9 @@ BasicOperator::BasicOperator (){
     const int number_of_momenta = global_data->get_number_of_momenta();
 
     // creating gamma matrices
-    gamma = new struct lookup[16];
-    for(int i = 0; i < 16; ++i){
+    gamma.resize(16);
+    for(int i = 0; i < 16; ++i)
       create_gamma(gamma, i);
-    }
 
     // memory for the perambulator, random vector and basic operator
     // D_u^-1 = perambulator * basicoperator. Columns are always
@@ -246,26 +246,14 @@ BasicOperator::BasicOperator (){
     // gamma matrices. contraction holds the for columns, contraction_dagger
     // holds the columns after gamma_5 trick
 
-
-    contraction = new Eigen::MatrixXcd***[2];
-    contraction_dagger = new Eigen::MatrixXcd***[2];
+    const size_t nmom = number_of_momenta;
+    const size_t nrnd = number_of_rnd_vec;
+    contraction.resize(boost::extents[2][nmom][nrnd][4]);
+    contraction_dagger.resize(boost::extents[2][nmom][nrnd][4]);
 
     for(int particle_no = 0; particle_no < 2; particle_no++){
-      contraction[particle_no] = 
-          new Eigen::MatrixXcd**[number_of_momenta];
-      contraction_dagger[particle_no] = 
-          new Eigen::MatrixXcd**[number_of_momenta];
-
       for(int p = 0; p < number_of_momenta; p++){
-        contraction[particle_no][p] = 
-            new Eigen::MatrixXcd*[number_of_rnd_vec];
-        contraction_dagger[particle_no][p] = 
-            new Eigen::MatrixXcd*[number_of_rnd_vec];
-    
         for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i){
-          contraction[particle_no][p][rnd_i] = new Eigen::MatrixXcd[4];
-          contraction_dagger[particle_no][p][rnd_i] = new Eigen::MatrixXcd[4];
-    
           for(int blocknr = 0; blocknr < 4; ++blocknr){
             // for charged pion the necessary matrix size is 
             // 4 * quarks[0].number_of_dilution_E, number_of_eigen_vec
@@ -297,32 +285,32 @@ BasicOperator::BasicOperator (){
 /******************************************************************************/
 /******************************************************************************/
 
-BasicOperator::~BasicOperator () {
-  try{
-    const std::vector<quark> quarks = global_data->get_quarks();
-    const int number_of_rnd_vec = quarks[0].number_of_rnd_vec;
-    const int number_of_momenta = global_data->get_number_of_momenta();
-    delete[] gamma;
-    for(int particle_no = 0; particle_no < 2; particle_no++){
-      for(int p = 0; p < number_of_momenta; p++){
-        for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i){
-          delete [] contraction[particle_no][p][rnd_i];
-          delete [] contraction_dagger[particle_no][p][rnd_i];
-        }
-        delete [] contraction[particle_no][p];
-        delete [] contraction_dagger[particle_no][p];
-      }
-      delete [] contraction[particle_no];
-      delete [] contraction_dagger[particle_no];
-    }
-    delete [] contraction;
-    delete [] contraction_dagger;
-  }
-  catch(std::exception& e){
-    std::cout << e.what() << "in: BasicOperator::~BasicOperator\n";
-    exit(0);
-  }
-}
+//BasicOperator::~BasicOperator () {
+//  try{
+//    const std::vector<quark> quarks = global_data->get_quarks();
+//    const int number_of_rnd_vec = quarks[0].number_of_rnd_vec;
+//    const int number_of_momenta = global_data->get_number_of_momenta();
+//    delete[] gamma;
+//    for(int particle_no = 0; particle_no < 2; particle_no++){
+//      for(int p = 0; p < number_of_momenta; p++){
+//        for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i){
+//          delete [] contraction[particle_no][p][rnd_i];
+//          delete [] contraction_dagger[particle_no][p][rnd_i];
+//        }
+//        delete [] contraction[particle_no][p];
+//        delete [] contraction_dagger[particle_no][p];
+//      }
+//      delete [] contraction[particle_no];
+//      delete [] contraction_dagger[particle_no];
+//    }
+//    delete [] contraction;
+//    delete [] contraction_dagger;
+//  }
+//  catch(std::exception& e){
+//    std::cout << e.what() << "in: BasicOperator::~BasicOperator\n";
+//    exit(0);
+//  }
+//}
 
 /******************************************************************************/
 /******************************************************************************/
@@ -338,9 +326,10 @@ void BasicOperator::init_operator_u (const int particle_no, const int t_source,
   const int number_of_eigen_vec = global_data->get_number_of_eigen_vec();
   const std::vector<quark> quarks = global_data->get_quarks();
   const int number_of_rnd_vec = quarks[0].number_of_rnd_vec;
-  Eigen::MatrixXcd*** basicoperator = rewr->get_basicoperator();
-  const Eigen::VectorXcd* rnd_vec = rewr->get_random_vector();
-  const Eigen::MatrixXcd* perambulator = rewr->get_perambulator();
+  const vec_eigen rnd_vec = rewr->get_random_vector(); 
+  const dim3_eigen_array basicoperator = rewr->get_basicoperator(); 
+  const vec_eigen perambulator = rewr->get_perambulator(); 
+
   int t_sink_dil;
 
   //TODO parallelization should be possible
@@ -362,13 +351,11 @@ void BasicOperator::init_operator_u (const int particle_no, const int t_source,
   // for charged particles dilute u quark V^dagger*V in rows and cols
   // memory for (P^(b) rho V)^dagger exp(-ipx) V P^(b) rho to build u quark in 
   // s contains diluted basicoperator
-  Eigen::MatrixXcd** s = new Eigen::MatrixXcd*[number_of_rnd_vec];
+  dim2_eigen_array s(boost::extents[number_of_rnd_vec][4]);
   for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i){
-    s[rnd_i] = new Eigen::MatrixXcd[4];
     for(int blocknr = 0; blocknr < 4; blocknr++){
       s[rnd_i][blocknr] = 
-          Eigen::MatrixXcd::Zero(quarks[0].number_of_dilution_E, 
-          number_of_eigen_vec);
+          Eigen::MatrixXcd::Zero(quarks[0].number_of_dilution_E, number_of_eigen_vec);
     }
   }
 
@@ -417,13 +404,17 @@ void BasicOperator::init_operator_u (const int particle_no, const int t_source,
 
   }
 
-  for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i){
-    delete[] s[rnd_i];
-  }
-  delete [] s;
+//  for(int rnd_i = 0; rnd_i < number_of_rnd_vec; rndi++){
+//    for(int blocknr = 0; blocknr < 4; blocknr++){
+//      delete [] s[rnd_i][blocknr];
+//    }
+//    delete [] s[rnd_i];
+//  }
+//  delete [] s;
 
   t = clock() - t;
   //printf("\t\tSUCCESS - %.1f seconds\n", ((float) t)/CLOCKS_PER_SEC);
+  return;
 }
 
 /******************************************************************************/
@@ -441,9 +432,9 @@ void BasicOperator::init_operator_d (const int particle_no, const int t_source,
   const int number_of_eigen_vec = global_data->get_number_of_eigen_vec();
   const std::vector<quark> quarks = global_data->get_quarks();
   const int number_of_rnd_vec = quarks[0].number_of_rnd_vec;
-  Eigen::MatrixXcd*** basicoperator = rewr->get_basicoperator();
-  const Eigen::MatrixXcd* perambulator = rewr->get_perambulator();
   int t_sink_dil;
+  const vec_eigen perambulator = rewr->get_perambulator(); 
+  const dim3_eigen_array basicoperator = rewr->get_basicoperator(); 
 
   //TODO parallelization should be possible
 
@@ -504,6 +495,7 @@ void BasicOperator::init_operator_d (const int particle_no, const int t_source,
 
   t = clock() - t;
   //printf("\t\tSUCCESS - %.1f seconds\n", ((float) t)/CLOCKS_PER_SEC);
+  return;
 }
 
 /******************************************************************************/
@@ -514,14 +506,14 @@ void BasicOperator::init_operator_d (const int particle_no, const int t_source,
 
 // returns D_u^-1 Gamma
 
-void BasicOperator::get_operator_charged (Eigen::MatrixXcd**& op_1, 
+void BasicOperator::get_operator_charged (dim2_eigen_array& op_1, 
     const int particle_no, const int t_sink, ReadWrite* rewr, const int dirac, 
-    const int p){
+    const int p) const {
 
   const int number_of_eigen_vec = global_data->get_number_of_eigen_vec();
   const std::vector<quark> quarks = global_data->get_quarks();
   const int number_of_rnd_vec = quarks[0].number_of_rnd_vec;
-  const Eigen::VectorXcd* rnd_vec = rewr->get_random_vector();
+  const vec_eigen rnd_vec = rewr->get_random_vector();
 
   // for charged particles D_u^-1 must be diluted from the right side
   // to match the dilution in the perambulator for D_d^-1
@@ -567,6 +559,9 @@ void BasicOperator::get_operator_charged (Eigen::MatrixXcd**& op_1,
     } // end for rnd_j
   } // end for rnd_i
 
+//  delete [] s_temp;
+  return;
+
 }
 
 /******************************************************************************/
@@ -575,8 +570,8 @@ void BasicOperator::get_operator_charged (Eigen::MatrixXcd**& op_1,
 
 //returns D_d^-1 Gamma
 
-void BasicOperator::get_operator_g5 (Eigen::MatrixXcd*& op_1, 
-    const int particle_no, const int dirac, const int p){
+void BasicOperator::get_operator_g5 (vec_eigen& op_1, 
+    const int particle_no, const int dirac, const int p) const{
 
   const int number_of_eigen_vec = global_data->get_number_of_eigen_vec();
   const std::vector<quark> quarks = global_data->get_quarks();
@@ -613,6 +608,7 @@ void BasicOperator::get_operator_g5 (Eigen::MatrixXcd*& op_1,
 
   }
 
+  return;
 } 
  
 // TODO: think about speedup from extracting factors -1 and +-i in get_operator 
@@ -630,8 +626,8 @@ void BasicOperator::get_operator_g5 (Eigen::MatrixXcd*& op_1,
 
 // returns D_u^-1 Gamma
 
-void BasicOperator::get_operator_uncharged (Eigen::MatrixXcd*& op_1, 
-    const int particle_no, const int dirac, const int p){
+void BasicOperator::get_operator_uncharged (vec_eigen& op_1, 
+    const int particle_no, const int dirac, const int p) const{
 
   const int number_of_eigen_vec = global_data->get_number_of_eigen_vec();
   const std::vector<quark> quarks = global_data->get_quarks();
@@ -647,6 +643,7 @@ void BasicOperator::get_operator_uncharged (Eigen::MatrixXcd*& op_1,
   
     }
   }
+  return;
 }
 
 
