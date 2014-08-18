@@ -1,10 +1,10 @@
 #!/bin/bash
 
 outpath="/hiskp2/werner/LapH/correlators"
-lattice="A80"
+lattice="A60"
 
-start_config=750
-end_config=3198
+start_config=600
+end_config=3104
 delta_config=8
 stepping=1
 
@@ -18,9 +18,9 @@ displ_max=0
 
 filenumber=1
 
-mkdir $lattice
+mkdir -p $lattice
 cd $lattice
-mkdir infiles_$lattice
+mkdir -p infiles_$lattice
 cd infiles_$lattice
 
 cp ../../infiles/LapHs$lattice.in .
@@ -41,7 +41,23 @@ for i in $(seq $start_config $(($stepping * delta_config)) $end_config); do
 done
 
 cd ../../
-mkdir $outpath
-mkdir $outpath"/"$lattice
-mkdir $outpath"/"$lattice"/dirac_"$dirac_min"_"$dirac_max"_p_0_"$(($number_of_max_mom * $number_of_max_mom))"_displ_"$displ_min"_"$displ_max
-#mkdir $outpath"/"$lattice"/dirac_"$dirac_min"_"$dirac_max"_p_0_0_displ_"$displ_min"_"$displ_max
+mkdir -p $outpath
+mkdir -p $outpath"/"$lattice
+
+for dirac1 in $(seq $dirac_min 1 $dirac_max); do
+  for dirac2 in $(seq $dirac_min 1 $dirac_max); do
+    for p1 in $(seq 0 1 $(($number_of_max_mom* $number_of_max_mom))); do
+      for p2 in $(seq $p1 1 $(($number_of_max_mom* $number_of_max_mom))); do
+        for displ1 in $(seq $displ_min 1 $displ_max); do
+          for displ2 in $(seq $displ_min 1 $displ_max); do
+            if [ "$p1" -eq "$p2" ]; then
+              mkdir -p $outpath"/"$lattice"/dirac_"$dirac1"_"$dirac2"_p_"$p1"_"$p2"_displ_"$displ1"_"$displ2"_unsuppressed";
+            fi
+            mkdir -p $outpath"/"$lattice"/dirac_"$dirac1"_"$dirac2"_p_"$p1"_"$p2"_displ_"$displ1"_"$displ2;
+          done;
+        done;
+      done;
+    done;
+  done;
+done
+

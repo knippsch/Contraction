@@ -18,7 +18,7 @@ all: rmxeq mkdep mkxeq
 
 # main programs and modules to be compiled
 
-MAIN = LapHs_Christopher
+MAIN = LapHs
 
 GENERAL = GlobalData BasicOperator ReadWrite io_utils propagator_io config_utils
 MODULES = $(GENERAL)
@@ -45,7 +45,7 @@ LIBPATH =  /hiskp2/werner/Libraries/lime/lib/ /hiskp2/werner/Libraries/boost_1_5
 
 
 # scheduling and optimization options
-CFLAGS = -Wall -pedantic -std=c++0x  -g #-O3 -fopenmp -march=native
+CFLAGS = -Wall -pedantic -std=c++0x  -O3 -fopenmp -march=native #-g 
 
 ############################## do not change ###################################
 
