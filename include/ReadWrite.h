@@ -36,8 +36,7 @@ public:
   //EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   ReadWrite ();
   virtual ~ReadWrite (); 
-  void build_source_matrix (const int config_i, const int p_min, 
-      const int p_max);
+  void build_source_matrix (const int config_i);
   void read_perambulators_from_file (const int config_i);
   void read_rnd_vectors_from_file (const int config_i);
   void read_lime_gauge_field_doubleprec_timeslices(const int config_i);
