@@ -26,8 +26,8 @@ lattice = A80
 number_of_max_mom = 0 
 max_mom_in_one_dir = 0 
 # dirac structure
-dirac_min = 05 
-dirac_max = 05 
+dirac_min = 00 
+dirac_max = 00
 # displacements
 displ_min = 0 
 displ_max = 0 

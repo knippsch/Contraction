@@ -1,15 +1,15 @@
 #!/bin/bash
 
 outpath="/hiskp2/werner/LapH/correlators"
-lattice="A60"
+lattice="A40.20"
 
-start_config=600
-end_config=3104
+start_config=1300
+end_config=1300
 delta_config=8
 stepping=1
 
-number_of_max_mom=0
-max_mom_in_one_dir=0
+number_of_max_mom=2
+max_mom_in_one_dir=2
 dirac_min=05
 dirac_max=05
 displ_min=0
@@ -44,8 +44,14 @@ cd ../../
 mkdir -p $outpath
 mkdir -p $outpath"/"$lattice
 
-for dirac1 in $(seq $dirac_min 1 $dirac_max); do
-  for dirac2 in $(seq $dirac_min 1 $dirac_max); do
+for dirac1 in $(seq $dirac_min 01 $dirac_max); do
+  while [ ${#dirac1} -ne 2 ]; do
+    dirac1="0"$dirac1;
+  done
+  for dirac2 in $(seq $dirac_min 01 $dirac_max); do
+    while [ ${#dirac2} -ne 2 ]; do
+      dirac2="0"$dirac2;
+    done
     for p1 in $(seq 0 1 $(($number_of_max_mom* $number_of_max_mom))); do
       for p2 in $(seq $p1 1 $(($number_of_max_mom* $number_of_max_mom))); do
         for displ1 in $(seq $displ_min 1 $displ_max); do

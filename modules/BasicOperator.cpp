@@ -483,43 +483,37 @@ void BasicOperator::get_operator_charged (dim2_eigen_array& op_1,
   // to match the dilution in the perambulator for D_d^-1
 
   // s_temp holds diluted contraction matrix
-  Eigen::MatrixXcd s_temp = Eigen::MatrixXcd::Zero(number_of_eigen_vec,
+  Eigen::MatrixXcd s_temp = Eigen::MatrixXcd::Zero(4 * number_of_eigen_vec,
       quarks[0].number_of_dilution_E);
 
   for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i){
     for(int rnd_j = rnd_i + 1; rnd_j < number_of_rnd_vec; ++rnd_j) {
 
-      // column number of contraction
+      // column number of contraction correspondes to blocknr in init_operator
       for(int col = 0; col < 4; col++){
-      
-        // row number of contraction corresponds to blocknr in init_operator
-        for(int row = 0; row  < 4; row++) {
 
-          // dilutes contraction in blocks of 
-          // number_of_eigen_vec * number_of_dilution_E (one dilution step for
-          // every dirac and number_of_dilution_D index
-          for(int vec_i = 0; vec_i < number_of_eigen_vec; ++vec_i) {
-            s_temp.col(vec_i % quarks[0].number_of_dilution_E) +=
-              (rewr->rnd_vec[rnd_j](col + vec_i * 4 + 
-                4 * number_of_eigen_vec * t_sink)) *
-              contraction[particle_no][p][rnd_i][col].block(
-                row * number_of_eigen_vec, vec_i, number_of_eigen_vec, 1);
-          }
-  
-          // introducing gamma structure via reordering of columns. Blockwise
-          // due to different randomvector-entries
-          (op_1[rnd_i][rnd_j]).block(row * number_of_eigen_vec, 
-              gamma[dirac].row[col] * quarks[0].number_of_dilution_E, 
-              number_of_eigen_vec, quarks[0].number_of_dilution_E) = 
-            gamma[dirac].value[col] * s_temp;
-
-          // reset s_temp to 0
-          (s_temp).setZero();
-
+        // dilutes contraction in blocks of 
+        // number_of_eigen_vec * number_of_dilution_E (one dilution step for
+        // every dirac and number_of_dilution_D index
+        for(int vec_i = 0; vec_i < number_of_eigen_vec; ++vec_i) {
+          s_temp.col(vec_i % quarks[0].number_of_dilution_E) +=
+            (rewr->rnd_vec[rnd_j](gamma[dirac].row[col] + vec_i * 4 + 
+              4 * number_of_eigen_vec * t_sink)) *
+            contraction[particle_no][p][rnd_i][col].col(vec_i);
         }
-  
-      }
 
+        // introducing gamma structure via reordering of columns. Blockwise
+        // due to different randomvector-entries
+        (op_1[rnd_i][rnd_j]).block(0, //row * number_of_eigen_vec, 
+            gamma[dirac].row[col] * quarks[0].number_of_dilution_E, 
+            4 * number_of_eigen_vec, quarks[0].number_of_dilution_E) = 
+          gamma[dirac].value[col] * s_temp;
+
+        // reset s_temp to 0
+        (s_temp).setZero();
+
+      }
+  
     }    
   }
 
@@ -543,11 +537,11 @@ void BasicOperator::get_operator_g5 (vec_eigen& op_1,
 
   for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i){
 
-    for(int i = 0; i < 4; i++) {
-      op_1[rnd_i].block(0, gamma[dirac].row[i] * number_of_eigen_vec,
+    for(int col = 0; col < 4; col++) {
+      op_1[rnd_i].block(0, gamma[dirac].row[col] * number_of_eigen_vec,
 //          4 * number_of_eigen_vec, number_of_eigen_vec) =
           4 * quarks[0].number_of_dilution_E, number_of_eigen_vec) =
-      gamma[dirac].value[i] * contraction_dagger[particle_no][p][rnd_i][i];
+      gamma[dirac].value[col] * contraction_dagger[particle_no][p][rnd_i][col];
     }
 
 //check if it is faster to initialize op_1 block- instead of column-wise

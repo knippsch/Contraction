@@ -105,23 +105,6 @@ int main (int ac, char* av[]) {
   const size_t ndir = number_of_dirac;
   const size_t ndis = number_of_displ;
 
-  // memory for intermediate matrices when building C4_3 (save multiplications)
-
-  dim3_eigen_array X(boost::extents[nrnd][nrnd][nrnd]);
-  dim3_eigen_array Y(boost::extents[nrnd][nrnd][nrnd]);
-	for(int rnd1 = 0; rnd1 < number_of_rnd_vec; rnd1++){
-		for(int rnd2 = 0; rnd2 < number_of_rnd_vec; rnd2++){
-      for(int rnd3 = 0; rnd3 < number_of_rnd_vec; rnd3++){
-  			X[rnd1][rnd2][rnd3] = Eigen::MatrixXcd::Zero(
-  					4 * quarks[0].number_of_dilution_E, 
-            4 * quarks[0].number_of_dilution_E);
-  			Y[rnd1][rnd2][rnd3] = Eigen::MatrixXcd::Zero(
-  					4 * quarks[0].number_of_dilution_E, 
-            4 * quarks[0].number_of_dilution_E);
-      }
-		}
-	}
-
 	// memory for the correlation function
 
   dim7_array C2_mes(boost::extents[nmom][nmom][ndir][ndir][ndis][ndis][Lt]);
@@ -242,6 +225,7 @@ int main (int ac, char* av[]) {
                         Corr[p1][p2][dirac1][dirac2][displ1][displ2][t1][t2]
                             [rnd1][rnd2] = std::complex<double>(0.0, 0.0);
   
+
     // initializing of Corr: calculate all two-operator traces of the form 
     // tr(u \Gamma \bar{d}) build all combinations of momenta, dirac_structures 
     // and displacements as specified in infile
@@ -400,11 +384,6 @@ int main (int ac, char* av[]) {
            for(int displ_u = 0; displ_u < number_of_displ; ++displ_u){
               for(int displ_d = 0; displ_d < number_of_displ; ++displ_d){
 
-                printf("Writing to file: ");
-		            printf("%s/dirac_%02d_%02d_p_%01d_%01d_displ_%01d_%01d/"
-                    "C2_pi+-_conf%04d.dat\n", 
-                    outpath.c_str(), dirac_min + dirac_u, dirac_min + dirac_d, 
-                    p1, p2, displ_min + displ_u, displ_min + displ_d, config_i);
 		            sprintf(outfile, 
                     "%s/dirac_%02d_%02d_p_%01d_%01d_displ_%01d_%01d/"
                     "C2_pi+-_conf%04d.dat", 
@@ -506,6 +485,7 @@ int main (int ac, char* av[]) {
     time = clock() - time;
 		printf("\t\tSUCCESS - %.1f seconds\n", ((float) time)/CLOCKS_PER_SEC);
 
+#if 0
 
 		// *************************************************************************
 		// FOUR PT CONTRACTION 1 ***************************************************
@@ -673,6 +653,8 @@ int main (int ac, char* av[]) {
       for(int offset = 0; offset <= max_mom_squared; offset++){
         for(int p = 0; p <= max_mom_squared; p++){
           if((p + offset) <= max_mom_squared){
+            printf("\tmomentum_u = %02d\n", p);
+            printf("\tmomentum_d = %02d\n", p + offset);
             for(int p_u = p_min; p_u < p_max; ++p_u){
               if((rewr.mom_squared[p_u] == p) && ((p + offset) <= max_mom_squared)){
                 for(int p_d = p_min; p_d < p_max; ++p_d){
@@ -857,6 +839,8 @@ int main (int ac, char* av[]) {
       for(int offset = 0; offset <= max_mom_squared; offset++){
         for(int p = 0; p <= max_mom_squared; p++){
           if((p + offset) <= max_mom_squared){
+            printf("\tmomentum_u = %02d\n", p);
+            printf("\tmomentum_d = %02d\n", p + offset);
             for(int p_u = p_min; p_u < p_max; ++p_u){
               if((rewr.mom_squared[p_u] == p) && ((p + offset) <= max_mom_squared)){
                 for(int p_d = p_min; p_d < p_max; ++p_d){
@@ -907,6 +891,7 @@ int main (int ac, char* av[]) {
                   std::complex<double>(0.0, 0.0);
 
 		for(int t_source = 0; t_source < Lt; ++t_source){
+      std::cout << "\tt_source = " << t_source << std::endl;
 			for(int t_sink = 0; t_sink < Lt; ++t_sink){
 
 				int t_source_1 = (t_source + 1) % Lt;
@@ -1079,7 +1064,7 @@ int main (int ac, char* av[]) {
     for(int dirac_u = 0; dirac_u < number_of_dirac; ++dirac_u){
       for(int dirac_d = 0; dirac_d < number_of_dirac; ++dirac_d){
         for(int p1 = 0; p1 <= max_mom_squared; p1++){
-          for(int p2 = p1; p2 <= max_mom_squared; p2++){
+          for(int p2 = 0; p2 <= max_mom_squared; p2++){
 
         		sprintf(outfile, 
                 "%s/dirac_%02d_%02d_p_%01d_%01d_displ_%01d_%01d/"
@@ -1145,6 +1130,8 @@ int main (int ac, char* av[]) {
 
     time = clock() - time;
 		printf("\t\tSUCCESS - %.1f seconds\n", ((float) time)/CLOCKS_PER_SEC);
+
+#endif
 		
 		// *************************************************************************
 		// FOUR PT CONTRACTION 4 ***************************************************
