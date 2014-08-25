@@ -12,6 +12,10 @@ in LapHs.cpp
 - implemented get_operator_uncharged for neutral particles
 - introduced Corr to hold traces for all momenta, dirac structures, times
   and randomvectors. Build C2, C4_1, C4_2 from Corr to save ca. 25% time
+- changed all memory allocation to boost
+- reworked output format. Now creates a new folder for every GEVP entry
+  (different p^2, dirac, displacement) and writes correlation function
+  configurationwise
 
 in Basicoperator.cpp:
 - changed layout of perambulator and basicoperator to reflect blockdiagonal
@@ -28,6 +32,7 @@ in Basicoperator.cpp:
 - implemented displacement (not working yet!)
 - introduced s matrix and changed from dilution in build_source_matrix to
   "live" dilution in get_operator()
+- changed all memory allocation to boost
 
 in ReadWrite.cpp:
 - introduced new class ReadWrite to handle the file input
@@ -40,6 +45,7 @@ in ReadWrite.cpp:
   BasicOperator.cpp
 - changed read_eigenvectors_from_file() to timeslice-wise reading of 
   vectors
+- changed all memory allocation to boost
 
 in config_utils.cpp
 - introduced from Christopher for displacement
