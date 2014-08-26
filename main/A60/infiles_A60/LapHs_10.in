@@ -13,10 +13,10 @@ delta_config = 8
 
 # eigenvector handling:
 number_of_eigen_vec = 120
-oath_eigenvectors   = /hiskp2/eigensystems/A60.24_L24_T48_beta190_mul0060_musig150_mudel190_kappa1632650/smearing_corr/hyp_062_058_3/nev_120/
+path_eigenvectors   = /hiskp2/eigensystems/A60.24_L24_T48_beta190_mul0060_musig150_mudel190_kappa1632650/smearing_corr/hyp_062_058_3/nev_120/
 name_eigenvectors   = eigenvectors
 # perambulator handling
-path_perambulators  = /hiskp2/knippsch/A60/nev_120/up/
+path_perambulators  = /hiskp2/perambulators/A60/nev_120/up
 name_perambulators  = perambulator
 #output path
 output_path = /hiskp2/werner/LapH/correlators

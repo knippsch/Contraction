@@ -300,6 +300,10 @@ int main (int ac, char* av[]) {
                             Corr[p_u][p_d][dirac_u][dirac_d][displ_u][displ_d]
                                 [t_source][t_sink][rnd1][rnd2] = 
                               (op_2[rnd2] * op_1[rnd1][rnd2]).trace();
+
+//                            std::cout << "p" << p_u << p_d << "dirac" << dirac_u << dirac_d << "\nCorr "
+//                                << Corr[p_u][p_d][dirac_u][dirac_d][displ_u][displ_d]
+//                                [t_source][t_sink][rnd1][rnd2] << std::endl;
           
           
                           }
@@ -667,34 +671,34 @@ int main (int ac, char* av[]) {
 
     // output to terminal
 
-		printf("\n");
-    for(int dirac = dirac_min; dirac < dirac_max + 1; ++dirac){
-		  printf("\tdirac    = %02d\n", dirac);
-      for(int offset = 0; offset <= max_mom_squared; offset++){
-        for(int p = 0; p <= max_mom_squared; p++){
-          if((p + offset) <= max_mom_squared){
-            for(int p_u = p_min; p_u < p_max; ++p_u){
-              if((rewr.mom_squared[p_u] == p) && ((p + offset) <= max_mom_squared)){
-                for(int p_d = p_min; p_d < p_max; ++p_d){
-                  if(rewr.mom_squared[p_d] == (p + offset)){
-            			  //printf(
-            				//  	"\t t\tRe(C4_1_con)\tIm(C4_1_con)\n\t----------------------------------\n");
-//            			  for(int t1 = 0; t1 < Lt; ++t1){
-//            				  printf("\t%02d\t%.5e\t%.5e\n", t1, real(C4_mes[p_u][p_d][dirac][dirac][t1]),
-//            				      imag(C4_mes[p_u][p_d][dirac][dirac][t1]));
-//            			  }
-            			printf("\n");
-                  printf("p_u = %02d\tp_d = %02d\n", p_u, p_d);
-            		  }
-                }
-              }
-            }
-          }
-        printf("\n");
-        }
-      }
-    printf("\n");
-    }
+//		printf("\n");
+//    for(int dirac = dirac_min; dirac < dirac_max + 1; ++dirac){
+//		  printf("\tdirac    = %02d\n", dirac);
+//      for(int offset = 0; offset <= max_mom_squared; offset++){
+//        for(int p = 0; p <= max_mom_squared; p++){
+//          if((p + offset) <= max_mom_squared){
+//            for(int p_u = p_min; p_u < p_max; ++p_u){
+//              if((rewr.mom_squared[p_u] == p) && ((p + offset) <= max_mom_squared)){
+//                for(int p_d = p_min; p_d < p_max; ++p_d){
+//                  if(rewr.mom_squared[p_d] == (p + offset)){
+//            			  //printf(
+//            				//  	"\t t\tRe(C4_1_con)\tIm(C4_1_con)\n\t----------------------------------\n");
+////            			  for(int t1 = 0; t1 < Lt; ++t1){
+////            				  printf("\t%02d\t%.5e\t%.5e\n", t1, real(C4_mes[p_u][p_d][dirac][dirac][t1]),
+////            				      imag(C4_mes[p_u][p_d][dirac][dirac][t1]));
+////            			  }
+//            			printf("\n");
+//                  printf("p_u = %02d\tp_d = %02d\n", p_u, p_d);
+//            		  }
+//                }
+//              }
+//            }
+//          }
+//        printf("\n");
+//        }
+//      }
+//    printf("\n");
+//    }
 
     time = clock() - time;
 		printf("\t\tSUCCESS - %.1f seconds\n", ((float) time)/CLOCKS_PER_SEC);
@@ -851,34 +855,34 @@ int main (int ac, char* av[]) {
 
     // output to terminal
 
-		printf("\n");
-    for(int dirac = dirac_min; dirac < dirac_max + 1; ++dirac){
-		  printf("\tdirac    = %02d\n", dirac);
-      for(int offset = 0; offset <= max_mom_squared; offset++){
-        for(int p = 0; p <= max_mom_squared; p++){
-          if((p + offset) <= max_mom_squared){
-            for(int p_u = p_min; p_u < p_max; ++p_u){
-              if((rewr.mom_squared[p_u] == p) && ((p + offset) <= max_mom_squared)){
-                for(int p_d = p_min; p_d < p_max; ++p_d){
-                  if(rewr.mom_squared[p_d] == (p + offset)){
-            			  //printf(
-            				//  	"\t t\tRe(C4_2_con)\tIm(C4_2_con)\n\t----------------------------------\n");
-//            			  for(int t1 = 0; t1 < Lt; ++t1){
-//            				  printf("\t%02d\t%.5e\t%.5e\n", t1, real(C4_mes[p][p][dirac][dirac][t1]),
-//            				      imag(C4_mes[p][p][dirac][dirac][t1]));
-//                    }
-            			  printf("\n");
-                    printf("p_u = %02d\tp_d = %02d\n", p_u, p_d);
-            		  }
-                }
-              }
-            }
-          }
-          printf("\n");
-        }
-      }
-      printf("\n");
-    }
+//		printf("\n");
+//    for(int dirac = dirac_min; dirac < dirac_max + 1; ++dirac){
+//		  printf("\tdirac    = %02d\n", dirac);
+//      for(int offset = 0; offset <= max_mom_squared; offset++){
+//        for(int p = 0; p <= max_mom_squared; p++){
+//          if((p + offset) <= max_mom_squared){
+//            for(int p_u = p_min; p_u < p_max; ++p_u){
+//              if((rewr.mom_squared[p_u] == p) && ((p + offset) <= max_mom_squared)){
+//                for(int p_d = p_min; p_d < p_max; ++p_d){
+//                  if(rewr.mom_squared[p_d] == (p + offset)){
+//            			  //printf(
+//            				//  	"\t t\tRe(C4_2_con)\tIm(C4_2_con)\n\t----------------------------------\n");
+////            			  for(int t1 = 0; t1 < Lt; ++t1){
+////            				  printf("\t%02d\t%.5e\t%.5e\n", t1, real(C4_mes[p][p][dirac][dirac][t1]),
+////            				      imag(C4_mes[p][p][dirac][dirac][t1]));
+////                    }
+//            			  printf("\n");
+//                    printf("p_u = %02d\tp_d = %02d\n", p_u, p_d);
+//            		  }
+//                }
+//              }
+//            }
+//          }
+//          printf("\n");
+//        }
+//      }
+//      printf("\n");
+//    }
 
     time = clock() - time;
 		printf("\t\tSUCCESS - %.1f seconds\n", ((float) time)/CLOCKS_PER_SEC);

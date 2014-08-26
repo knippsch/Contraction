@@ -1,11 +1,11 @@
 #!/bin/bash
 
 outpath="/hiskp2/werner/LapH/correlators"
-lattice="A40.20"
+lattice="A40.24"
 
-start_config=1300
-end_config=1300
-delta_config=8
+start_config=714
+end_config=2330
+delta_config=4
 stepping=1
 
 number_of_max_mom=2
