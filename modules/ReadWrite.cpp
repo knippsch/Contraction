@@ -10,6 +10,7 @@ namespace { // some internal namespace
 static const std::complex<double> I(0.0, 1.0);
 
 static void create_momenta (dim2_array momentum) {
+
   try{
     const int Lx = global_data->get_Lx();
     const int Ly = global_data->get_Ly();
@@ -202,6 +203,12 @@ void ReadWrite::build_source_matrix (const int config_i) {
     (V_t).setZero();
     read_eigenvectors_from_file(V_t, config_i, t);
    
+//    std::cout << "V_t with t = " << t << std::endl;
+//    std::cout << V_t.block(0,0,6,6) << std::endl;
+//    std::cout << basicoperator[number_of_momenta - p - 1][t][0].block(0,0,6,6) << std::endl;
+//        << std::endl << "\n" << s.block(0,0,6,6) << std::endl;
+//    std::cout << std::endl;
+
     for(int dir = displ_min; dir < displ_max + 1; dir++) {
       for(int p = number_of_momenta/2; p < number_of_momenta; p++){
         // TODO: implement switch case for displacement
@@ -315,8 +322,9 @@ void ReadWrite::read_eigenvectors_from_file (Eigen::MatrixXcd& V, const int conf
   
     for (int nev = 0; nev < number_of_eigen_vec; ++nev) {
       infile.read( (char*) &(eigen_vec[0]), 2*dim_row*sizeof(double));
-      for(int nrow = 0; nrow < dim_row; ++nrow)
-      V(nrow, nev) = eigen_vec[nrow];
+      for(int nrow = 0; nrow < dim_row; ++nrow){
+        V(nrow, nev) = eigen_vec[nrow];
+      }
     }
     infile.close();
     // small test of trace and sum over the eigen vector matrix!

@@ -270,7 +270,7 @@ BasicOperator::BasicOperator() : contraction_dagger(), contraction(), gamma() {
       }
     }
 
-    std::cout << "\t allocated memory in BasicOperator" << std::endl;
+    std::cout << "\tallocated memory in BasicOperator" << std::endl;
 
   }
   catch(std::exception& e){
