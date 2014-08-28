@@ -52,6 +52,7 @@ private:
   std::string name_perambulators;
   std::string name_lattice;
   std::string path_output;
+  std::string path_config;
   std::vector<quark> quarks;
   std::vector<int> momentum_squared;
   void quark_input_data_handling (const std::vector<std::string> quark_configs);
@@ -67,6 +68,9 @@ public:
   }
   inline std::string get_output_path() {
     return path_output;
+  }
+  inline std::string get_config_path() {
+    return path_config;
   }
   inline int get_Lx () {
     return Lx;

@@ -81,6 +81,7 @@ ReadWrite::ReadWrite () : perambulator(), rnd_vec(), basicoperator() {
         * quarks[0].number_of_dilution_E * quarks[0].number_of_dilution_D;
     const int number_of_momenta = global_data->get_number_of_momenta();
     const std::vector<int> mom_squared = global_data->get_momentum_squared();
+    const int V_for_lime = global_data->get_V_for_lime();
 
     // memory for momentum matrices
     momentum.resize(boost::extents[number_of_momenta][Vs]);
@@ -109,7 +110,7 @@ ReadWrite::ReadWrite () : perambulator(), rnd_vec(), basicoperator() {
       rnd_vec[i] = Eigen::VectorXcd::Zero(Lt * number_of_eigen_vec * 4);
     }
 
-#if 0
+#if 1
     //memory for gauge fields
     gaugefield = new double[V_for_lime];
     //Allocate Eigen Array to hold timeslice
@@ -535,6 +536,7 @@ void ReadWrite::read_rnd_vectors_from_file (const int config_i) {
 void ReadWrite::read_lime_gauge_field_doubleprec_timeslices(const int config_i) {
 
   try{
+    clock_t time = clock();
     const int Lt = global_data->get_Lt();
     const int Lx = global_data->get_Lx();
     const int Ly = global_data->get_Ly();
@@ -554,13 +556,13 @@ void ReadWrite::read_lime_gauge_field_doubleprec_timeslices(const int config_i) 
     int words_bigendian;
 
     if(verbose){
-      printf("reading gauge fields from files:\n");
-    }
-    else{
-      printf("\treading gauge fields:");
+      std::cout << "\treading gauge fields from files:" << std::endl;
+    } else {
+      std::cout << "\treading gauge fields:";
     }
 
-    sprintf(filename, "/hiskp2/gauges/A40.20_L20_T48_beta190_mul0040_musig150_mudel190_kappa1632700/conf.%04d", config_i);
+    sprintf(filename, "%s/conf.%04d",
+      global_data->get_config_path().c_str(), config_i);
 
     words_bigendian = big_endian();
     ifs = fopen(filename, "r");
@@ -573,6 +575,7 @@ void ReadWrite::read_lime_gauge_field_doubleprec_timeslices(const int config_i) 
       fprintf(stderr, "Unable to open LimeReader\n");
       exit(500);
     }
+    if(verbose) std::cout << "\t\tread file: " << filename << std::endl;
     while( (status = limeReaderNextRecord(limereader)) != LIME_EOF ) {
       if(status != LIME_SUCCESS ) {
         fprintf(stderr, "limeReaderNextRecord returned error with status = %d!\n",
@@ -675,6 +678,9 @@ void ReadWrite::read_lime_gauge_field_doubleprec_timeslices(const int config_i) 
     }
     limeDestroyReader(limereader);
     fclose(ifs);
+    time = clock() - time;
+    if(!verbose) std::cout << "\t\tSUCCESS - " << std::fixed << std::setprecision(1)
+      << ((float) time)/CLOCKS_PER_SEC << " seconds" << std::endl; 
     return;
 
   }

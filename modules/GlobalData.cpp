@@ -76,7 +76,8 @@ quark make_quark (const std::string& quark_string) {
 // *****************************************************************************
 // simplifies and cleans read_parameters function
 static void lattice_input_data_handling (const std::string path_output,
-    const std::string name_lattice, int Lt, int Lx, int Ly, int Lz) {
+    const std::string name_lattice, const std::string path_config, int Lt,
+    int Lx, int Ly, int Lz) {
   try{
     if(Lt < 1){
       std::cout << "\ninput file error:\n" << "\toption \"Lt\""
@@ -117,6 +118,8 @@ static void lattice_input_data_handling (const std::string path_output,
       name_lattice << std::endl;
     std::cout << "\tResults will be saved to path:\n\t\t"
         << path_output << "/" << std::endl;
+    std::cout << "\tConfigurations will be read from:\n\t\t"
+        << path_config << "/" << std::endl;
   }
   catch(std::exception& e){
     std::cout << e.what() << "\n";
@@ -379,6 +382,9 @@ void GlobalData::read_parameters (int ac, char* av[]) {
     config.add_options()("output_path",
         po::value<std::string>(&path_output)->default_value("../../contractions"),
         "path for output")
+        ("config_path",
+        po::value<std::string>(&path_config)->default_value("../../configs"),
+        "path for configurations")
         ("lattice", po::value<std::string>(&name_lattice)->
         default_value("lattice"),"Codename of the lattice")("Lt", 
         po::value<int>(&Lt)->default_value(0),
@@ -485,7 +491,7 @@ void GlobalData::read_parameters (int ac, char* av[]) {
 
     // input file options ******************************************************
     //
-    lattice_input_data_handling(path_output, name_lattice, Lt, Lx, Ly, Lz);
+    lattice_input_data_handling(path_output, name_lattice, path_config, Lt, Lx, Ly, Lz);
     //
     eigenvec_perambulator_input_data_handling(number_of_eigen_vec,
         path_eigenvectors, name_eigenvectors, path_perambulators,

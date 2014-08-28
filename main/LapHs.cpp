@@ -178,7 +178,7 @@ int main (int ac, char* av[]) {
     rewr->read_perambulators_from_file(config_i);
     rewr->read_rnd_vectors_from_file(config_i);
 //    rewr->read_eigenvectors_from_file(config_i);
-//    rewr->read_lime_gauge_field_doubleprec_timeslices(config_i);
+    rewr->read_lime_gauge_field_doubleprec_timeslices(config_i);
     rewr->build_source_matrix(config_i);
 
 
