@@ -9,7 +9,7 @@ namespace { // some internal namespace
 
 static const std::complex<double> I(0.0, 1.0);
 
-static void create_momenta (dim2_array momentum) {
+static void create_momenta (array_cd_d2 momentum) {
 
   try{
     const int Lx = global_data->get_Lx();

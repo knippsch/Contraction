@@ -14,22 +14,23 @@
 #include <cstdlib>
 #include <typeinfo>
 
-#include "Eigen/Dense"
-#include "Eigen/Core"
-#include "Eigen/SparseCore"
-#include "boost/multi_array.hpp"
+//#include "Eigen/Dense"
+//#include "Eigen/Core"
+//#include "Eigen/SparseCore"
+//#include "boost/multi_array.hpp"
 
 #include "GlobalData.h"
 #include "BasicOperator.h"
 #include "ReadWrite.h"
+#include "typedefs.h"
 
-typedef boost::multi_array<Eigen::MatrixXcd, 2> dim2_eigen_array;
-typedef boost::multi_array<Eigen::MatrixXcd, 3> dim3_eigen_array;
-typedef std::complex<double> cmplx;
-typedef boost::multi_array<cmplx, 4> dim4_array;
-typedef boost::multi_array<cmplx, 5> dim5_array;
-typedef boost::multi_array<cmplx, 7> dim7_array;
-typedef boost::multi_array<cmplx, 10> dim10_array;
+//typedef boost::multi_array<Eigen::MatrixXcd, 2> dim2_eigen_array;
+//typedef boost::multi_array<Eigen::MatrixXcd, 3> dim3_eigen_array;
+//typedef std::complex<double> cmplx;
+//typedef boost::multi_array<cmplx, 4> dim4_array;
+//typedef boost::multi_array<cmplx, 5> dim5_array;
+//typedef boost::multi_array<cmplx, 7> dim7_array;
+//typedef boost::multi_array<cmplx, 10> dim10_array;
 
 int main (int ac, char* av[]) {
   // ***************************************************************************
@@ -115,9 +116,9 @@ int main (int ac, char* av[]) {
   const size_t ndis = number_of_displ;
 
   // memory for the correlation function
-  dim7_array C2_mes(boost::extents[nmom][nmom][ndir][ndir][ndis][ndis][Lt]);
+  array_cd_d7 C2_mes(boost::extents[nmom][nmom][ndir][ndir][ndis][ndis][Lt]);
   //TODO: dont need the memory for p_u^2 > p_d^2
-  dim10_array Corr(boost::extents[nmom][nmom][ndir][ndir][ndis][ndis][Lt][Lt][nrnd][nrnd]);
+  array_cd_d10 Corr(boost::extents[nmom][nmom][ndir][ndir][ndis][ndis][Lt][Lt][nrnd][nrnd]);
 
   int norm = 0;
   for(int rnd1 = 0; rnd1 < number_of_rnd_vec; ++rnd1){
@@ -144,12 +145,12 @@ int main (int ac, char* av[]) {
   // 4-point functions
   // 1, 3 -> u-quarks; 2, 4 -> d-quarks; 5, 6 -> u quarks for neutral particle
 
-  dim2_eigen_array op_1(boost::extents[nrnd][nrnd]);
-  dim2_eigen_array op_3(boost::extents[nrnd][nrnd]);
-  std::vector<Eigen::MatrixXcd> op_2(number_of_rnd_vec);
-  std::vector<Eigen::MatrixXcd> op_4(number_of_rnd_vec);
-  std::vector<Eigen::MatrixXcd> op_5(number_of_rnd_vec);
-  std::vector<Eigen::MatrixXcd> op_6(number_of_rnd_vec);
+  array_Xcd_d2_eigen op_1(boost::extents[nrnd][nrnd]);
+  array_Xcd_d2_eigen op_3(boost::extents[nrnd][nrnd]);
+  vec_Xcd_eigen op_2(number_of_rnd_vec);
+  vec_Xcd_eigen op_4(number_of_rnd_vec);
+  vec_Xcd_eigen op_5(number_of_rnd_vec);
+  vec_Xcd_eigen op_6(number_of_rnd_vec);
 
   for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i){
     for(int rnd_j = 0; rnd_j < number_of_rnd_vec; ++rnd_j){
