@@ -1,0 +1,43 @@
+# This is an example input file
+
+# lattice parameters:
+Lt = 64
+Lx = 32
+Ly = 32
+Lz = 32
+
+# configuration handling:
+start_config = 1856 
+end_config = 1856 
+delta_config = 16
+
+# eigenvector handling:
+number_of_eigen_vec = 220
+path_eigenvectors   = /hiskp2/eigensystems/B55.32_L32_T64_beta195_mul0055_musig135_mudel170_kappa1612360_NEW/hyp_062_058_3/nev_220
+name_eigenvectors   = eigenvectors
+# perambulator handling
+path_perambulators  = /hiskp2/perambulators/B55
+name_perambulators  = perambulator
+#output path
+output_path = /hiskp2/werner/LapH/correlators
+lattice = B55
+
+# momentum handling:
+number_of_max_mom = 0 
+max_mom_in_one_dir = 0 
+# dirac structure
+dirac_min = 05 
+dirac_max = 05 
+# displacements
+displ_min = 0 
+displ_max = 0 
+
+[quarks]
+quark = u:5:TI:2:EI:4:DI:4
+
+
+
+
+
+
+

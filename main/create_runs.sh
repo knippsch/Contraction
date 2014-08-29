@@ -1,15 +1,15 @@
 #!/bin/bash
 
 outpath="/hiskp2/werner/LapH/correlators"
-lattice="A40.24"
+lattice="B55"
 
-start_config=714
-end_config=2330
-delta_config=4
+start_config=0
+end_config=2896
+delta_config=16
 stepping=1
 
-number_of_max_mom=2
-max_mom_in_one_dir=2
+number_of_max_mom=0
+max_mom_in_one_dir=0
 dirac_min=05
 dirac_max=05
 displ_min=0
@@ -53,7 +53,7 @@ for dirac1 in $(seq $dirac_min 01 $dirac_max); do
       dirac2="0"$dirac2;
     done
     for p1 in $(seq 0 1 $(($number_of_max_mom* $number_of_max_mom))); do
-      for p2 in $(seq $p1 1 $(($number_of_max_mom* $number_of_max_mom))); do
+      for p2 in $(seq 0 1 $(($number_of_max_mom* $number_of_max_mom))); do
         for displ1 in $(seq $displ_min 1 $displ_max); do
           for displ2 in $(seq $displ_min 1 $displ_max); do
             if [ "$p1" -eq "$p2" ]; then
