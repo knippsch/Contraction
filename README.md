@@ -76,5 +76,6 @@ known bugs:
 - C4_2 doesnt cover timevalue t_sink = Lt-1, t_sink_1 = 0 (done for
   consistency with Bastians Code)
 
+29.8.2014 pull request from Christian
 
 
