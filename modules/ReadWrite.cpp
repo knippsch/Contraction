@@ -77,7 +77,8 @@ int check_momenta() {
           if((ipx * ipx + ipy * ipy + ipz * ipz) > max_mom_squared) {
             continue;
           }
-          std::cout << "\t\ŧp = " << p << "=> (" << ipx << ", " << ipy << ", " << ipz << ")" << std::endl;
+          std::cout << "\t\ŧ p = " << p << " => (" << ipx << ", " << ipy 
+              << ", " << ipz << ")" << std::endl;
           p++;
         }
       }
@@ -402,14 +403,14 @@ void ReadWrite::read_perambulators_from_file (const int config_i) {
 //      std::string filename = global_data->get_path_perambulators() + "/";
 
       // data path for qbig contractions
-      sprintf(temp, "cnfg%d/rnd_vec_%01d/", config_i, rnd_vec_i);
-      std::string filename = global_data->get_path_perambulators() + "/"
-          + temp;
-
-      // data path for juqueen contractions
-//      sprintf(temp, "cnfg%d/", config_i);
+//      sprintf(temp, "cnfg%d/rnd_vec_%01d/", config_i, rnd_vec_i);
 //      std::string filename = global_data->get_path_perambulators() + "/"
 //          + temp;
+
+      // data path for juqueen contractions
+      sprintf(temp, "cnfg%d/", config_i);
+      std::string filename = global_data->get_path_perambulators() + "/"
+          + temp;
 
       //TODO: sink dilution is  hard-coded at the moment
       sprintf(infile,
@@ -502,14 +503,14 @@ void ReadWrite::read_rnd_vectors_from_file (const int config_i) {
 //      std::string filename = global_data->get_path_perambulators() + "/";
 
       // data path for qbig contractions
-      sprintf(temp, "cnfg%d/rnd_vec_%01d/", config_i, rnd_vec_i);
-      std::string filename = global_data->get_path_perambulators()
-				+ "/" + temp;
-
-      // data path for juqueen contractions
-//      sprintf(temp, "cnfg%d/", config_i);
+//      sprintf(temp, "cnfg%d/rnd_vec_%01d/", config_i, rnd_vec_i);
 //      std::string filename = global_data->get_path_perambulators()
 //				+ "/" + temp;
+
+      // data path for juqueen contractions
+      sprintf(temp, "cnfg%d/", config_i);
+      std::string filename = global_data->get_path_perambulators()
+				+ "/" + temp;
 
       // read random vector
       sprintf(infile, "%srandomvector.rndvecnb%02d.u.nbev%04d.%04d", 

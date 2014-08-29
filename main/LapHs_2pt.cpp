@@ -39,7 +39,7 @@ int main (int ac, char* av[]) {
 	GlobalData* global_data = GlobalData::Instance();
 	global_data->read_parameters(ac, av);
 
-	Eigen::setNbThreads(4);
+	Eigen::setNbThreads(2);
 
 	// global variables from input file needed in main function
 	const int Lt = global_data->get_Lt();
@@ -265,7 +265,7 @@ int main (int ac, char* av[]) {
     
                   for(int dirac_d = 0; dirac_d < number_of_dirac; ++dirac_d){
                     for(int p_d = p_min; p_d < p_max; ++p_d) {
-                      if(rewr.mom_squared[p_u] <= rewr.mom_squared[p_d]){
+                      if(rewr.mom_squared[p_u] == rewr.mom_squared[p_d]){
       
                         // same as get_operator but with gamma_5 trick. D_u^-1 
                         // is daggered and multipied with gamma_5 from left and 
@@ -312,7 +312,7 @@ int main (int ac, char* av[]) {
 
    	    for(int p_u = p_min; p_u < p_max; ++p_u) {
    	      for(int p_d = p_min; p_d < p_max; ++p_d) {
-            if(rewr.mom_squared[p_u] <= rewr.mom_squared[p_d]){
+            if(rewr.mom_squared[p_u] == rewr.mom_squared[p_d]){
               for(int dirac_u = 0; dirac_u < number_of_dirac; ++dirac_u){
                 for(int dirac_d = 0; dirac_d < number_of_dirac; ++dirac_d){
                   for(int displ_u = 0; displ_u < number_of_displ; displ_u++){
@@ -350,7 +350,7 @@ int main (int ac, char* av[]) {
 		double norm3 = Lt * number_of_rnd_vec * (number_of_rnd_vec - 1) * 0.5;
     for(int p_u = p_min; p_u < p_max; ++p_u) {
       for(int p_d = p_min; p_d < p_max; ++p_d) {
-        if(rewr.mom_squared[p_u] <= rewr.mom_squared[p_d]){
+        if(rewr.mom_squared[p_u] == rewr.mom_squared[p_d]){
           for(int dirac_u = 0; dirac_u < number_of_dirac; ++dirac_u){
             for(int dirac_d = 0; dirac_d < number_of_dirac; ++dirac_d){
               for(int displ_u = 0; displ_u < number_of_displ; ++displ_u){
@@ -379,39 +379,70 @@ int main (int ac, char* av[]) {
 
     for(int dirac_u = 0; dirac_u < number_of_dirac; ++dirac_u){
       for(int dirac_d = 0; dirac_d < number_of_dirac; ++dirac_d){
-        for(int p1 = 0; p1 <= max_mom_squared; p1++){
-         for(int p2 = p1; p2 <= max_mom_squared; p2++){
-           for(int displ_u = 0; displ_u < number_of_displ; ++displ_u){
-              for(int displ_d = 0; displ_d < number_of_displ; ++displ_d){
+        for(int p = 0; p <= max_mom_squared; p++){
+          for(int displ_u = 0; displ_u < number_of_displ; ++displ_u){
+            for(int displ_d = 0; displ_d < number_of_displ; ++displ_d){
 
-		            sprintf(outfile, 
-                    "%s/dirac_%02d_%02d_p_%01d_%01d_displ_%01d_%01d/"
-                    "C2_pi+-_conf%04d.dat", 
-                    outpath.c_str(), dirac_min + dirac_u, dirac_min + dirac_d, 
-                    p1, p2, displ_min + displ_u, displ_min + displ_d, config_i);
-		            if((fp = fopen(outfile, "wb")) == NULL)
-		            	std::cout << "fail to open outputfile" << std::endl;
+              sprintf(outfile, 
+                  "%s/dirac_%02d_%02d_p_%01d_%01d_displ_%01d_%01d_unsuppressed/"
+                  "C2_pi+-_conf%04d.dat", 
+                  outpath.c_str(), dirac_min + dirac_u, dirac_min + dirac_d, p, p, 
+                  displ_min, displ_max, config_i);
+              if((fp = fopen(outfile, "wb")) == NULL)
+                std::cout << "fail to open outputfile" << std::endl;
 
-                for(int p_u = p_min; p_u < p_max; ++p_u){
-                  if(rewr.mom_squared[p_u] == p1){
-                    for(int p_d = p_min; p_d < p_max; ++p_d){
-                      if(rewr.mom_squared[p_d] == p2){
+              for(int p_u = p_min; p_u < p_max; ++p_u){
+                if(rewr.mom_squared[p_u] == p){
 
-		                    fwrite((double*) &(C2_mes[p_u][p_d][dirac_u][dirac_d]
-                            [displ_u][displ_d][0]), sizeof(double), 2 * Lt, fp);
-                      }
-                    }
-                  }
+              		fwrite((double*) &(C2_mes[p_u][p_u][dirac_u][dirac_d]
+                      [displ_u][displ_d][0]), 
+                      sizeof(double), 2 * Lt, fp);
                 }
-
-		            fclose(fp);
-  
               }
+
+		          fclose(fp);
+
             }
           }
         }
       }
     }
+
+//    for(int dirac_u = 0; dirac_u < number_of_dirac; ++dirac_u){
+//      for(int dirac_d = 0; dirac_d < number_of_dirac; ++dirac_d){
+//        for(int p1 = 0; p1 <= max_mom_squared; p1++){
+//         for(int p2 = p1; p2 <= max_mom_squared; p2++){
+//           for(int displ_u = 0; displ_u < number_of_displ; ++displ_u){
+//              for(int displ_d = 0; displ_d < number_of_displ; ++displ_d){
+//
+//		            sprintf(outfile, 
+//                    "%s/dirac_%02d_%02d_p_%01d_%01d_displ_%01d_%01d/"
+//                    "C2_pi+-_conf%04d.dat", 
+//                    outpath.c_str(), dirac_min + dirac_u, dirac_min + dirac_d, 
+//                    p1, p2, displ_min + displ_u, displ_min + displ_d, config_i);
+//		            if((fp = fopen(outfile, "wb")) == NULL)
+//		            	std::cout << "fail to open outputfile" << std::endl;
+//
+//                for(int p_u = p_min; p_u < p_max; ++p_u){
+//                  if(rewr.mom_squared[p_u] == p1){
+//                    for(int p_d = p_min; p_d < p_max; ++p_d){
+//                      if(rewr.mom_squared[p_d] == p2){
+//
+//		                    fwrite((double*) &(C2_mes[p_u][p_d][dirac_u][dirac_d]
+//                            [displ_u][displ_d][0]), sizeof(double), 2 * Lt, fp);
+//                      }
+//                    }
+//                  }
+//                }
+//
+//		            fclose(fp);
+//  
+//              }
+//            }
+//          }
+//        }
+//      }
+//    }
 
 
 

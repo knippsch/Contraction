@@ -247,7 +247,7 @@ static void config_input_data_handling (const int start_config,
 					<< "\n\n";
 			exit(0);
 		}
-		else if(end_config < 1 || end_config < start_config){
+		else if(end_config < 0 || end_config < start_config){
 			std::cout << "\ninput file error:\n" << "\toption \"end_config\""
 					<< " is mandatory, its value must be an integer greater than 0,"
 					<< " and it must be larger than start config!" << "\n\n";
