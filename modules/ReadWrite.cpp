@@ -15,14 +15,15 @@ static void create_momenta (array_cd_d2 momentum) {
     const int Lx = global_data->get_Lx();
     const int Ly = global_data->get_Ly();
     const int Lz = global_data->get_Lz();
-    const int number_of_max_mom = global_data->get_number_of_max_mom();
+    //const int number_of_max_mom = global_data->get_number_of_max_mom();
     const int max_mom_in_one_dir = global_data->get_max_mom_in_one_dir();
    // helper variables for momenta
     const double px = 2. * M_PI / (double) Lx;
     const double py = 2. * M_PI / (double) Ly;
     const double pz = 2. * M_PI / (double) Lz;
     int p = 0;
-    int max_mom_squared = number_of_max_mom * number_of_max_mom;
+    int max_mom_squared = global_data->get_number_of_max_mom();
+      //number_of_max_mom * number_of_max_mom;
 
     // running over all momentum components
     for(int ipx = -max_mom_in_one_dir; ipx <= max_mom_in_one_dir; ++ipx){
@@ -384,14 +385,14 @@ void ReadWrite::read_perambulators_from_file (const int config_i) {
 //      std::string filename = global_data->get_path_perambulators() + "/";
 
       // data path for qbig contractions
-//      sprintf(temp, "cnfg%d/rnd_vec_%01d/", config_i, rnd_vec_i);
-//      std::string filename = global_data->get_path_perambulators() + "/"
-//          + temp;
-
-      // data path for juqueen contractions
-      sprintf(temp, "cnfg%d/", config_i);
+      sprintf(temp, "cnfg%d/rnd_vec_%01d/", config_i, rnd_vec_i);
       std::string filename = global_data->get_path_perambulators() + "/"
           + temp;
+
+      // data path for juqueen contractions
+//      sprintf(temp, "cnfg%d/", config_i);
+//      std::string filename = global_data->get_path_perambulators() + "/"
+//          + temp;
 
       //TODO: sink dilution is  hard-coded at the moment
       sprintf(infile,
@@ -490,12 +491,7 @@ void ReadWrite::read_rnd_vectors_from_file (const int config_i) {
       // data path for juqueen contractions
 //      sprintf(temp, "cnfg%d/", config_i);
 //      std::string filename = global_data->get_path_perambulators()
-//        + "/" + temp;
-
-      // data path for juqueen contractions
-      sprintf(temp, "cnfg%d/", config_i);
-      std::string filename = global_data->get_path_perambulators()
-				+ "/" + temp;
+//				+ "/" + temp;
 
       // read random vector
       sprintf(infile, "%srandomvector.rndvecnb%02d.u.nbev%04d.%04d", 

@@ -1,16 +1,16 @@
 #!/bin/bash
 
 outpath="/hiskp2/werner/LapH/correlators"
-lattice="B55"
+lattice="A100_test"
 
-start_config=0
-end_config=2896
-delta_config=16
+start_config=1685
+end_config=1837
+delta_config=8
 stepping=1
 
 number_of_max_mom=0
 max_mom_in_one_dir=0
-dirac_min=05
+dirac_min=00
 dirac_max=05
 displ_min=0
 displ_max=0

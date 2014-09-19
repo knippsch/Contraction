@@ -240,9 +240,6 @@ BasicOperator::BasicOperator() : contraction_dagger(), contraction(), gamma() {
     for(int i = 0; i < 16; ++i)
       create_gamma(gamma, i);
 
-    for(int i = 0; i < 4; i++)
-      std::cout << gamma[5].row[i] << std::endl;
-
     // memory for the perambulator, random vector and basic operator
     // D_u^-1 = perambulator * basicoperator. Columns are always
     // the same, only permuted and multiplied with +-i or -1 by
@@ -379,7 +376,8 @@ void BasicOperator::init_operator_u (const int particle_no, const int t_source,
       // s holds left diluted basicoperator
       for(int vec_i = 0; vec_i < number_of_eigen_vec; ++vec_i) {
         s[rnd_i][blocknr].row(vec_i % quarks[0].number_of_dilution_E) +=
-            std::conj(rewr->rnd_vec[rnd_i](blocknr + vec_i * 4 + 
+//            std::conj
+            (rewr->rnd_vec[rnd_i](blocknr + vec_i * 4 + 
               4 * number_of_eigen_vec * t_sink)) * 
             rewr->basicoperator[p][t_sink][displ].row(vec_i);
       }
@@ -485,11 +483,15 @@ void BasicOperator::init_operator_d (const int particle_no, const int t_source,
         // gamma_5 from left and right side. It changes the sign of the two
         // upper right and two lower left blocks in dirac space
         if( ((row + col) == 3) || (abs(row - col) > 1) ){
-        contraction_dagger[particle_no][p][rnd_i][row].block(col * 
+          contraction_dagger[particle_no][p][rnd_i][row].block(col * 
             quarks[0].number_of_dilution_E, 0,
             quarks[0].number_of_dilution_E, number_of_eigen_vec) *= -1;
         }
 
+//        if(row > 1){
+//          contraction_dagger[particle_no][p][rnd_i][row] *= -1;
+//        }
+            
       }
     }
 
@@ -510,6 +512,7 @@ void BasicOperator::init_operator_d (const int particle_no, const int t_source,
 
 void BasicOperator::get_operator_charged (array_Xcd_d2_eigen& op_1, 
     const int particle_no, const int t_sink, ReadWrite* rewr, const int dirac, 
+//    const int dirac_d, 
     const int p) const {
 
   const int number_of_eigen_vec = global_data->get_number_of_eigen_vec();
@@ -522,7 +525,9 @@ void BasicOperator::get_operator_charged (array_Xcd_d2_eigen& op_1,
 
   // s_temp holds diluted contraction matrix
   Eigen::MatrixXcd s_temp = Eigen::MatrixXcd::Zero(4 * number_of_eigen_vec,
-      quarks[0].number_of_dilution_E);
+      4 * number_of_eigen_vec);
+  Eigen::MatrixXcd s_dil = Eigen::MatrixXcd::Zero(4 * number_of_eigen_vec,
+      4 * quarks[0].number_of_dilution_E);
 
   for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i){
     for(int rnd_j = rnd_i + 1; rnd_j < number_of_rnd_vec; ++rnd_j) {
@@ -530,33 +535,41 @@ void BasicOperator::get_operator_charged (array_Xcd_d2_eigen& op_1,
       // column number of contraction correspondes to blocknr in init_operator
       for(int col = 0; col < 4; col++){
 
+
+        // introducing gamma structure via reordering of columns. Blockwise
+        // due to different randomvector-entries
+        s_temp.block(0, //row * number_of_eigen_vec, 
+//            gamma[dirac].row[col] * quarks[0].number_of_dilution_E, 
+            col * number_of_eigen_vec, 
+            4 * number_of_eigen_vec, number_of_eigen_vec) = 
+          gamma[dirac].value[col] * contraction[particle_no][p][rnd_i]
+          [gamma[dirac].row[col]];
+
         // dilutes contraction in blocks of 
         // number_of_eigen_vec * number_of_dilution_E (one dilution step for
         // every dirac and number_of_dilution_D index
         for(int vec_i = 0; vec_i < number_of_eigen_vec; ++vec_i) {
-          s_temp.col(vec_i % quarks[0].number_of_dilution_E) +=
-//            (rewr->rnd_vec[rnd_j](gamma[dirac].row[col] + vec_i * 4 + 
-            (rewr->rnd_vec[rnd_j](col + vec_i * 4 + 
-              4 * number_of_eigen_vec * t_sink)) *
-//            contraction[particle_no][p][rnd_i][col].col(vec_i);
-            contraction[particle_no][p][rnd_i][gamma[dirac].row[col]].col(vec_i);
+          s_dil(col * number_of_eigen_vec + vec_i, 
+              col * quarks[0].number_of_dilution_E + 
+              vec_i % quarks[0].number_of_dilution_E) +=
+            std::conj(rewr->rnd_vec[rnd_j](col + vec_i * 4 + 
+              4 * number_of_eigen_vec * t_sink));
         }
 
-        // introducing gamma structure via reordering of columns. Blockwise
-        // due to different randomvector-entries
-        (op_1[rnd_i][rnd_j]).block(0, //row * number_of_eigen_vec, 
-//            gamma[dirac].row[col] * quarks[0].number_of_dilution_E, 
-            col * quarks[0].number_of_dilution_E, 
-            4 * number_of_eigen_vec, quarks[0].number_of_dilution_E) = 
-          gamma[dirac].value[col] * s_temp;
-
-        // reset s_temp to 0
-        (s_temp).setZero();
-
       } // end for col
+
+//      s_dil.block(0, 2*quarks[0].number_of_dilution_E, 4*number_of_eigen_vec, 
+//          2*quarks[0].number_of_dilution_E) *= -1;
+
+      (op_1[rnd_i][rnd_j]) = s_temp * s_dil;
+
+      // reset s_temp to 0
+      (s_temp).setZero();
+      (s_dil).setZero();
   
     } // end for rnd_j
   } // end for rnd_i
+
 
 //  delete [] s_temp;
   return;

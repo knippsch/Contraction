@@ -18,7 +18,7 @@ all: rmxeq mkdep mkxeq
 
 # main programs and modules to be compiled
 
-MAIN = LapHs1
+MAIN = LapHs
 
 GENERAL = GlobalData BasicOperator ReadWrite io_utils propagator_io config_utils
 MODULES = $(GENERAL)
@@ -32,17 +32,20 @@ LOGOPTION =
 
 
 # additional include directories
-INCPATH = ${HOME}/ext_lib/eigen ${HOME}/ext_lib/boost_1_55_0/ ${HOME}/ext_lib/lime-1.3.2/include ../include 
+INCPATH = /hiskp2/werner/Libraries/eigen-eigen-1306d75b4a21/ /hiskp2/werner/Libraries/boost_1_55_0/ ../include 
+#hiskp2/jost/lime-1.3.2/include/  
 #INCPATH = /hiskp2/jost/eigen-eigen-ffa86ffb5570 /hiskp2/jost/boost_1_54_0/ /hiskp2/jost/lime-1.3.2/include ../include 
 
 
 # additional libraries
+
 LIBS = lime boost_program_options
-LIBPATH = ${HOME}/ext_lib/boost_1_55_0/stage/lib/ ${HOME}/ext_lib/lime-1.3.2/lib/
+
+LIBPATH =  /hiskp2/werner/Libraries/lime/lib/ /hiskp2/werner/Libraries/boost_1_55_0/stage/lib/
+
 
 # scheduling and optimization options
-CFLAGS = -Wall -O3 -fopenmp -march=native -std=c++11 -mtune=native -Wno-unused-local-typedefs
-#CFLAGS = -Wall -pedantic -g -O0 -fopenmp -march=native -std=c++11 -mtune=native -Wno-unused-local-typedefs
+CFLAGS = -Wall -pedantic -std=c++0x  -O3 -fopenmp -march=native #-g 
 
 ############################## do not change ###################################
 
@@ -64,14 +67,14 @@ $(addsuffix .d,$(PGMS)): %.d: %.cpp Makefile
 # rule to compile source programs
 
 $(addsuffix .o,$(PGMS)): %.o: %.cpp Makefile
-	$(CC) $< -c $(CFLAGS) $(LOGOPTION) $(addprefix -I,$(INCPATH))
+	$(CC) $< -c $(CFLAGS) $(LOGOPTION) $(addprefix -I,$(INCPATH)) -static
 
 
 # rule to link object files
 
 $(MAIN): %: %.o $(addsuffix .o,$(MODULES)) Makefile
 	$(CLINKER) $< $(addsuffix .o,$(MODULES)) $(CFLAGS) $(LOGOPTION) \
-	   $(addprefix -L,$(LIBPATH)) $(addprefix -l,$(LIBS)) -lm -o $@
+	   $(addprefix -L,$(LIBPATH)) $(addprefix -l,$(LIBS)) -lm -o $@ -static
 
 # produce executables
 

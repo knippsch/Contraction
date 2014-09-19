@@ -44,6 +44,8 @@
 
 class ReadWrite {
 
+friend class BasicOperator;
+
 public:
   //EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   ReadWrite ();
@@ -53,15 +55,15 @@ public:
   void read_rnd_vectors_from_file (const int config_i);
   void read_lime_gauge_field_doubleprec_timeslices(const int config_i);
 
-  inline vec_Xcd_eigen get_perambulator() {
-    return perambulator;
-  }
-  inline array_Xcd_d3_eigen get_basicoperator() {
-    return basicoperator;
-  }
-  inline vec_Xcd_eigen get_random_vector() {
-    return rnd_vec;
-  }
+//  inline vec_Xcd_eigen get_perambulator() {
+//    return perambulator;
+//  }
+//  inline array_Xcd_d3_eigen get_basicoperator() {
+//    return basicoperator;
+//  }
+//  inline vec_Xcd_eigen get_random_vector() {
+//    return rnd_vec;
+//  }
 //  int* mom_squared;
 //  int number_of_momenta;
 

@@ -168,7 +168,7 @@ static void momentum_input_data_handling (const int number_of_max_mom,
           << "\n\n";
       exit(0);
     }
-    else std::cout << "\ttotal number of momenta .................. "
+    else std::cout << "\tabsolute value squared of max momentum .... "
         << number_of_max_mom << "\n";
     if(max_mom_in_one_dir < 0){
       std::cout << "\ninput file error:\n" << "\toption \"max_mom_in_one_dir\""
@@ -179,7 +179,7 @@ static void momentum_input_data_handling (const int number_of_max_mom,
     else std::cout << "\tmaximal momentum in one direction ........ "
         << max_mom_in_one_dir << "\n";
 
-    int max_mom_squared = number_of_max_mom * number_of_max_mom;
+    int max_mom_squared = number_of_max_mom;
     // generate all used momenta
     for(int ipx = -max_mom_in_one_dir; ipx <= max_mom_in_one_dir; ++ipx){
       for(int ipy = -max_mom_in_one_dir; ipy <= max_mom_in_one_dir; ++ipy){
