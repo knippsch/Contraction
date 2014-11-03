@@ -1,5 +1,6 @@
 ReadWrite.o: ../modules/ReadWrite.cpp ../include/ReadWrite.h \
- ../include/GlobalData.h \
+ ../include/config_utils.h \
+ /home/knippsch/ExternLibraries/eigen-3.2.1/Eigen/Eigen \
  /home/knippsch/ExternLibraries/eigen-3.2.1/Eigen/Dense \
  /home/knippsch/ExternLibraries/eigen-3.2.1/Eigen/Core \
  /home/knippsch/ExternLibraries/eigen-3.2.1/Eigen/src/Core/util/DisableStupidWarnings.h \
@@ -155,7 +156,19 @@ ReadWrite.o: ../modules/ReadWrite.cpp ../include/ReadWrite.h \
  /home/knippsch/ExternLibraries/eigen-3.2.1/Eigen/src/Eigenvalues/GeneralizedEigenSolver.h \
  /home/knippsch/ExternLibraries/eigen-3.2.1/Eigen/src/Eigenvalues/./RealQZ.h \
  /home/knippsch/ExternLibraries/eigen-3.2.1/Eigen/src/Eigenvalues/MatrixBaseEigenvalues.h \
+ /home/knippsch/ExternLibraries/eigen-3.2.1/unsupported/Eigen/MatrixFunctions \
  /home/knippsch/ExternLibraries/eigen-3.2.1/Eigen/Core \
+ /home/knippsch/ExternLibraries/eigen-3.2.1/Eigen/LU \
+ /home/knippsch/ExternLibraries/eigen-3.2.1/Eigen/Eigenvalues \
+ /home/knippsch/ExternLibraries/eigen-3.2.1/unsupported/Eigen/src/MatrixFunctions/MatrixExponential.h \
+ /home/knippsch/ExternLibraries/eigen-3.2.1/unsupported/Eigen/src/MatrixFunctions/StemFunction.h \
+ /home/knippsch/ExternLibraries/eigen-3.2.1/unsupported/Eigen/src/MatrixFunctions/MatrixFunction.h \
+ /home/knippsch/ExternLibraries/eigen-3.2.1/unsupported/Eigen/src/MatrixFunctions/MatrixFunctionAtomic.h \
+ /home/knippsch/ExternLibraries/eigen-3.2.1/unsupported/Eigen/src/MatrixFunctions/MatrixSquareRoot.h \
+ /home/knippsch/ExternLibraries/eigen-3.2.1/unsupported/Eigen/src/MatrixFunctions/MatrixLogarithm.h \
+ /home/knippsch/ExternLibraries/eigen-3.2.1/unsupported/Eigen/src/MatrixFunctions/MatrixPower.h \
+ ../include/GlobalData.h \
+ /home/knippsch/ExternLibraries/eigen-3.2.1/Eigen/Dense \
  /home/knippsch/ExternLibraries/eigen-3.2.1/Eigen/SparseCore \
  /home/knippsch/ExternLibraries/eigen-3.2.1/Eigen/src/SparseCore/SparseUtil.h \
  /home/knippsch/ExternLibraries/eigen-3.2.1/Eigen/src/SparseCore/SparseMatrixBase.h \
@@ -783,7 +796,7 @@ ReadWrite.o: ../modules/ReadWrite.cpp ../include/ReadWrite.h \
  /home/knippsch/ExternLibraries/boost_1_55_0/boost/program_options/detail/convert.hpp \
  /home/knippsch/ExternLibraries/boost_1_55_0/boost/program_options/variables_map.hpp \
  /home/knippsch/ExternLibraries/boost_1_55_0/boost/program_options/version.hpp \
- ../include/quark.h ../include/propagator_io.h ../include/io_utils.h \
+ ../include/quark.h ../include/io_utils.h \
  /home/knippsch/ExternLibraries/lime-1.3.2/include/lime.h \
  /home/knippsch/ExternLibraries/lime-1.3.2/include/lime_config.h \
  /home/knippsch/ExternLibraries/lime-1.3.2/include/lime_config_internal.h \
@@ -794,20 +807,8 @@ ReadWrite.o: ../modules/ReadWrite.cpp ../include/ReadWrite.h \
  /home/knippsch/ExternLibraries/lime-1.3.2/include/lime_config.h \
  /home/knippsch/ExternLibraries/lime-1.3.2/include/lime_writer.h \
  /home/knippsch/ExternLibraries/lime-1.3.2/include/lime_reader.h \
- ../include/config_utils.h \
- /home/knippsch/ExternLibraries/eigen-3.2.1/Eigen/Eigen \
- /home/knippsch/ExternLibraries/eigen-3.2.1/Eigen/Dense \
- /home/knippsch/ExternLibraries/eigen-3.2.1/unsupported/Eigen/MatrixFunctions \
- /home/knippsch/ExternLibraries/eigen-3.2.1/Eigen/LU \
- /home/knippsch/ExternLibraries/eigen-3.2.1/Eigen/Eigenvalues \
- /home/knippsch/ExternLibraries/eigen-3.2.1/unsupported/Eigen/src/MatrixFunctions/MatrixExponential.h \
- /home/knippsch/ExternLibraries/eigen-3.2.1/unsupported/Eigen/src/MatrixFunctions/StemFunction.h \
- /home/knippsch/ExternLibraries/eigen-3.2.1/unsupported/Eigen/src/MatrixFunctions/MatrixFunction.h \
- /home/knippsch/ExternLibraries/eigen-3.2.1/unsupported/Eigen/src/MatrixFunctions/MatrixFunctionAtomic.h \
- /home/knippsch/ExternLibraries/eigen-3.2.1/unsupported/Eigen/src/MatrixFunctions/MatrixSquareRoot.h \
- /home/knippsch/ExternLibraries/eigen-3.2.1/unsupported/Eigen/src/MatrixFunctions/MatrixLogarithm.h \
- /home/knippsch/ExternLibraries/eigen-3.2.1/unsupported/Eigen/src/MatrixFunctions/MatrixPower.h \
- ../include/typedefs.h \
+ ../include/propagator_io.h ../include/random_vector.h \
+ ../include/ranlxs.h ../include/typedefs.h \
  /home/knippsch/ExternLibraries/eigen-3.2.1/Eigen/Sparse \
  /home/knippsch/ExternLibraries/eigen-3.2.1/Eigen/SparseCore \
  /home/knippsch/ExternLibraries/eigen-3.2.1/Eigen/OrderingMethods \

@@ -228,7 +228,9 @@ static void create_gamma (std::vector<struct lookup>& gamma, const int i) {
 /******************************************************************************/
 /******************************************************************************/
 
-BasicOperator::BasicOperator() : contraction_dagger(), contraction(), gamma() {
+BasicOperator::BasicOperator() : contraction_dagger(), 
+                                 contraction(), 
+                                 gamma() {
   try{
     const int number_of_eigen_vec = global_data->get_number_of_eigen_vec();
     const std::vector<quark> quarks = global_data->get_quarks();
@@ -379,8 +381,8 @@ void BasicOperator::init_operator_u (const int particle_no, const int t_source,
       // s holds left diluted basicoperator
       for(int vec_i = 0; vec_i < number_of_eigen_vec; ++vec_i) {
         s[rnd_i][blocknr].row(vec_i % quarks[0].number_of_dilution_E) +=
-            std::conj(rewr->rnd_vec[rnd_i](blocknr + vec_i * 4 + 
-              4 * number_of_eigen_vec * t_sink)) * 
+            std::conj(rewr->rnd_vec[rnd_i][blocknr + vec_i * 4 + 
+              4 * number_of_eigen_vec * t_sink]) * 
             rewr->basicoperator[p][t_sink][displ].row(vec_i);
       }
     }
@@ -536,8 +538,8 @@ void BasicOperator::get_operator_charged (array_Xcd_d2_eigen& op_1,
         for(int vec_i = 0; vec_i < number_of_eigen_vec; ++vec_i) {
           s_temp.col(vec_i % quarks[0].number_of_dilution_E) +=
 //            (rewr->rnd_vec[rnd_j](gamma[dirac].row[col] + vec_i * 4 + 
-            (rewr->rnd_vec[rnd_j](col + vec_i * 4 + 
-              4 * number_of_eigen_vec * t_sink)) *
+            (rewr->rnd_vec[rnd_j][col + vec_i * 4 + 
+              4 * number_of_eigen_vec * t_sink]) *
 //            contraction[particle_no][p][rnd_i][col].col(vec_i);
             contraction[particle_no][p][rnd_i][gamma[dirac].row[col]].col(vec_i);
         }

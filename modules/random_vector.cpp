@@ -64,7 +64,7 @@ void LapH::random_vector::read_random_vector(const std::string& filename) {
     exit(0);
   }   
   // reading data
-  int check_read_in += fread(&(vec[0]), sizeof(std::complex<double>), 
+  int check_read_in = fread(&(vec[0]), sizeof(std::complex<double>), 
                              vec.size(), fp);
   if(check_read_in !=  (int) vec.size())
     std::cout << "It seems that not all data are written to: "

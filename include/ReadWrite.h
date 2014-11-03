@@ -11,13 +11,9 @@
 // TODO: check if they are all necessary. Doesn't matter much though
 #include <cmath>
 #include <complex>
-//#include <cstdio>
-//include <cstdlib>
-//#include <cstring>
 #include <ctime>
 #include <fstream>
 #include <iostream>
-//#include <typeinfo>
 #include <vector>
 
 //#include "Eigen/Dense"
@@ -26,21 +22,15 @@
 //#include "boost/multi_array.hpp" 
 
 //#include "lime.h"
+#include "config_utils.h"
 #include "GlobalData.h"
+#include "io_utils.h"
 #include "propagator_io.h"
 #include "quark.h"
-#include "io_utils.h"
-#include "config_utils.h"
+#include "random_vector.h"
 #include "typedefs.h"
 
 /***************************Input from files**********************************/
-
-
-//typedef boost::multi_array<Eigen::MatrixXcd, 3> dim3_eigen_array;
-//typedef std::vector<Eigen::MatrixXcd> vec_eigen;
-//typedef std::complex<double> cmplx;
-//typedef std::vector<cmplx> vec;
-//typedef boost::multi_array<cmplx, 2> dim2_array;
 
 class ReadWrite {
 
@@ -58,7 +48,8 @@ public:
 protected:
   vec_Xcd_eigen perambulator;
 
-  vec_Xcd_eigen rnd_vec;
+//  vec_Xcd_eigen rnd_vec;
+  std::vector<LapH::random_vector> rnd_vec;
 
   array_Xcd_d3_eigen basicoperator;
   array_cd_d2 momentum;
@@ -66,6 +57,7 @@ protected:
   double* gaugefield;
   int** iup;
   int** idown;
+
   void read_eigenvectors_from_file (Eigen::MatrixXcd& V, const int config_i, 
       const int t);
 };
