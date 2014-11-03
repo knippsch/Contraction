@@ -9,7 +9,7 @@ namespace { // some internal namespace
 
 static const std::complex<double> I(0.0, 1.0);
 
-static void create_momenta (array_cd_d2 momentum) {
+static void create_momenta (array_cd_d2 &momentum) {
 
   try{
     const int Lx = global_data->get_Lx();
@@ -50,7 +50,6 @@ static void create_momenta (array_cd_d2 momentum) {
         }
       }
     }
-  return;
   }
   catch(std::exception& e){
     std::cout << e.what() << "in: ReadWrite::create_momenta\n";
@@ -206,7 +205,7 @@ void ReadWrite::build_source_matrix (const int config_i) {
     read_eigenvectors_from_file(V_t, config_i, t);
    
 //    std::cout << "V_t with t = " << t << std::endl;
-//    std::cout << V_t.block(0,0,6,6) << std::endl;
+//    std::cout << std::setprecision(8) << V_t.block(0,0,6,12) << std::endl;
 //    std::cout << basicoperator[number_of_momenta - p - 1][t][0].block(0,0,6,6) << std::endl;
 //        << std::endl << "\n" << s.block(0,0,6,6) << std::endl;
 //    std::cout << std::endl;
@@ -303,14 +302,14 @@ void ReadWrite::read_eigenvectors_from_file (Eigen::MatrixXcd& V, const int conf
   try{
     //clock_t time = clock();
  //   const int Lt = global_data->get_Lt();
-    const int dim_row = global_data->get_dim_row();
-    const int verbose = global_data->get_verbose();
-    const int number_of_eigen_vec = global_data->get_number_of_eigen_vec();
+    const size_t dim_row = global_data->get_dim_row();
+    const size_t verbose = 1.;// global_data->get_verbose();
+    const size_t number_of_eigen_vec = global_data->get_number_of_eigen_vec();
 
     std::string filename = global_data->get_path_eigenvectors() + "/"
         + global_data->get_name_eigenvectors();
     //buffer for read in
-    vec eigen_vec(dim_row);
+    std::complex<double>* eigen_vec = new std::complex<double>[dim_row];
 
     //if(verbose) printf("reading eigen vectors from files:\n");
     //else printf("\treading eigenvectors:");
@@ -320,15 +319,21 @@ void ReadWrite::read_eigenvectors_from_file (Eigen::MatrixXcd& V, const int conf
     char name[200];
     sprintf(name, "%s.%04d.%03d", filename.c_str(), config_i, t); 
     if(verbose) std::cout << "Reading file: " << name << std::endl;
-    std::ifstream infile(name, std::ifstream::binary);
-  
-    for (int nev = 0; nev < number_of_eigen_vec; ++nev) {
-      infile.read( (char*) &(eigen_vec[0]), 2*dim_row*sizeof(double));
-      for(int nrow = 0; nrow < dim_row; ++nrow){
-        V(nrow, nev) = eigen_vec[nrow];
+    std::ifstream infile(name, std::ifstream::binary); 
+    if (infile) {
+      for (size_t nev = 0; nev < number_of_eigen_vec; ++nev) {
+        infile.read( (char*) eigen_vec, 2*dim_row*sizeof(double));
+        for(size_t nrow = 0; nrow < dim_row; ++nrow){
+          V(nrow, nev) = eigen_vec[nrow];
+        }
       }
     }
+    else {
+      std::cout << "eigenvector file does not exist!!!\n" << std::endl;
+      exit(0);
+    }
     infile.close();
+  
     // small test of trace and sum over the eigen vector matrix!
     if(verbose){
       std::cout << "trace of V^d*V on t = " << t << ":\t"
@@ -337,9 +342,10 @@ void ReadWrite::read_eigenvectors_from_file (Eigen::MatrixXcd& V, const int conf
           << (V.adjoint() * V).sum() << std::endl;
     }   
 
+//    std::cout << (V.adjoint() * V).block(0,0,6,6) << std::endl;
+
     //time = clock() - time;
     //if(!verbose) printf("\t\tSUCCESS - %.1f seconds\n", ((float) time)/CLOCKS_PER_SEC);
-  return;
   }
   catch(std::exception& e){
     std::cout << e.what() << "in: ReadWrite::read_eigenvectors_from_file\n";
@@ -534,161 +540,161 @@ void ReadWrite::read_rnd_vectors_from_file (const int config_i) {
 
 // Christophers function to read in the gauge fields. Don't ask me for comments on 
 // what this does
-void ReadWrite::read_lime_gauge_field_doubleprec_timeslices(const int config_i) {
-
-  try{
-    clock_t time = clock();
-    const int Lt = global_data->get_Lt();
-    const int Lx = global_data->get_Lx();
-    const int Ly = global_data->get_Ly();
-    const int Lz = global_data->get_Lz();
-    const int verbose = global_data->get_verbose();
-    
-    const int slice_i = 0;
-    const int slice_f = Lt+1;
-    char filename[200];
-
-    FILE * ifs;
-    int t, x, y, z, status;
-    n_uint64_t bytes;
-    char * header_type;
-    LimeReader * limereader;
-    double tmp[72], tmp2[72];
-    int words_bigendian;
-
-    if(verbose){
-      std::cout << "\treading gauge fields from files:" << std::endl;
-    } else {
-      std::cout << "\treading gauge fields:";
-    }
-
-    sprintf(filename, "%s/conf.%04d",
-      global_data->get_config_path().c_str(), config_i);
-
-    words_bigendian = big_endian();
-    ifs = fopen(filename, "r");
-    if(ifs == (FILE *)NULL) {
-      fprintf(stderr, "Could not open file %s\n Aborting...\n", filename);
-      exit(500);
-    }
-    limereader = limeCreateReader( ifs );
-    if( limereader == (LimeReader *)NULL ) {
-      fprintf(stderr, "Unable to open LimeReader\n");
-      exit(500);
-    }
-    if(verbose) std::cout << "\t\tread file: " << filename << std::endl;
-    while( (status = limeReaderNextRecord(limereader)) != LIME_EOF ) {
-      if(status != LIME_SUCCESS ) {
-        fprintf(stderr, "limeReaderNextRecord returned error with status = %d!\n",
-            status);
-        status = LIME_EOF;
-        break;
-      }
-      header_type = limeReaderType(limereader);
-      if(strcmp("ildg-binary-data",header_type) == 0) break;
-    }
-    if(status == LIME_EOF) {
-      fprintf(stderr, "no ildg-binary-data record found in file %s\n",filename);
-      limeDestroyReader(limereader);
-      fclose(ifs);
-      exit(-2);
-    }
-    bytes = limeReaderBytes(limereader);
-    if(bytes != (n_uint64_t)Lx*Ly*Lz*Lt*72*(n_uint64_t)sizeof(double)) {
-      if(bytes != (n_uint64_t)Lx*Ly*Lz*Lt*72*(n_uint64_t)sizeof(double)/2) {
-        fprintf(stderr, "Probably wrong lattice size or precision (bytes=%lu) in file %s expected %lu\n",
-            (n_uint64_t)bytes, filename,
-            (n_uint64_t)Lx*Ly*Lz*Lt*72*(n_uint64_t)sizeof(double));
-        fprintf(stderr, "Aborting...!\n");
-        fflush( stdout );
-        exit(501);
-      }
-      else {
-        fclose(ifs);
-        fprintf(stderr, "single precision read!\n");
-
-        fprintf(stderr, "Not implemented!\n");
-        exit(EXIT_FAILURE);
-        read_lime_gauge_field_singleprec(gaugefield, filename, Lt, Lx, Ly, Lz);
-        return;
-      }
-    }
-
-    bytes = (n_uint64_t)72*sizeof(double);
-
-    for(t = 0; t < Lt; t++) {
-      for(z = 0; z < Lz; z++) {
-        for(y = 0; y < Ly; y++) {
-          for(x = 0; x < Lx; x++) {
-
-            // check for endianess and reading in data
-            // the pointer limereader is internally increased by bytes
-            // in the limeReaderReadData function
-            if(!words_bigendian) {
-              status = limeReaderReadData(tmp, &bytes, limereader);
-              byte_swap_assign(tmp2, tmp, 72);
-            }
-            else
-              status = limeReaderReadData(tmp2, &bytes, limereader);
-            // check if reading was successfull
-            if(status < 0 && status != LIME_EOR) {
-              fprintf(stderr, "LIME read error occured with status = %d while reading file %s!\n Aborting...\n",
-                  status, filename);
-              exit(500);
-            }
-
-            // we just want to read in data in the specific range of timeslices
-            // must be here because the limereader pointer must be increased 
-            // correctly
-            // could be done with much more performance but might be tricky to 
-            // do correctly
-            if(t<slice_i || t>slice_f)
-              continue;
-
-            // copy of link variables from tmp2 into config
-            // ILDG has mu-order: x,y,z,t so it is changed here to: t,x,y,z !
-            const size_t p = (size_t) ( ((t-slice_i)*Lx*Lz*Lz + 
-                x*Ly*Lz + y*Lz + z) * 72); // position in config
-            size_t k = 0;
-            for(size_t mu = 1; mu <= 4; mu++) { // mu=4 is for the shift of U_t
-              size_t index;
-              if (mu != 4)
-                index = p + mu*18; // for U_x, U_y and U_z
-              else
-                index = p; // U_t is copied into the beginning of
-              // the (config+p) array
-
-              for(size_t i = 0; i < 3; i++) {
-                for(size_t j = 0; j < 3; j++) {
-                  gaugefield[index+6*i+2*j] = tmp2[2*k];
-                  gaugefield[index+6*i+2*j+1] = tmp2[2*k+1];
-                  k++;
-                }
-              }
-
-            } // loop over mu ends here
-
-          } // loop over position space ends here
-        }
-      }
-    }
-    if(status < 0 && status != LIME_EOR) {
-      fprintf(stderr, "LIME read error occured with status = %d while reading file %s!\n Aborting...\n",
-          status, filename);
-      exit(500);
-    }
-    limeDestroyReader(limereader);
-    fclose(ifs);
-    time = clock() - time;
-    if(!verbose) std::cout << "\t\tSUCCESS - " << std::fixed << std::setprecision(1)
-      << ((float) time)/CLOCKS_PER_SEC << " seconds" << std::endl; 
-    return;
-
-  }
-  catch(std::exception& e){
-    std::cout << e.what() << "in: ReadWrite::read_lime_gauge_field_doubleprec_timeslices\n";
-    exit(0);
-  }
-
-}
+//void ReadWrite::read_lime_gauge_field_doubleprec_timeslices(const int config_i) {
+//
+//  try{
+//    clock_t time = clock();
+//    const int Lt = global_data->get_Lt();
+//    const int Lx = global_data->get_Lx();
+//    const int Ly = global_data->get_Ly();
+//    const int Lz = global_data->get_Lz();
+//    const int verbose = global_data->get_verbose();
+//    
+//    const int slice_i = 0;
+//    const int slice_f = Lt+1;
+//    char filename[200];
+//
+//    FILE * ifs;
+//    int t, x, y, z, status;
+//    n_uint64_t bytes;
+//    char * header_type;
+//    LimeReader * limereader;
+//    double tmp[72], tmp2[72];
+//    int words_bigendian;
+//
+//    if(verbose){
+//      std::cout << "\treading gauge fields from files:" << std::endl;
+//    } else {
+//      std::cout << "\treading gauge fields:";
+//    }
+//
+//    sprintf(filename, "%s/conf.%04d",
+//      global_data->get_config_path().c_str(), config_i);
+//
+//    words_bigendian = big_endian();
+//    ifs = fopen(filename, "r");
+//    if(ifs == (FILE *)NULL) {
+//      fprintf(stderr, "Could not open file %s\n Aborting...\n", filename);
+//      exit(500);
+//    }
+//    limereader = limeCreateReader( ifs );
+//    if( limereader == (LimeReader *)NULL ) {
+//      fprintf(stderr, "Unable to open LimeReader\n");
+//      exit(500);
+//    }
+//    if(verbose) std::cout << "\t\tread file: " << filename << std::endl;
+//    while( (status = limeReaderNextRecord(limereader)) != LIME_EOF ) {
+//      if(status != LIME_SUCCESS ) {
+//        fprintf(stderr, "limeReaderNextRecord returned error with status = %d!\n",
+//            status);
+//        status = LIME_EOF;
+//        break;
+//      }
+//      header_type = limeReaderType(limereader);
+//      if(strcmp("ildg-binary-data",header_type) == 0) break;
+//    }
+//    if(status == LIME_EOF) {
+//      fprintf(stderr, "no ildg-binary-data record found in file %s\n",filename);
+//      limeDestroyReader(limereader);
+//      fclose(ifs);
+//      exit(-2);
+//    }
+//    bytes = limeReaderBytes(limereader);
+//    if(bytes != (n_uint64_t)Lx*Ly*Lz*Lt*72*(n_uint64_t)sizeof(double)) {
+//      if(bytes != (n_uint64_t)Lx*Ly*Lz*Lt*72*(n_uint64_t)sizeof(double)/2) {
+//        fprintf(stderr, "Probably wrong lattice size or precision (bytes=%lu) in file %s expected %lu\n",
+//            (n_uint64_t)bytes, filename,
+//            (n_uint64_t)Lx*Ly*Lz*Lt*72*(n_uint64_t)sizeof(double));
+//        fprintf(stderr, "Aborting...!\n");
+//        fflush( stdout );
+//        exit(501);
+//      }
+//      else {
+//        fclose(ifs);
+//        fprintf(stderr, "single precision read!\n");
+//
+//        fprintf(stderr, "Not implemented!\n");
+//        exit(EXIT_FAILURE);
+//        read_lime_gauge_field_singleprec(gaugefield, filename, Lt, Lx, Ly, Lz);
+//        return;
+//      }
+//    }
+//
+//    bytes = (n_uint64_t)72*sizeof(double);
+//
+//    for(t = 0; t < Lt; t++) {
+//      for(z = 0; z < Lz; z++) {
+//        for(y = 0; y < Ly; y++) {
+//          for(x = 0; x < Lx; x++) {
+//
+//            // check for endianess and reading in data
+//            // the pointer limereader is internally increased by bytes
+//            // in the limeReaderReadData function
+//            if(!words_bigendian) {
+//              status = limeReaderReadData(tmp, &bytes, limereader);
+//              byte_swap_assign(tmp2, tmp, 72);
+//            }
+//            else
+//              status = limeReaderReadData(tmp2, &bytes, limereader);
+//            // check if reading was successfull
+//            if(status < 0 && status != LIME_EOR) {
+//              fprintf(stderr, "LIME read error occured with status = %d while reading file %s!\n Aborting...\n",
+//                  status, filename);
+//              exit(500);
+//            }
+//
+//            // we just want to read in data in the specific range of timeslices
+//            // must be here because the limereader pointer must be increased 
+//            // correctly
+//            // could be done with much more performance but might be tricky to 
+//            // do correctly
+//            if(t<slice_i || t>slice_f)
+//              continue;
+//
+//            // copy of link variables from tmp2 into config
+//            // ILDG has mu-order: x,y,z,t so it is changed here to: t,x,y,z !
+//            const size_t p = (size_t) ( ((t-slice_i)*Lx*Lz*Lz + 
+//                x*Ly*Lz + y*Lz + z) * 72); // position in config
+//            size_t k = 0;
+//            for(size_t mu = 1; mu <= 4; mu++) { // mu=4 is for the shift of U_t
+//              size_t index;
+//              if (mu != 4)
+//                index = p + mu*18; // for U_x, U_y and U_z
+//              else
+//                index = p; // U_t is copied into the beginning of
+//              // the (config+p) array
+//
+//              for(size_t i = 0; i < 3; i++) {
+//                for(size_t j = 0; j < 3; j++) {
+//                  gaugefield[index+6*i+2*j] = tmp2[2*k];
+//                  gaugefield[index+6*i+2*j+1] = tmp2[2*k+1];
+//                  k++;
+//                }
+//              }
+//
+//            } // loop over mu ends here
+//
+//          } // loop over position space ends here
+//        }
+//      }
+//    }
+//    if(status < 0 && status != LIME_EOR) {
+//      fprintf(stderr, "LIME read error occured with status = %d while reading file %s!\n Aborting...\n",
+//          status, filename);
+//      exit(500);
+//    }
+//    limeDestroyReader(limereader);
+//    fclose(ifs);
+//    time = clock() - time;
+//    if(!verbose) std::cout << "\t\tSUCCESS - " << std::fixed << std::setprecision(1)
+//      << ((float) time)/CLOCKS_PER_SEC << " seconds" << std::endl; 
+//    return;
+//
+//  }
+//  catch(std::exception& e){
+//    std::cout << e.what() << "in: ReadWrite::read_lime_gauge_field_doubleprec_timeslices\n";
+//    exit(0);
+//  }
+//
+//}
 

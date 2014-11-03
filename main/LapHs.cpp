@@ -68,7 +68,7 @@ int main (int ac, char* av[]) {
 
   const int dirac_min = global_data->get_dirac_min();
   const int dirac_max = global_data->get_dirac_max();
-  std::vector<int> dirac_ind {0, 5};
+  std::vector<int> dirac_ind {5};
   const int number_of_dirac = dirac_ind.size();
 
   int displ_min = global_data->get_displ_min();
@@ -408,7 +408,7 @@ int main (int ac, char* av[]) {
               outpath.c_str(), dirac_ind.at(dirac), dirac_ind.at(dirac), p, p, 
               displ_min, displ_max, config_i);
           if((fp = fopen(outfile, "wb")) == NULL)
-            std::cout << "fail to open outputfile" << std::endl;
+            std::cout << "fail to open outputfile: " << outfile << std::endl;
 
           for(int p_u = p_min; p_u < p_max; ++p_u){
             if(mom_squared[p_u] == p){
@@ -440,7 +440,7 @@ int main (int ac, char* av[]) {
                     p1, p2, displ_min + displ_u, displ_min + displ_d, config_i);
                 printf("%s\n", outfile);
                 if((fp = fopen(outfile, "wb")) == NULL)
-                  std::cout << "fail to open outputfile" << std::endl;
+                  std::cout << "fail to open outputfile" << outfile << std::endl;
 
                 for(int p_u = p_min; p_u < p_max; ++p_u){
                   if(mom_squared[p_u] == p1){
@@ -468,7 +468,7 @@ int main (int ac, char* av[]) {
     time = clock() - time;
     std::cout << "\t\tSUCCESS - " << ((float) time)/CLOCKS_PER_SEC << " seconds" << std::endl;
 
-    exit(0);
+    //exit(0);
 
     // *************************************************************************
     // FOUR PT CONTRACTION 1 ***************************************************
@@ -889,11 +889,16 @@ int main (int ac, char* av[]) {
         // build all momenta for sinks
 
         for(int dirac_d = 0; dirac_d < number_of_dirac; ++dirac_d){
-          for(int p_d = p_min; p_d < p_max; ++p_d){
+          for(int p = 0; p <= max_mom_squared; p++){
+            for(int p_d = number_of_momenta/2; p_d > p_min; --p_d){
+              if(mom_squared[p_d] == p){
 
-            basic->init_operator_d(0, t_source_1, t_sink, rewr, 'b', p_d, 0);
-            basic->init_operator_d(1, t_source, t_sink_1, rewr, 'b', 
-                number_of_momenta - p_d - 1, 0);
+                basic->init_operator_d(0, t_source_1, t_sink, rewr, 'b', p_d, 0);
+                basic->init_operator_d(1, t_source, t_sink_1, rewr, 'b', 
+                    number_of_momenta - p_d - 1, 0);
+                break;
+              }
+            }
           }
         }
 
@@ -915,8 +920,8 @@ int main (int ac, char* av[]) {
              for(int p_u = number_of_momenta / 2; p_u < p_max; ++p_u) {
               if(mom_squared[p_u] == p){
                 for(int dirac_2 = 0; dirac_2 < number_of_dirac; ++dirac_2){
-                   for(int p_d = p_min; p_d < p_max; ++p_d) {
-                    if(mom_squared[p_u] <= mom_squared[p_d]){
+                  for(int p_d = p_min; p_d < p_max; ++p_d) {
+                    if(p_u == p_d){
 
                       // initialisation of X. rnd loops and if-statements rule
                       // forbidden randomvector combinations (to improve 
