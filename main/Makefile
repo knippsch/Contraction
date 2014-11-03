@@ -20,7 +20,7 @@ all: rmxeq mkdep mkxeq
 
 MAIN = LapHs
 
-GENERAL = GlobalData BasicOperator ReadWrite io_utils propagator_io config_utils
+GENERAL = GlobalData BasicOperator ReadWrite io_utils config_utils
 MODULES = $(GENERAL)
 
 # search path for modules
@@ -30,22 +30,22 @@ VPATH = .:$(MDIR)
 # Logging option (-mpilog or -mpitrace or -mpianim)
 LOGOPTION =
 
+LIMEPATH = /home/knippsch/ExternLibraries/lime-1.3.2
 
 # additional include directories
-INCPATH = /hiskp2/werner/Libraries/eigen-eigen-1306d75b4a21/ /hiskp2/werner/Libraries/boost_1_55_0/ ../include 
-#hiskp2/jost/lime-1.3.2/include/  
-#INCPATH = /hiskp2/jost/eigen-eigen-ffa86ffb5570 /hiskp2/jost/boost_1_54_0/ /hiskp2/jost/lime-1.3.2/include ../include 
-
+INCPATH = /home/knippsch/ExternLibraries/eigen-3.2.1 \
+          /home/knippsch/ExternLibraries/boost_1_55_0 \
+          $(LIMEPATH)/include/ ../include 
 
 # additional libraries
 
 LIBS = lime boost_program_options
 
-LIBPATH =  /hiskp2/werner/Libraries/lime/lib/ /hiskp2/werner/Libraries/boost_1_55_0/stage/lib/
+LIBPATH = $(LIMEPATH)/lib  /usr/local/lib /home/knippsch/ExternLibraries/boost_1_55_0/stage/lib/
 
 
 # scheduling and optimization options
-CFLAGS = -Wall -pedantic -std=c++0x  -O3 -fopenmp -march=native #-g 
+CFLAGS = -Wall -pedantic -std=c++11  -O3 -fopenmp -march=native -Wno-unused-variable -Wno-unused-local-typedefs
 
 ############################## do not change ###################################
 
