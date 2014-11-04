@@ -114,7 +114,7 @@ void LapH::VdaggerV::build_source_matrix (const int config_i) {
     read_eigenvectors_from_file(V_t, config_i, t);
 
 //    std::cout << "V_t with t = " << t << std::endl;
-//    std::cout << std::setprecision(8) << V_t.block(0,0,6,12) << std::endl;
+//    std::cout << std::setprecision(8) << V_t[0].block(0,0,6,12) << std::endl;
 //    std::cout << vdaggerv[nb_mom - p - 1][t][0].block(0,0,6,6) << std::endl;
 //        << std::endl << "\n" << s.block(0,0,6,6) << std::endl;
 //    std::cout << std::endl;
@@ -132,7 +132,7 @@ void LapH::VdaggerV::build_source_matrix (const int config_i) {
           // TODO: initialize somewhere in the constructor
           if(p == (nb_mom/2)) // zero momentum
             (vdaggerv[nb_mom/2][t][0]).Identity(nb_ev, nb_ev);
-          } else { // not zero momentum
+          else { // not zero momentum
             // momentum vector contains exp(-i p x)
             // Divisor 3 for colour index. All three colours on same lattice site get
             // the same momentum
@@ -142,9 +142,11 @@ void LapH::VdaggerV::build_source_matrix (const int config_i) {
             vdaggerv[p][t][0] = V_t[0].adjoint() * mom.asDiagonal() * V_t[0];
             vdaggerv[nb_mom - p - 1][t][0] =
                 (vdaggerv[p][t][0]).adjoint();
-          } // end if momentum
-        // case displacement
-//        } else {
+             
+           } // end if momentum
+         // case displacement
+         } 
+//        else {
 //
 //          (W_t).setZero();
 //
