@@ -20,7 +20,8 @@ all: rmxeq mkdep mkxeq
 
 MAIN = LapHs
 
-GENERAL = GlobalData BasicOperator ReadWrite io_utils config_utils RandomVector ranlxs EigenVector
+GENERAL = GlobalData BasicOperator ReadWrite io_utils config_utils RandomVector \
+          ranlxs EigenVector VdaggerV
 MODULES = $(GENERAL)
 
 # search path for modules

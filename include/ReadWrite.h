@@ -40,7 +40,7 @@ friend class BasicOperator;
 public:
   //EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   ReadWrite ();
-  void build_source_matrix (const int config_i);
+//  void build_source_matrix (const int config_i);
   void read_perambulators_from_file (const int config_i);
   void read_rnd_vectors_from_file (const int config_i);
 //  void read_lime_gauge_field_doubleprec_timeslices(const int config_i);
@@ -51,12 +51,12 @@ protected:
 
   std::vector<LapH::RandomVector> rnd_vec;
 
-  array_Xcd_d3_eigen basicoperator;
-  array_cd_d2 momentum;
-  Eigen::Matrix3cd** eigen_timeslice;
-  double* gaugefield;
-  int** iup;
-  int** idown;
+//  array_Xcd_d3_eigen basicoperator;
+//  array_cd_d2 momentum;
+//  Eigen::Matrix3cd** eigen_timeslice;
+//  double* gaugefield;
+//  int** iup;
+//  int** idown;
 };
 
 #endif // _READ_WRITE_H__

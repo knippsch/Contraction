@@ -28,6 +28,7 @@
 #include "propagator_io.h"
 #include "quark.h"
 #include "typedefs.h"
+#include "VdaggerV.h"
 
 //typedef boost::multi_array<Eigen::MatrixXcd, 2> dim2_eigen_array;
 //typedef boost::multi_array<Eigen::MatrixXcd, 4> dim4_eigen_array;
@@ -48,13 +49,15 @@ public:
   BasicOperator();
 //  virtual ~BasicOperator ();
   void init_operator_u (const int particle_no, const int t_source, 
-    const int t_sink, ReadWrite* rewr, const char dilution, const int p, 
-    const int displ);
+                        const int t_sink, const ReadWrite& rewr, 
+                        const LapH::VdaggerV& vdaggerv, const char dilution, 
+                        const int p, const int displ);
   void init_operator_d(const int particle_no, const int t_source, 
-      const int t_sink, ReadWrite* rewr, const char dilution, const int p, 
-      const int displ);
+                       const int t_sink, const ReadWrite& rewr, 
+                       const LapH::VdaggerV& vdaggerv, const char dilution, 
+                       const int p, const int displ);
   void get_operator_charged(array_Xcd_d2_eigen& op_1, const int particle_no, const int t_sink, 
-                            ReadWrite* rewr, const int dirac, const int p) const;
+                            const ReadWrite& rewr, const int dirac, const int p) const;
   void get_operator_g5(vec_Xcd_eigen& op_1, const int particle_no, 
                        const int dirac, const int p) const;
   void get_operator_uncharged(vec_Xcd_eigen& op_1, const int particle_no, 

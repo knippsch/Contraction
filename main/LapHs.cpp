@@ -45,7 +45,8 @@ int main (int ac, char* av[]) {
   global_data->read_parameters(ac, av);
 
   // reading in of data
-  ReadWrite* rewr = new ReadWrite;
+  ReadWrite rewr;
+  LapH::VdaggerV vdaggerv;
 
   // everything for operator handling
   BasicOperator* basic = new BasicOperator();
@@ -203,11 +204,9 @@ int main (int ac, char* av[]) {
 
     std::cout << "\nprocessing configuration: " << config_i << "\n\n";
 
-    rewr->read_perambulators_from_file(config_i);
-    rewr->read_rnd_vectors_from_file(config_i);
-//    rewr->read_eigenvectors_from_file(config_i);
-//    rewr->read_lime_gauge_field_doubleprec_timeslices(config_i);
-    rewr->build_source_matrix(config_i);
+    rewr.read_perambulators_from_file(config_i);
+    rewr.read_rnd_vectors_from_file(config_i);
+    vdaggerv.build_source_matrix(config_i);
 
 
     // *************************************************************************
@@ -263,8 +262,8 @@ int main (int ac, char* av[]) {
                 // choose 'i' for interlace or 'b' for block time dilution scheme
                 // TODO: get that from input file
                 // choose 'c' for charged or 'u' for uncharged particles
-                basic->init_operator_u(0, t_source, t_sink, rewr, 'b', p, displ_min + displ_u);
-                basic->init_operator_d(0, t_source, t_sink, rewr, 'b', p, displ_min + displ_d);
+                basic->init_operator_u(0, t_source, t_sink, rewr, vdaggerv, 'b', p, displ_min + displ_u);
+                basic->init_operator_d(0, t_source, t_sink, rewr, vdaggerv, 'b', p, displ_min + displ_d);
               }
     
               for(int dirac_u = 0; dirac_u < number_of_dirac; ++dirac_u){
@@ -876,9 +875,9 @@ int main (int ac, char* av[]) {
           for(int p = 0; p <= max_mom_squared; p++){
             for(int p_u = number_of_momenta/2; p_u < p_max; ++p_u){
               if(mom_squared[p_u] == p){
-                basic->init_operator_u(0, t_source, t_sink, rewr, 'b', p_u, 0);
-                basic->init_operator_u(1, t_source_1, t_sink_1, rewr, 'b', 
-                    number_of_momenta - p_u - 1, 0);
+                basic->init_operator_u(0, t_source, t_sink, rewr, vdaggerv, 'b', p_u, 0);
+                basic->init_operator_u(1, t_source_1, t_sink_1, rewr, vdaggerv, 'b', 
+                                       number_of_momenta - p_u - 1, 0);
                 break;
               }
             }
@@ -893,8 +892,8 @@ int main (int ac, char* av[]) {
             for(int p_d = number_of_momenta/2; p_d > p_min; --p_d){
               if(mom_squared[p_d] == p){
 
-                basic->init_operator_d(0, t_source_1, t_sink, rewr, 'b', p_d, 0);
-                basic->init_operator_d(1, t_source, t_sink_1, rewr, 'b', 
+                basic->init_operator_d(0, t_source_1, t_sink, rewr, vdaggerv, 'b', p_d, 0);
+                basic->init_operator_d(1, t_source, t_sink_1, rewr, vdaggerv, 'b', 
                     number_of_momenta - p_d - 1, 0);
                 break;
               }
@@ -1113,7 +1112,6 @@ int main (int ac, char* av[]) {
 
   // TODO: freeing all memory!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  delete rewr;
   delete basic;
 }
 
