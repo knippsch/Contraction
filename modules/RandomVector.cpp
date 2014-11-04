@@ -1,8 +1,8 @@
-#include "random_vector.h"
+#include "RandomVector.h"
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
-void LapH::random_vector::set(const int seed) {
+void LapH::RandomVector::set(const int seed) {
 
   // initialisation of the rando vector to create Z2 random vector
   size_t length = vec.size();
@@ -28,7 +28,7 @@ void LapH::random_vector::set(const int seed) {
 }
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
-void LapH::random_vector::set(const int seed, const std::string& filename) {
+void LapH::RandomVector::set(const int seed, const std::string& filename) {
 
   set(seed);
   write_random_vector(filename);
@@ -36,7 +36,7 @@ void LapH::random_vector::set(const int seed, const std::string& filename) {
 }
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
-void LapH::random_vector::write_random_vector(
+void LapH::RandomVector::write_random_vector(
                                        const std::string& filename) const {
   // writing random vector to file
   FILE* fp = NULL;
@@ -54,7 +54,7 @@ void LapH::random_vector::write_random_vector(
 } 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
-void LapH::random_vector::read_random_vector(const std::string& filename) {
+void LapH::RandomVector::read_random_vector(const std::string& filename) {
 
   // open file for reading
   FILE *fp = NULL;

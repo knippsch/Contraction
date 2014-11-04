@@ -103,10 +103,10 @@ ReadWrite::ReadWrite () : perambulator(),
       perambulator[i] = Eigen::MatrixXcd::Zero(4 * number_of_eigen_vec * Lt,
           number_of_inversions);
     }
-    // TODO: the resize is unnassicarry if it is done in initialiser list 
+    // TODO: the resize is unnasassarry if it is done in initialiser list 
     // with the ctor
     rnd_vec.resize(number_of_rnd_vec, 
-                   LapH::random_vector(Lt*number_of_eigen_vec*4));
+                   LapH::RandomVector(Lt*number_of_eigen_vec*4));
     
 
 #if 1
@@ -180,6 +180,19 @@ ReadWrite::ReadWrite () : perambulator(),
 /******************************************************************************/
 /******************************************************************************/
 
+static void read_eigenvectors_from_file (LapH::EigenVector& V, 
+                                         const int config_i, const int t) {
+    char name[200];
+    std::string filename = global_data->get_path_eigenvectors() + "/"
+        + global_data->get_name_eigenvectors();
+    sprintf(name, "%s.%04d.%03d", filename.c_str(), config_i, t); 
+
+    V.read_eigen_vector(name, 0, 1);    
+}
+
+/******************************************************************************/
+/******************************************************************************/
+/******************************************************************************/
 
 void ReadWrite::build_source_matrix (const int config_i) {
 
@@ -194,13 +207,14 @@ void ReadWrite::build_source_matrix (const int config_i) {
   const int number_of_momenta = global_data->get_number_of_momenta();
 
   // creating basic operator
-  Eigen::MatrixXcd V_t = Eigen::MatrixXcd::Zero(dim_row, number_of_eigen_vec);
   Eigen::MatrixXcd W_t = Eigen::MatrixXcd::Zero(dim_row, number_of_eigen_vec);
   Eigen::VectorXcd mom = Eigen::VectorXcd::Zero(dim_row);
 
+  LapH::EigenVector V_t(1, dim_row, number_of_eigen_vec);
+
   for(int t = 0; t < Lt; ++t){
 
-    (V_t).setZero();
+    //(V_t).setZero();
     read_eigenvectors_from_file(V_t, config_i, t);
    
 //    std::cout << "V_t with t = " << t << std::endl;
@@ -233,7 +247,7 @@ void ReadWrite::build_source_matrix (const int config_i) {
             for(int x = 0; x < dim_row; ++x) {
               mom(x) = momentum[p][x/3];
             }
-            basicoperator[p][t][0] = V_t.adjoint() * mom.asDiagonal() * V_t;
+            basicoperator[p][t][0] = V_t[0].adjoint() * mom.asDiagonal() * V_t[0];
             basicoperator[number_of_momenta - p - 1][t][0] = 
                 (basicoperator[p][t][0]).adjoint();
           } // end if momentum
@@ -250,15 +264,15 @@ void ReadWrite::build_source_matrix (const int config_i) {
           map_timeslice_to_eigen(eigen_timeslice, timeslice);
         
           //displacement in one direction i acting to the right
-          right_displacement_one_dir(eigen_timeslice, iup, idown, dir - 1, 
-              V_t, W_t);
+//          right_displacement_one_dir(eigen_timeslice, iup, idown, dir - 1, 
+//              V_t[0], W_t);
           // dir = 3 for z-displacement (1 x 2 y)
           // W holds DV
   
           if(p == number_of_momenta/2) {
             
-            basicoperator[number_of_momenta/2][t][dir] = V_t.adjoint() * W_t
-                - W_t.adjoint() * V_t;
+            basicoperator[number_of_momenta/2][t][dir] = V_t[0].adjoint() * W_t
+                - W_t.adjoint() * V_t[0];
 
           } else {   
 
@@ -273,8 +287,8 @@ void ReadWrite::build_source_matrix (const int config_i) {
             //TODO: is that efficient?
             // build basicoperator = V^dagger exp(-ipx) V 
             // opposite momentum is just basicoperator daggered
-            basicoperator[p][t][dir] = V_t.adjoint() * mom.asDiagonal() *  W_t - 
-                W_t.adjoint() * mom.asDiagonal() * V_t;
+            basicoperator[p][t][dir] = V_t[0].adjoint() * mom.asDiagonal() *  W_t - 
+                W_t.adjoint() * mom.asDiagonal() * V_t[0];
             basicoperator[number_of_momenta - p - 1][t][dir] = 
                 (-1) *  (basicoperator[p][t][dir]).adjoint();
           
@@ -290,66 +304,6 @@ void ReadWrite::build_source_matrix (const int config_i) {
   std::cout << "\t\tSUCCESS - " << std::fixed << std::setprecision(1)
     << ((float) t2)/CLOCKS_PER_SEC << " seconds" << std::endl;
   return;
-}
-
-/******************************************************************************/
-/******************************************************************************/
-/******************************************************************************/
-
-void ReadWrite::read_eigenvectors_from_file (Eigen::MatrixXcd& V, const int config_i, const int t) {
-
-  try{
-    //clock_t time = clock();
- //   const int Lt = global_data->get_Lt();
-    const size_t dim_row = global_data->get_dim_row();
-    const size_t verbose = 1.;// global_data->get_verbose();
-    const size_t number_of_eigen_vec = global_data->get_number_of_eigen_vec();
-
-    std::string filename = global_data->get_path_eigenvectors() + "/"
-        + global_data->get_name_eigenvectors();
-    //buffer for read in
-    std::complex<double>* eigen_vec = new std::complex<double>[dim_row];
-
-    //if(verbose) printf("reading eigen vectors from files:\n");
-    //else printf("\treading eigenvectors:");
-    //fflush(stdout);
-
-    //setting up file
-    char name[200];
-    sprintf(name, "%s.%04d.%03d", filename.c_str(), config_i, t); 
-    if(verbose) std::cout << "Reading file: " << name << std::endl;
-    std::ifstream infile(name, std::ifstream::binary); 
-    if (infile) {
-      for (size_t nev = 0; nev < number_of_eigen_vec; ++nev) {
-        infile.read( (char*) eigen_vec, 2*dim_row*sizeof(double));
-        for(size_t nrow = 0; nrow < dim_row; ++nrow){
-          V(nrow, nev) = eigen_vec[nrow];
-        }
-      }
-    }
-    else {
-      std::cout << "eigenvector file does not exist!!!\n" << std::endl;
-      exit(0);
-    }
-    infile.close();
-  
-    // small test of trace and sum over the eigen vector matrix!
-    if(verbose){
-      std::cout << "trace of V^d*V on t = " << t << ":\t"
-          << (V.adjoint() * V).trace() << std::endl;
-      std::cout << "sum over all entries of V^d*V on t = " << t << ":\t"
-          << (V.adjoint() * V).sum() << std::endl;
-    }   
-
-//    std::cout << (V.adjoint() * V).block(0,0,6,6) << std::endl;
-
-    //time = clock() - time;
-    //if(!verbose) printf("\t\tSUCCESS - %.1f seconds\n", ((float) time)/CLOCKS_PER_SEC);
-  }
-  catch(std::exception& e){
-    std::cout << e.what() << "in: ReadWrite::read_eigenvectors_from_file\n";
-    exit(0);
-  }
 }
 
 /******************************************************************************/

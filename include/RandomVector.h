@@ -1,5 +1,5 @@
-#ifndef RANDOM_VECTOR_H_
-#define RANDOM_VECTOR_H_
+#ifndef RANDOMVECTOR_H_
+#define RANDOMVECTOR_H_
 
 #include <complex>
 #include <fstream>
@@ -15,7 +15,7 @@ typedef std::complex<double> cmplx;
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-class random_vector {
+class RandomVector {
 
 private:
   // the random vector
@@ -23,8 +23,8 @@ private:
 
 public:
   // standard ctor and dtor are enough - all else is handled by std::vector
-  random_vector(const size_t length) : vec(length, cmplx(0.0,0.0)) {};
-  ~random_vector() {};
+  RandomVector(const size_t length) : vec(length, cmplx(0.0,0.0)) {};
+  ~RandomVector() {};
 
   // [] operator to directly access the elements of vec
   inline cmplx operator[](size_t i) const {
@@ -55,4 +55,4 @@ public:
 
 } // end of namespace
 
-#endif // RANDOM_VECTOR_H_ 
+#endif // RANDOMVECTOR_H_ 

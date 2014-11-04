@@ -23,11 +23,12 @@
 
 //#include "lime.h"
 #include "config_utils.h"
+#include "EigenVector.h"
 #include "GlobalData.h"
 #include "io_utils.h"
 #include "propagator_io.h"
 #include "quark.h"
-#include "random_vector.h"
+#include "RandomVector.h"
 #include "typedefs.h"
 
 /***************************Input from files**********************************/
@@ -48,8 +49,7 @@ public:
 protected:
   vec_Xcd_eigen perambulator;
 
-//  vec_Xcd_eigen rnd_vec;
-  std::vector<LapH::random_vector> rnd_vec;
+  std::vector<LapH::RandomVector> rnd_vec;
 
   array_Xcd_d3_eigen basicoperator;
   array_cd_d2 momentum;
@@ -57,9 +57,6 @@ protected:
   double* gaugefield;
   int** iup;
   int** idown;
-
-  void read_eigenvectors_from_file (Eigen::MatrixXcd& V, const int config_i, 
-      const int t);
 };
 
 #endif // _READ_WRITE_H__
