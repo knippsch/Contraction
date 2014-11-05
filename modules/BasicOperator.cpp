@@ -333,15 +333,15 @@ void BasicOperator::init_operator_u (const int particle_no, const int t_source,
     for(int rnd_j = 0; rnd_j < number_of_rnd_vec; ++rnd_j){
       for(int blocknr = 0; blocknr < 4; blocknr++){
         s[rnd_i][rnd_j][blocknr] = Eigen::MatrixXcd::Zero(
-                                   quarks[0].number_of_dilution_E, 
-                                   quarks[0].number_of_dilution_E);
+                                         quarks[0].number_of_dilution_E, 
+                                         quarks[0].number_of_dilution_E);
+      }
     }
-  }}
-
+  }
   // TODO: put dilution into main loop
   // dilution from the left
   for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i) {
-    for(int rnd_j = 0; rnd_j < number_of_rnd_vec; ++rnd_j){
+    for(int rnd_j = rnd_i+1; rnd_j < number_of_rnd_vec; ++rnd_j){
       for(int blocknr = 0; blocknr < 4; ++blocknr) {
 
         // s holds left diluted basicoperator
@@ -353,7 +353,7 @@ void BasicOperator::init_operator_u (const int particle_no, const int t_source,
   
                 std::conj(rnd_vec[rnd_i][blocknr + vec_i * 4 + 
                   4 * number_of_eigen_vec * t_sink]) * 
-                rnd_vec[rnd_i][blocknr + vec_j * 4 + 
+                rnd_vec[rnd_j][blocknr + vec_j * 4 + 
                   4 * number_of_eigen_vec * t_sink] * 
                 vdaggerv(p, t_sink, displ)(vec_i, vec_j);
           }
@@ -363,37 +363,29 @@ void BasicOperator::init_operator_u (const int particle_no, const int t_source,
   }
                 
   for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i) {
-  for(int rnd_j = 0; rnd_j < number_of_rnd_vec; ++rnd_j) {
+    for(int rnd_j = rnd_i+1; rnd_j < number_of_rnd_vec; ++rnd_j) {
+  
+      for(int col = 0; col < 4; ++col) {
+        for(int row = 0; row  < 4; ++row){
+  
+          // propagator D_u^-1=perambulator(tsource, tsink) * basicoperator(tsink)
+          // calculate columns of D_u^-1. gamma structure can be implented by
+          // reordering columns and multiplying them with constants
+  
+          contraction[particle_no][p][rnd_i][rnd_j][col].block(
+                                    row * number_of_eigen_vec, 0,
+                                    number_of_eigen_vec, quarks[0].number_of_dilution_E) =
 
-    for(int col = 0; col < 4; ++col) {
-      for(int row = 0; row  < 4; ++row){
-
-        // propagator D_u^-1=perambulator(tsource, tsink) * basicoperator(tsink)
-        // calculate columns of D_u^-1. gamma structure can be implented by
-        // reordering columns and multiplying them with constants
-
-        contraction[particle_no][p][rnd_i][rnd_j][col].block(
-                                  row * number_of_eigen_vec, 0,
-                                  number_of_eigen_vec, number_of_eigen_vec) =
-          peram[rnd_i].block(4 * number_of_eigen_vec * t_source + 
-            number_of_eigen_vec * row,
-            (quarks[0].number_of_dilution_E) * quarks[0].number_of_dilution_D * 
-            t_sink_dil + (quarks[0].number_of_dilution_E) * col,
-            number_of_eigen_vec,
-            (quarks[0].number_of_dilution_E)) * s[rnd_i][rnd_j][col];
-
+            peram[rnd_i].block(4 * number_of_eigen_vec * t_source + number_of_eigen_vec * row,
+                               (quarks[0].number_of_dilution_E) * quarks[0].number_of_dilution_D * 
+                                t_sink_dil + (quarks[0].number_of_dilution_E) * col,
+                                number_of_eigen_vec,
+                                (quarks[0].number_of_dilution_E)) * s[rnd_i][rnd_j][col];
+  
+        }
       }
-    }
-
-  }}
-
-//  for(int rnd_i = 0; rnd_i < number_of_rnd_vec; rndi++){
-//    for(int blocknr = 0; blocknr < 4; blocknr++){
-//      delete [] s[rnd_i][blocknr];
-//    }
-//    delete [] s[rnd_i];
-//  }
-//  delete [] s;
+    }  
+  }
 
   t = clock() - t;
   //printf("\t\tSUCCESS - %.1f seconds\n", ((float) t)/CLOCKS_PER_SEC);
@@ -461,9 +453,9 @@ void BasicOperator::init_operator_d (const int particle_no, const int t_source,
         // gamma_5 from left and right side. It changes the sign of the two
         // upper right and two lower left blocks in dirac space
         if( ((row + col) == 3) || (abs(row - col) > 1) ){
-        contraction_dagger[particle_no][p][rnd_i][row].block(col * 
-            quarks[0].number_of_dilution_E, 0,
-            quarks[0].number_of_dilution_E, number_of_eigen_vec) *= -1;
+          contraction_dagger[particle_no][p][rnd_i][row].block(col * 
+              quarks[0].number_of_dilution_E, 0,
+              quarks[0].number_of_dilution_E, number_of_eigen_vec) *= -1;
         }
 
       }
@@ -492,44 +484,20 @@ void BasicOperator::get_operator_charged (array_Xcd_d2_eigen& op_1,
   const int number_of_eigen_vec = global_data->get_number_of_eigen_vec();
   const std::vector<quark> quarks = global_data->get_quarks();
   const int number_of_rnd_vec = quarks[0].number_of_rnd_vec;
-//  const vec_Xcd_eigen rnd_vec = rewr->get_random_vector();
-
-  // for charged particles D_u^-1 must be diluted from the right side
-  // to match the dilution in the perambulator for D_d^-1
-
-  // s_temp holds diluted contraction matrix
-  Eigen::MatrixXcd s_temp = Eigen::MatrixXcd::Zero(4 * number_of_eigen_vec,
-      quarks[0].number_of_dilution_E);
 
   for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i){
-    for(int rnd_j = rnd_i + 1; rnd_j < number_of_rnd_vec; ++rnd_j) {
+    for(int rnd_j = rnd_i+1; rnd_j < number_of_rnd_vec; ++rnd_j) {
 
       // column number of contraction correspondes to blocknr in init_operator
       for(int col = 0; col < 4; col++){
 
-        // dilutes contraction in blocks of 
-        // number_of_eigen_vec * number_of_dilution_E (one dilution step for
-        // every dirac and number_of_dilution_D index
-//        for(int vec_i = 0; vec_i < number_of_eigen_vec; ++vec_i) {
-//          s_temp.col(vec_i % quarks[0].number_of_dilution_E) +=
-////            (rewr->rnd_vec[rnd_j](gamma[dirac].row[col] + vec_i * 4 + 
-//            (rnd_vec[rnd_j][col + vec_i * 4 + 
-//              4 * number_of_eigen_vec * t_sink]) *
-////            contraction[particle_no][p][rnd_i][col].col(vec_i);
-//            contraction[particle_no][p][rnd_i][gamma[dirac].row[col]].col(vec_i);
-//        }
-
         // introducing gamma structure via reordering of columns. Blockwise
         // due to different randomvector-entries
-        (op_1[rnd_i][rnd_j]).block(0, //row * number_of_eigen_vec, 
-//            gamma[dirac].row[col] * quarks[0].number_of_dilution_E, 
-            col * quarks[0].number_of_dilution_E, 
-            4 * number_of_eigen_vec, quarks[0].number_of_dilution_E) = 
-          gamma[dirac].value[col] *
-            contraction[particle_no][p][rnd_i][rnd_j][gamma[dirac].row[col]];
-
-        // reset s_temp to 0
-        (s_temp).setZero();
+        (op_1[rnd_i][rnd_j]).block(0, col * quarks[0].number_of_dilution_E, 
+                                   4 * number_of_eigen_vec, 
+                                   quarks[0].number_of_dilution_E) = 
+            gamma[dirac].value[col] *
+              contraction[particle_no][p][rnd_i][rnd_j][gamma[dirac].row[col]];
 
       } // end for col
   
@@ -557,34 +525,10 @@ void BasicOperator::get_operator_g5 (vec_Xcd_eigen& op_1,
 
     for(int col = 0; col < 4; col++) {
       op_1[rnd_i].block(0, col * number_of_eigen_vec,
-//          4 * number_of_eigen_vec, number_of_eigen_vec) =
           4 * quarks[0].number_of_dilution_E, number_of_eigen_vec) =
       gamma[dirac].value[col] * contraction_dagger[particle_no][p][rnd_i][gamma[dirac].row[col]];
     }
-
-//check if it is faster to initialize op_1 block- instead of column-wise
-#if 0
-      for(int j = 0; j < 4; j++) {
-        for(int i = 0; i < 4; i++){
-          (op_1[rnd_i]).block(i * number_of_eigen_vec, gamma[dirac].row[j] * 
-              number_of_eigen_vec, number_of_eigen_vec, number_of_eigen_vec) = 
-              gamma[dirac].value[j] * contraction_dagger[rnd_i][j + 4 * i];
-          (op_1[rnd_i]).block(i * number_of_eigen_vec, gamma[dirac].row[j] * 
-              number_of_eigen_vec, number_of_eigen_vec, number_of_eigen_vec) = 
-              gamma[dirac].value[j] * contraction_dagger[rnd_i][j + 4 * i];
-          (op_1[rnd_i]).block(i * number_of_eigen_vec, gamma[dirac].row[j] * 
-              number_of_eigen_vec, number_of_eigen_vec, number_of_eigen_vec) = 
-              gamma[dirac].value[j] * contraction_dagger[rnd_i][j + 4 * i];
-          (op_1[rnd_i]).block(i * number_of_eigen_vec, gamma[dirac].row[j] * 
-              number_of_eigen_vec, number_of_eigen_vec, number_of_eigen_vec) = 
-              gamma[dirac].value[j] * contraction_dagger[rnd_i][j + 4 * i];
-        }
-      }
-#endif
-
   }
-
-  return;
 } 
  
 // TODO: think about speedup from extracting factors -1 and +-i in get_operator 
