@@ -33,7 +33,7 @@ int main (int ac, char* av[]) {
   // second line lets OMP decide on the number of threads,
   // e. g. via OMP_NUM_THREADS
   //Eigen::setNbThreads(4);
-  Eigen::setNbThreads(0);
+  Eigen::setNbThreads(4);
 
   //check the number of threads used
   const int nthreads = Eigen::nbThreads();
@@ -427,7 +427,7 @@ int main (int ac, char* av[]) {
     time = clock() - time;
     std::cout << "\t\tSUCCESS - " << ((float) time)/CLOCKS_PER_SEC << " seconds" << std::endl;
 
-    //exit(0);
+    exit(0);
 
     // *************************************************************************
     // FOUR PT CONTRACTION 1 ***************************************************

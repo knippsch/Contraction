@@ -46,7 +46,7 @@ LIBPATH = $(LIMEPATH)/lib  /usr/local/lib /home/knippsch/ExternLibraries/boost_1
 
 
 # scheduling and optimization options
-CFLAGS = -Wall -pedantic -std=c++11  -O3 -fopenmp -march=native -Wno-unused-variable -Wno-unused-local-typedefs
+CFLAGS = -Wall -pedantic -std=c++11 -fopenmp -O3 -march=native -Wno-unused-variable -Wno-unused-local-typedefs
 
 ############################## do not change ###################################
 

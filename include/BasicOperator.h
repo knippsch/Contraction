@@ -77,7 +77,7 @@ protected:
   std::vector<LapH::RandomVector> rnd_vec;
   LapH::VdaggerV vdaggerv;
   array_Xcd_d4_eigen contraction_dagger;
-  array_Xcd_d4_eigen contraction;
+  array_Xcd_d5_eigen contraction;
   std::vector<struct lookup>  gamma;
 };
 

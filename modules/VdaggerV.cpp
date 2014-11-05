@@ -78,7 +78,7 @@ static void read_eigenvectors_from_file (LapH::EigenVector& V,
         + global_data->get_name_eigenvectors();
     sprintf(name, "%s.%04d.%03d", filename.c_str(), config_i, t);
 
-    V.read_eigen_vector(name, 0, 1);
+    V.read_eigen_vector(name, 0, 0);
 }
 /******************************************************************************/
 /******************************************************************************/
