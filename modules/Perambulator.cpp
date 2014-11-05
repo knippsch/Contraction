@@ -1,6 +1,6 @@
 //everything to read and write from/to files
 
-#include "ReadWrite.h"
+#include "Perambulator.h"
 
 // Definition of a pointer on global data
 static GlobalData * const global_data = GlobalData::Instance();
@@ -10,8 +10,7 @@ static GlobalData * const global_data = GlobalData::Instance();
 // constructor ****************************************************************/
 /******************************************************************************/
 /******************************************************************************/
-ReadWrite::ReadWrite () : perambulator(), 
-                          rnd_vec() {
+LapH::Perambulator::Perambulator () : perambulator() {
 
   const int Lt = global_data->get_Lt();
   const std::vector<quark> quarks = global_data->get_quarks();
@@ -26,18 +25,14 @@ ReadWrite::ReadWrite () : perambulator(),
     perambulator[i] = Eigen::MatrixXcd::Zero(4 * number_of_eigen_vec * Lt,
         number_of_inversions);
   }
-  // TODO: the resize is unnasassarry if it is done in initialiser list 
-  // with the ctor
-  rnd_vec.resize(number_of_rnd_vec, 
-                 LapH::RandomVector(Lt*number_of_eigen_vec*4));
     
-  std::cout << "\tallocated memory for ReadWrite" << std::endl;
+  std::cout << "\tallocated memory for Perambulator" << std::endl;
 
 }
 /******************************************************************************/
 /******************************************************************************/
 /******************************************************************************/
-void ReadWrite::read_perambulators_from_file (const int config_i) {
+void LapH::Perambulator::read_perambulators_from_file (const int config_i) {
 
   try{
     clock_t t = clock();
@@ -133,63 +128,8 @@ void ReadWrite::read_perambulators_from_file (const int config_i) {
   }
   catch(std::exception& e){
     std::cout << e.what()
-        << "in: ReadWrite::read_perambulators_from_file\n";
+        << "in: Perambulator::read_perambulators_from_file\n";
     exit(0);
   }
 }
 
-/******************************************************************************/
-/******************************************************************************/
-/******************************************************************************/
-void ReadWrite::read_rnd_vectors_from_file (const int config_i) {
-
-  clock_t t = clock();
-  char infile[400];
-  const int Lt = global_data->get_Lt();
-  const int verbose = global_data->get_verbose();
-  const std::vector<quark> quarks = global_data->get_quarks();
-  const int number_of_rnd_vec = quarks[0].number_of_rnd_vec;
-  const int number_of_eigen_vec = global_data->get_number_of_eigen_vec();
-  const int rnd_vec_length = Lt * number_of_eigen_vec * 4;
-
-  char temp[100];
-
-  if(verbose){
-    std::cout << "\treading randomvectors from files:" << std::endl;
-  } else {
-    std::cout << "\treading randomvectors:";
-  }
-
-  int check_read_in = 0;
-  for(int rnd_vec_i = 0; rnd_vec_i < number_of_rnd_vec; ++rnd_vec_i){
-    // data path Christians perambulators
-//      std::string filename = global_data->get_path_perambulators() + "/";
-
-    // data path for qbig contractions
-    sprintf(temp, "cnfg%d/rnd_vec_%01d/", config_i, rnd_vec_i);
-    std::string filename = global_data->get_path_perambulators()
-      + "/" + temp;
-
-    // data path for juqueen contractions
-//      sprintf(temp, "cnfg%d/", config_i);
-//      std::string filename = global_data->get_path_perambulators()
-//				+ "/" + temp;
-
-    // read random vector
-    sprintf(infile, "%srandomvector.rndvecnb%02d.u.nbev%04d.%04d", 
-        filename.c_str(), rnd_vec_i, number_of_eigen_vec, config_i);
-//      sprintf(infile, "%srandomvector.rndvecnb%02d.u.nbev0120.%04d", 
-//          filename.c_str(), rnd_vec_i, config_i);
-
-//      sprintf(infile, "%s.%03d.u.Ti.%04d", filename.c_str(), rnd_vec_i,
-//          config_i);
-
-    // TODO:: explicit type conversion - Bad style
-    rnd_vec[rnd_vec_i].read_random_vector(infile);
-  }
-  t = clock() - t;
-  if(!verbose) std::cout << "\t\tSUCCESS - " << std::fixed 
-                         << std::setprecision(1)
-                         << ((float) t)/CLOCKS_PER_SEC << " seconds" 
-                         << std::endl; 
-}

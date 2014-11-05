@@ -1,4 +1,4 @@
-#include <VDaggerV.h>
+#include "VDaggerV.h"
 
 // Definition of a pointer on global data
 static GlobalData * const global_data = GlobalData::Instance();
@@ -14,16 +14,8 @@ LapH::VdaggerV::VdaggerV() : vdaggerv(), momentum() {
                  global_data->get_Lz();         
 
   vdaggerv.resize(boost::extents[nb_mom][Lt][4]);
-  for(int p = 0; p < nb_mom; ++p) {
-    for(int t = 0; t < Lt; ++t){
-      // changed to case of no displacement. Else dir < 4
-      for(int dir = 0; dir < 4; dir++) {
-        // blocks in Basicoperator are on diagonal in the beginning. 
-        // non-zero blocks have row = col = blocknr
-        vdaggerv[p][t][dir] = Eigen::MatrixXcd::Zero(nb_ev, nb_ev);
-      }
-    }
-  }   
+  std::fill(vdaggerv.origin(), vdaggerv.origin() + vdaggerv.size(), 
+            Eigen::MatrixXcd::Zero(nb_ev, nb_ev));
 
   momentum.resize(boost::extents[nb_mom][Vs]);
   create_momenta();
@@ -103,7 +95,6 @@ void LapH::VdaggerV::build_source_matrix (const int config_i) {
   const int nb_ev = global_data->get_number_of_eigen_vec();
   const int nb_mom = global_data->get_number_of_momenta();
 
-  // creating basic operator
   Eigen::MatrixXcd W_t = Eigen::MatrixXcd::Zero(dim_row, nb_ev);
   Eigen::VectorXcd mom = Eigen::VectorXcd::Zero(dim_row);
 
@@ -113,82 +104,29 @@ void LapH::VdaggerV::build_source_matrix (const int config_i) {
 
     read_eigenvectors_from_file(V_t, config_i, t);
 
-//    std::cout << "V_t with t = " << t << std::endl;
-//    std::cout << std::setprecision(8) << V_t[0].block(0,0,6,12) << std::endl;
-//    std::cout << vdaggerv[nb_mom - p - 1][t][0].block(0,0,6,6) << std::endl;
-//        << std::endl << "\n" << s.block(0,0,6,6) << std::endl;
-//    std::cout << std::endl;
-
     for(int dir = displ_min; dir < displ_max + 1; dir++) {
       for(int p = nb_mom/2; p < nb_mom; p++){
-        // TODO: implement switch case for displacement
-        // case no displacement
-        if(dir == 0) {
-          // TODO: checking the order of loops - enhancement might be possible
-          // e.g. by reordering vdaggerv with t faster than rnd_i
+        // TODO: checking the order of loops - enhancement might be possible
+        // e.g. by reordering vdaggerv with t faster than rnd_i
 
-          // for p = 0, s is the unit matrix. Thus, the V.adjoint() * V multiplication
-          // can be omitted
-          // TODO: initialize somewhere in the constructor
-          if(p == (nb_mom/2)) // zero momentum
-            (vdaggerv[nb_mom/2][t][0]).Identity(nb_ev, nb_ev);
-          else { // not zero momentum
-            // momentum vector contains exp(-i p x)
-            // Divisor 3 for colour index. All three colours on same lattice site get
-            // the same momentum
-            for(int x = 0; x < dim_row; ++x) {
-              mom(x) = momentum[p][x/3];
-            }
-            vdaggerv[p][t][0] = V_t[0].adjoint() * mom.asDiagonal() * V_t[0];
-            vdaggerv[nb_mom - p - 1][t][0] =
-                (vdaggerv[p][t][0]).adjoint();
-             
-           } // end if momentum
-         // case displacement
-         } 
-//        else {
-//
-//          (W_t).setZero();
-//
-//          //Time Slice of Configuration
-//          //Factor 3 for second color index, 2 for complex numbers
-//          double* timeslice = gaugefield + (t * dim_row * 3 * 2);
-//
-//          //Write Timeslice in Eigen Array
-//          map_timeslice_to_eigen(eigen_timeslice, timeslice);
-//
-//          //displacement in one direction i acting to the right
-////          right_displacement_one_dir(eigen_timeslice, iup, idown, dir - 1, 
-////              V_t[0], W_t);
-//          // dir = 3 for z-displacement (1 x 2 y)
-//          // W holds DV
-//
-//          if(p == nb_mom/2) {
-//
-//            vdaggerv[nb_mom/2][t][dir] = V_t[0].adjoint() * W_t
-//                - W_t.adjoint() * V_t[0];
-//
-//          } else {
-//
-//            // momentum vector contains exp(-i p x)
-//            // Divisor 3 for colour index. All three colours on same lattice site get
-//            // the same momentum
-//            for(int x = 0; x < dim_row; ++x) {
-//              mom(x) = momentum[p][x/3];
-//            }
-//
-//            //TODO: check if saving V[t].adjoint in own matrix is faster
-//            //TODO: is that efficient?
-//            // build vdaggerv = V^dagger exp(-ipx) V 
-//            // opposite momentum is just vdaggerv daggered
-//            vdaggerv[p][t][dir] = V_t[0].adjoint() * mom.asDiagonal() *  W_t -
-//                W_t.adjoint() * mom.asDiagonal() * V_t[0];
-//            vdaggerv[nb_mom - p - 1][t][dir] =
-//                (-1) *  (vdaggerv[p][t][dir]).adjoint();
-//
-//          }
-//        } // end if displacement
-
+        // for p = 0, s is the unit matrix
+        // TODO: initialize somewhere in the constructor
+        if(p == (nb_mom/2)){ // zero momentum
+          (vdaggerv[nb_mom/2][t][0]) = Eigen::MatrixXcd::Identity(nb_ev, nb_ev);
+        }
+        else { // not zero momentum
+          // momentum vector contains exp(-i p x)
+          // Divisor 3 for colour index. All three colours on same lattice 
+          // site get the same momentum
+          for(int x = 0; x < dim_row; ++x) {
+            mom(x) = momentum[p][x/3];
+          }
+          vdaggerv[p][t][0] = V_t[0].adjoint() * mom.asDiagonal() * V_t[0];
+          // TODO: this is not needed since adjoining takes no time
+          //       would save a lot of memeory
+          vdaggerv[nb_mom - p - 1][t][0] = (vdaggerv[p][t][0]).adjoint();
+           
+         } // end if momentum
       } // end for momentum
     } // end for displacement
 

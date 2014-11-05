@@ -16,7 +16,7 @@
 
 #include "GlobalData.h"
 #include "BasicOperator.h"
-#include "ReadWrite.h"
+#include "Perambulator.h"
 #include "typedefs.h"
 
 int main (int ac, char* av[]) {
@@ -44,10 +44,6 @@ int main (int ac, char* av[]) {
   GlobalData* global_data = GlobalData::Instance();
   global_data->read_parameters(ac, av);
 
-  // reading in of data
-  ReadWrite rewr;
-  LapH::VdaggerV vdaggerv;
-
   // everything for operator handling
   BasicOperator* basic = new BasicOperator();
 
@@ -60,7 +56,7 @@ int main (int ac, char* av[]) {
 
   //const int number_of_max_mom = global_data->get_number_of_max_mom();
   const int max_mom_squared = global_data->get_number_of_max_mom();
-    //number_of_max_mom * number_of_max_mom;
+  //number_of_max_mom * number_of_max_mom;
   const int number_of_momenta = global_data->get_number_of_momenta();
   const std::vector<int> mom_squared = global_data->get_momentum_squared();
 
@@ -154,13 +150,18 @@ int main (int ac, char* av[]) {
   // 4-point functions
   // 1, 3 -> u-quarks; 2, 4 -> d-quarks; 5, 6 -> u quarks for neutral particle
 
+  // TODO:: should be changed to use std::fill or std::for_each or something
+  size_t row = 4 * quarks[0].number_of_dilution_E;
+  size_t col = 4 * number_of_eigen_vec;
+  Eigen::MatrixXcd test = Eigen::MatrixXcd::Zero(col, row);
   array_Xcd_d2_eigen op_1(boost::extents[nrnd][nrnd]);
+//  std::fill(op_1.origin(), op_1.origin() + op_1.size(), 
+//            test);
   array_Xcd_d2_eigen op_3(boost::extents[nrnd][nrnd]);
-  vec_Xcd_eigen op_2(number_of_rnd_vec);
-  vec_Xcd_eigen op_4(number_of_rnd_vec);
-  vec_Xcd_eigen op_5(number_of_rnd_vec);
-  vec_Xcd_eigen op_6(number_of_rnd_vec);
-
+//  std::fill(op_3.origin(), op_3.origin() + op_3.size(), 
+//            test);
+  vec_Xcd_eigen op_2(number_of_rnd_vec, Eigen::MatrixXcd::Zero(row, col));
+  vec_Xcd_eigen op_4(number_of_rnd_vec, Eigen::MatrixXcd::Zero(row, col));
   for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i){
     for(int rnd_j = 0; rnd_j < number_of_rnd_vec; ++rnd_j){
       op_1[rnd_i][rnd_j] = Eigen::MatrixXcd(4 * number_of_eigen_vec, 
@@ -168,29 +169,6 @@ int main (int ac, char* av[]) {
       op_3[rnd_i][rnd_j] = Eigen::MatrixXcd(4 * number_of_eigen_vec, 
           4 * quarks[0].number_of_dilution_E);
     }
-
-    op_2[rnd_i] = Eigen::MatrixXcd(4 * quarks[0].number_of_dilution_E, 
-        4 * number_of_eigen_vec);
-    op_4[rnd_i] = Eigen::MatrixXcd(4 * quarks[0].number_of_dilution_E, 
-        4 * number_of_eigen_vec);
-
-//    op_5[rnd_i] = Eigen::MatrixXcd(4 * number_of_eigen_vec, 
-//        4 * number_of_eigen_vec);
-//    op_6[rnd_i] = Eigen::MatrixXcd(4 * number_of_eigen_vec, 
-//        4 * number_of_eigen_vec);
-
-  }
-
-  for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i){
-    for(int rnd_j = 0; rnd_j < number_of_rnd_vec; ++rnd_j){
-
-      op_1[rnd_i][rnd_j] = Eigen::MatrixXcd(4 * number_of_eigen_vec, 
-          4 * quarks[0].number_of_dilution_E);
-       }
-
-    op_2[rnd_i] = Eigen::MatrixXcd(4 * quarks[0].number_of_dilution_E, 
-        4 * number_of_eigen_vec);
-    
   }
 
   // ***************************************************************************
@@ -204,9 +182,7 @@ int main (int ac, char* av[]) {
 
     std::cout << "\nprocessing configuration: " << config_i << "\n\n";
 
-    rewr.read_perambulators_from_file(config_i);
-    rewr.read_rnd_vectors_from_file(config_i);
-    vdaggerv.build_source_matrix(config_i);
+    basic->set_basic(config_i);
 
 
     // *************************************************************************
@@ -218,28 +194,10 @@ int main (int ac, char* av[]) {
     time = clock();
 
     // setting the correlation function to zero
-    for(int p1 = 0; p1 < number_of_momenta; ++p1)
-      for(int p2 = 0; p2 < number_of_momenta; ++p2)
-        for(int dirac1 = 0; dirac1 < number_of_dirac; ++dirac1)
-          for(int dirac2 = 0; dirac2 < number_of_dirac; ++dirac2)
-            for(int displ1 = 0; displ1 < number_of_displ; ++displ1)
-              for(int displ2 = 0; displ2 < number_of_displ; ++displ2)
-                for(int t1 = 0; t1 < Lt; ++t1)
-                   for(int t1 = 0; t1 < Lt; ++t1)
-                     C2_mes[p1][p2][dirac1][dirac2][displ1][displ2][t1] = std::complex<double>(0.0, 0.0);
-
-    for(int p1 = 0; p1 < number_of_momenta; ++p1)
-      for(int p2 = 0; p2 < number_of_momenta; ++p2)
-        for(int dirac1 = 0; dirac1 < number_of_dirac; ++dirac1)
-          for(int dirac2 = 0; dirac2 < number_of_dirac; ++dirac2)
-            for(int displ1 = 0; displ1 < number_of_displ; ++displ1)
-              for(int displ2 = 0; displ2 < number_of_displ; ++displ2)
-                for(int t1 = 0; t1 < Lt; ++t1)
-                  for(int t2 = 0; t2 < Lt; ++t2)
-                    for(int rnd1 = 0; rnd1 < number_of_rnd_vec; rnd1++)
-                      for(int rnd2 = 0; rnd2 < number_of_rnd_vec; rnd2++)
-                        Corr[p1][p2][dirac1][dirac2][displ1][displ2][t1][t2][rnd1][rnd2] = 
-                            std::complex<double>(0.0, 0.0);
+    std::fill(C2_mes.origin(), C2_mes.origin() + C2_mes.size(), 
+              std::complex<double>(0.0, 0.0));
+    std::fill(C2_mes.origin(), C2_mes.origin() + C2_mes.size(), 
+              std::complex<double>(0.0, 0.0));
 
     // pi^+/-
     // initializing of Corr: calculate all two-operator traces of the form tr(u \Gamma \bar{d})
@@ -262,8 +220,10 @@ int main (int ac, char* av[]) {
                 // choose 'i' for interlace or 'b' for block time dilution scheme
                 // TODO: get that from input file
                 // choose 'c' for charged or 'u' for uncharged particles
-                basic->init_operator_u(0, t_source, t_sink, rewr, vdaggerv, 'b', p, displ_min + displ_u);
-                basic->init_operator_d(0, t_source, t_sink, rewr, vdaggerv, 'b', p, displ_min + displ_d);
+                basic->init_operator_u(0, t_source, t_sink, 'b', p, 
+                                       displ_min + displ_u);
+                basic->init_operator_d(0, t_source, t_sink, 'b', p, 
+                                       displ_min + displ_d);
               }
     
               for(int dirac_u = 0; dirac_u < number_of_dirac; ++dirac_u){
@@ -274,8 +234,7 @@ int main (int ac, char* av[]) {
                   // contraction[rnd_i] are the columns of D_u^-1 which get
                   // reordered by gamma multiplication. No actual multiplication
                   // is carried out
-                  basic->get_operator_charged(op_1, 0, t_sink, rewr, dirac_ind.at(dirac_u), p_u);
-    
+                  basic->get_operator_charged(op_1, 0, t_sink, dirac_ind.at(dirac_u), p_u);
                   for(int dirac_d = 0; dirac_d < number_of_dirac; ++dirac_d){
                     for(int p_d = p_min; p_d < p_max; ++p_d) {
                       if(mom_squared[p_u] <= mom_squared[p_d]){
@@ -365,6 +324,7 @@ int main (int ac, char* av[]) {
       }
     }
 
+    //TODO: Could be in a std::for_each
     // normalization of correlation function
     double norm3 = Lt * number_of_rnd_vec * (number_of_rnd_vec - 1) * 0.5;
     for(int p_u = p_min; p_u < p_max; ++p_u) {
@@ -875,8 +835,8 @@ int main (int ac, char* av[]) {
           for(int p = 0; p <= max_mom_squared; p++){
             for(int p_u = number_of_momenta/2; p_u < p_max; ++p_u){
               if(mom_squared[p_u] == p){
-                basic->init_operator_u(0, t_source, t_sink, rewr, vdaggerv, 'b', p_u, 0);
-                basic->init_operator_u(1, t_source_1, t_sink_1, rewr, vdaggerv, 'b', 
+                basic->init_operator_u(0, t_source, t_sink, 'b', p_u, 0);
+                basic->init_operator_u(1, t_source_1, t_sink_1, 'b', 
                                        number_of_momenta - p_u - 1, 0);
                 break;
               }
@@ -892,9 +852,9 @@ int main (int ac, char* av[]) {
             for(int p_d = number_of_momenta/2; p_d > p_min; --p_d){
               if(mom_squared[p_d] == p){
 
-                basic->init_operator_d(0, t_source_1, t_sink, rewr, vdaggerv, 'b', p_d, 0);
-                basic->init_operator_d(1, t_source, t_sink_1, rewr, vdaggerv, 'b', 
-                    number_of_momenta - p_d - 1, 0);
+                basic->init_operator_d(0, t_source_1, t_sink, 'b', p_d, 0);
+                basic->init_operator_d(1, t_source, t_sink_1, 'b', 
+                                       number_of_momenta - p_d - 1, 0);
                 break;
               }
             }
@@ -929,7 +889,7 @@ int main (int ac, char* av[]) {
     
                       basic->get_operator_g5(op_2, 0, dirac_ind.at(dirac_1), 
                           number_of_momenta - p_d - 1);
-                      basic->get_operator_charged(op_3, 1, t_sink_1, rewr, 
+                      basic->get_operator_charged(op_3, 1, t_sink_1, 
                           dirac_ind.at(dirac_2), number_of_momenta - p_u - 1);
           
                       // second u quark: t_source_1 -> t_sink_1
@@ -954,7 +914,7 @@ int main (int ac, char* av[]) {
                       // initialisation of Y. see initialisation of X
     
                       basic->get_operator_g5(op_4, 1, dirac_ind.at(dirac_2), p_d);
-                      basic->get_operator_charged(op_1, 0, t_sink, rewr, 
+                      basic->get_operator_charged(op_1, 0, t_sink, 
                           dirac_ind.at(dirac_1), p_u);
     
                       // first u quark: t_source -> t_sink

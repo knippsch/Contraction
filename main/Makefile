@@ -20,7 +20,7 @@ all: rmxeq mkdep mkxeq
 
 MAIN = LapHs
 
-GENERAL = GlobalData BasicOperator ReadWrite io_utils config_utils RandomVector \
+GENERAL = GlobalData BasicOperator Perambulator io_utils config_utils RandomVector \
           ranlxs EigenVector VdaggerV
 MODULES = $(GENERAL)
 

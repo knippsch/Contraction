@@ -228,60 +228,64 @@ static void create_gamma (std::vector<struct lookup>& gamma, const int i) {
 /******************************************************************************/
 /******************************************************************************/
 
-BasicOperator::BasicOperator() : contraction_dagger(), 
+BasicOperator::BasicOperator() : peram(),
+                                 rnd_vec(),
+                                 vdaggerv(),
+                                 contraction_dagger(), 
                                  contraction(), 
                                  gamma() {
-  try{
-    const int number_of_eigen_vec = global_data->get_number_of_eigen_vec();
-    const std::vector<quark> quarks = global_data->get_quarks();
-    const int number_of_rnd_vec = quarks[0].number_of_rnd_vec;
-    const int number_of_momenta = global_data->get_number_of_momenta();
 
-    // creating gamma matrices
-    gamma.resize(16);
-    for(int i = 0; i < 16; ++i)
-      create_gamma(gamma, i);
+  const int Lt = global_data->get_Lt();
+  const int number_of_eigen_vec = global_data->get_number_of_eigen_vec();
+  const std::vector<quark> quarks = global_data->get_quarks();
+  const int number_of_rnd_vec = quarks[0].number_of_rnd_vec;
+  const int number_of_momenta = global_data->get_number_of_momenta();
 
-    for(int i = 0; i < 4; i++)
-      std::cout << gamma[5].row[i] << std::endl;
+  // creating gamma matrices
+  gamma.resize(16);
+  for(int i = 0; i < 16; ++i)
+    create_gamma(gamma, i);
 
-    // memory for the perambulator, random vector and basic operator
-    // D_u^-1 = perambulator * basicoperator. Columns are always
-    // the same, only permuted and multiplied with +-i or -1 by
-    // gamma matrices. contraction holds the for columns, contraction_dagger
-    // holds the columns after gamma_5 trick
+  for(int i = 0; i < 4; i++)
+    std::cout << gamma[5].row[i] << std::endl;
 
-    const size_t nmom = number_of_momenta;
-    const size_t nrnd = number_of_rnd_vec;
-    contraction.resize(boost::extents[2][nmom][nrnd][4]);
-    contraction_dagger.resize(boost::extents[2][nmom][nrnd][4]);
+  // memory for the perambulator, random vector and basic operator
+  // D_u^-1 = perambulator * basicoperator. Columns are always
+  // the same, only permuted and multiplied with +-i or -1 by
+  // gamma matrices. contraction holds the for columns, contraction_dagger
+  // holds the columns after gamma_5 trick
 
-    for(int particle_no = 0; particle_no < 2; particle_no++){
-      for(int p = 0; p < number_of_momenta; p++){
-        for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i){
-          for(int blocknr = 0; blocknr < 4; ++blocknr){
-            // for charged pion the necessary matrix size is 
-            // 4 * quarks[0].number_of_dilution_E, number_of_eigen_vec
-            // but to use the same object as for pi0, the allocated size 
-            // is larger. Could unite contraction_dagger and contraction
-            contraction[particle_no][p][rnd_i][blocknr] = 
-                Eigen::MatrixXcd::Zero(4 * number_of_eigen_vec, 
-                number_of_eigen_vec);
-            contraction_dagger[particle_no][p][rnd_i][blocknr] =  
-                Eigen::MatrixXcd::Zero(4 * quarks[0].number_of_dilution_E, 
-                number_of_eigen_vec);
-          }
+  const size_t nmom = number_of_momenta;
+  const size_t nrnd = number_of_rnd_vec;
+  contraction.resize(boost::extents[2][nmom][nrnd][4]);
+  contraction_dagger.resize(boost::extents[2][nmom][nrnd][4]);
+
+  // TODO: the resize is unnasassarry if it is done in initialiser list 
+  // with the ctor
+  rnd_vec.resize(number_of_rnd_vec, 
+                 LapH::RandomVector(Lt*number_of_eigen_vec*4));
+
+  for(int particle_no = 0; particle_no < 2; particle_no++){
+    for(int p = 0; p < number_of_momenta; p++){
+      for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i){
+        for(int blocknr = 0; blocknr < 4; ++blocknr){
+          // for charged pion the necessary matrix size is 
+          // 4 * quarks[0].number_of_dilution_E, number_of_eigen_vec
+          // but to use the same object as for pi0, the allocated size 
+          // is larger. Could unite contraction_dagger and contraction
+          contraction[particle_no][p][rnd_i][blocknr] = 
+              Eigen::MatrixXcd::Zero(4 * number_of_eigen_vec, 
+              number_of_eigen_vec);
+          contraction_dagger[particle_no][p][rnd_i][blocknr] =  
+              Eigen::MatrixXcd::Zero(4 * quarks[0].number_of_dilution_E, 
+              number_of_eigen_vec);
         }
       }
     }
-
-    std::cout << "\tallocated memory in BasicOperator" << std::endl;
-
   }
-  catch(std::exception& e){
-    std::cout << e.what() << "in: BasicOperator::BasicOperator\n";
-    exit(0);
-  }
+
+  std::cout << "\tallocated memory in BasicOperator" << std::endl;
+
 }
 
 /******************************************************************************/
@@ -290,53 +294,16 @@ BasicOperator::BasicOperator() : contraction_dagger(),
 /******************************************************************************/
 /******************************************************************************/
 
-//BasicOperator::~BasicOperator () {
-//  try{
-//    const std::vector<quark> quarks = global_data->get_quarks();
-//    const int number_of_rnd_vec = quarks[0].number_of_rnd_vec;
-//    const int number_of_momenta = global_data->get_number_of_momenta();
-//    delete[] gamma;
-//    for(int particle_no = 0; particle_no < 2; particle_no++){
-//      for(int p = 0; p < number_of_momenta; p++){
-//        for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i){
-//          delete [] contraction[particle_no][p][rnd_i];
-//          delete [] contraction_dagger[particle_no][p][rnd_i];
-//        }
-//        delete [] contraction[particle_no][p];
-//        delete [] contraction_dagger[particle_no][p];
-//      }
-//      delete [] contraction[particle_no];
-//      delete [] contraction_dagger[particle_no];
-//    }
-//    delete [] contraction;
-//    delete [] contraction_dagger;
-//  }
-//  catch(std::exception& e){
-//    std::cout << e.what() << "in: BasicOperator::~BasicOperator\n";
-//    exit(0);
-//  }
-//}
-
-/******************************************************************************/
-/******************************************************************************/
-/******************************************************************************/
-
 // initializes contractions[col] with columns of D_u^-1
 
 void BasicOperator::init_operator_u (const int particle_no, const int t_source, 
-                                     const int t_sink, const ReadWrite& rewr, 
-                                     const LapH::VdaggerV& vdaggerv, 
-                                     const char dilution, const int p, 
-                                     const int displ){
+                                     const int t_sink, const char dilution, 
+                                     const int p, const int displ){
 
   clock_t t = clock();
   const int number_of_eigen_vec = global_data->get_number_of_eigen_vec();
   const std::vector<quark> quarks = global_data->get_quarks();
   const int number_of_rnd_vec = quarks[0].number_of_rnd_vec;
-//  const vec_Xcd_eigen rnd_vec = rewr->get_random_vector(); 
-//  const array_Xcd_d3_eigen basicoperator = rewr->get_basicoperator(); 
-//  const vec_Xcd_eigen perambulator = rewr->get_perambulator(); 
-
   int t_sink_dil;
 
   //TODO parallelization should be possible
@@ -362,19 +329,13 @@ void BasicOperator::init_operator_u (const int particle_no, const int t_source,
   array_Xcd_d2_eigen s(boost::extents[number_of_rnd_vec][4]);
   for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i){
     for(int blocknr = 0; blocknr < 4; blocknr++){
-      s[rnd_i][blocknr] = 
-          Eigen::MatrixXcd::Zero(quarks[0].number_of_dilution_E, number_of_eigen_vec);
+      s[rnd_i][blocknr] = Eigen::MatrixXcd::Zero(
+                                 quarks[0].number_of_dilution_E, 
+                                 number_of_eigen_vec);
     }
   }
 
   // TODO: put dilution into main loop
-
-//  // initialize s to 0  
-//  for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i){
-//    for(int blocknr = 0; blocknr < 4; ++blocknr) {
-//      (s[rnd_i][blocknr]).setZero();
-//    }
-//  }
 
   // dilution from the left
   for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i) {
@@ -383,7 +344,7 @@ void BasicOperator::init_operator_u (const int particle_no, const int t_source,
       // s holds left diluted basicoperator
       for(int vec_i = 0; vec_i < number_of_eigen_vec; ++vec_i) {
         s[rnd_i][blocknr].row(vec_i % quarks[0].number_of_dilution_E) +=
-            std::conj(rewr.rnd_vec[rnd_i][blocknr + vec_i * 4 + 
+            std::conj(rnd_vec[rnd_i][blocknr + vec_i * 4 + 
               4 * number_of_eigen_vec * t_sink]) * 
             vdaggerv(p, t_sink, displ).row(vec_i);
       }
@@ -395,13 +356,14 @@ void BasicOperator::init_operator_u (const int particle_no, const int t_source,
     for(int col = 0; col < 4; ++col) {
       for(int row = 0; row  < 4; ++row){
 
-        // propagator D_u^-1 = perambulator(tsource, tsink) * basicoperator(tsink)
+        // propagator D_u^-1=perambulator(tsource, tsink) * basicoperator(tsink)
         // calculate columns of D_u^-1. gamma structure can be implented by
         // reordering columns and multiplying them with constants
 
-        contraction[particle_no][p][rnd_i][col].block(row * number_of_eigen_vec, 0,
-            number_of_eigen_vec, number_of_eigen_vec) =
-          rewr.perambulator[rnd_i].block(4 * number_of_eigen_vec * t_source + 
+        contraction[particle_no][p][rnd_i][col].block(
+                                  row * number_of_eigen_vec, 0,
+                                  number_of_eigen_vec, number_of_eigen_vec) =
+          peram[rnd_i].block(4 * number_of_eigen_vec * t_source + 
             number_of_eigen_vec * row,
             (quarks[0].number_of_dilution_E) * quarks[0].number_of_dilution_D * 
             t_sink_dil + (quarks[0].number_of_dilution_E) * col,
@@ -435,10 +397,8 @@ void BasicOperator::init_operator_u (const int particle_no, const int t_source,
 // initializes contractions_dagger[col] with columns of D_d^-1
 
 void BasicOperator::init_operator_d (const int particle_no, const int t_source, 
-                                     const int t_sink, const ReadWrite& rewr, 
-                                     const LapH::VdaggerV& vdaggerv, 
-                                     const char dilution, const int p, 
-                                     const int displ){
+                                     const int t_sink, const char dilution, 
+                                     const int p, const int displ){
 
   clock_t t = clock();
   const int number_of_eigen_vec = global_data->get_number_of_eigen_vec();
@@ -479,7 +439,7 @@ void BasicOperator::init_operator_d (const int particle_no, const int t_source,
         contraction_dagger[particle_no][p][rnd_i][row].block(
             col * quarks[0].number_of_dilution_E, 0,
             quarks[0].number_of_dilution_E, number_of_eigen_vec) = 
-          (rewr.perambulator[rnd_i].block(4 * number_of_eigen_vec * t_source + 
+          (peram[rnd_i].block(4 * number_of_eigen_vec * t_source + 
             number_of_eigen_vec * row,
             (quarks[0].number_of_dilution_E) * quarks[0].number_of_dilution_D * 
             t_sink_dil + (quarks[0].number_of_dilution_E) * col,
@@ -515,8 +475,9 @@ void BasicOperator::init_operator_d (const int particle_no, const int t_source,
 // returns D_u^-1 Gamma
 
 void BasicOperator::get_operator_charged (array_Xcd_d2_eigen& op_1, 
-    const int particle_no, const int t_sink, const ReadWrite& rewr, const int dirac, 
-    const int p) const {
+                                          const int particle_no, 
+                                          const int t_sink, const int dirac, 
+                                          const int p) const {
 
   const int number_of_eigen_vec = global_data->get_number_of_eigen_vec();
   const std::vector<quark> quarks = global_data->get_quarks();
@@ -542,7 +503,7 @@ void BasicOperator::get_operator_charged (array_Xcd_d2_eigen& op_1,
         for(int vec_i = 0; vec_i < number_of_eigen_vec; ++vec_i) {
           s_temp.col(vec_i % quarks[0].number_of_dilution_E) +=
 //            (rewr->rnd_vec[rnd_j](gamma[dirac].row[col] + vec_i * 4 + 
-            (rewr.rnd_vec[rnd_j][col + vec_i * 4 + 
+            (rnd_vec[rnd_j][col + vec_i * 4 + 
               4 * number_of_eigen_vec * t_sink]) *
 //            contraction[particle_no][p][rnd_i][col].col(vec_i);
             contraction[particle_no][p][rnd_i][gamma[dirac].row[col]].col(vec_i);
@@ -565,7 +526,6 @@ void BasicOperator::get_operator_charged (array_Xcd_d2_eigen& op_1,
   } // end for rnd_i
 
 //  delete [] s_temp;
-  return;
 
 }
 
@@ -649,6 +609,61 @@ void BasicOperator::get_operator_uncharged (vec_Xcd_eigen& op_1,
     }
   }
   return;
+}
+/******************************************************************************/
+/******************************************************************************/
+/******************************************************************************/
+void BasicOperator::read_rnd_vectors_from_file (const int config_i) {
+
+  clock_t t = clock();
+  char infile[400];
+  const int Lt = global_data->get_Lt();
+  const int verbose = global_data->get_verbose();
+  const std::vector<quark> quarks = global_data->get_quarks();
+  const int number_of_rnd_vec = quarks[0].number_of_rnd_vec;
+  const int number_of_eigen_vec = global_data->get_number_of_eigen_vec();
+  const int rnd_vec_length = Lt * number_of_eigen_vec * 4;
+
+  char temp[100];
+
+  if(verbose){
+    std::cout << "\treading randomvectors from files:" << std::endl;
+  } else {
+    std::cout << "\treading randomvectors:";
+  }
+
+  int check_read_in = 0;
+  for(int rnd_vec_i = 0; rnd_vec_i < number_of_rnd_vec; ++rnd_vec_i){
+    // data path Christians perambulators
+//      std::string filename = global_data->get_path_perambulators() + "/";
+
+    // data path for qbig contractions
+    sprintf(temp, "cnfg%d/rnd_vec_%01d/", config_i, rnd_vec_i);
+    std::string filename = global_data->get_path_perambulators()
+      + "/" + temp;
+
+    // data path for juqueen contractions
+//      sprintf(temp, "cnfg%d/", config_i);
+//      std::string filename = global_data->get_path_perambulators()
+//				+ "/" + temp;
+
+    // read random vector
+    sprintf(infile, "%srandomvector.rndvecnb%02d.u.nbev%04d.%04d", 
+        filename.c_str(), rnd_vec_i, number_of_eigen_vec, config_i);
+//      sprintf(infile, "%srandomvector.rndvecnb%02d.u.nbev0120.%04d", 
+//          filename.c_str(), rnd_vec_i, config_i);
+
+//      sprintf(infile, "%s.%03d.u.Ti.%04d", filename.c_str(), rnd_vec_i,
+//          config_i);
+
+    // TODO:: explicit type conversion - Bad style
+    rnd_vec[rnd_vec_i].read_random_vector(infile);
+  }
+  t = clock() - t;
+  if(!verbose) std::cout << "\t\tSUCCESS - " << std::fixed 
+                         << std::setprecision(1)
+                         << ((float) t)/CLOCKS_PER_SEC << " seconds" 
+                         << std::endl; 
 }
 
 

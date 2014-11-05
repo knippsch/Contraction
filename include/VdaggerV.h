@@ -30,13 +30,11 @@ class VdaggerV {
 private:
   // the onject containing [V^dagger * momentum * displacement * V]
   ArrayXcdd3Eigen vdaggerv;
-
   ArrayCDd2 momentum;
 
   void create_momenta();
 
 public:
-
   VdaggerV ();
   ~VdaggerV () {};
 
@@ -46,15 +44,6 @@ public:
                                       const size_t d) const {
     return vdaggerv[p][t][d];
   }
-
-  // computes the random vectors for the sources
-  // input: seed   -> seed for the random vector
-  //        length -> length of the random vector
-//  void set(const int seed);
-  // computes the random vectors for the sources and stores them
-  // input: seed   -> seed for the random vector
-  //        length -> length of the random vector
-//  void set(const int seed, const std::string& filename);
 
 };
 ////////////////////////////////////////////////////////////////////////////////

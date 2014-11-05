@@ -24,7 +24,7 @@
 //#include "boost/multi_array.hpp"
 
 #include "GlobalData.h"
-#include "ReadWrite.h"
+#include "Perambulator.h"
 #include "propagator_io.h"
 #include "quark.h"
 #include "typedefs.h"
@@ -49,23 +49,33 @@ public:
   BasicOperator();
 //  virtual ~BasicOperator ();
   void init_operator_u (const int particle_no, const int t_source, 
-                        const int t_sink, const ReadWrite& rewr, 
-                        const LapH::VdaggerV& vdaggerv, const char dilution, 
+                        const int t_sink, const char dilution, 
                         const int p, const int displ);
   void init_operator_d(const int particle_no, const int t_source, 
-                       const int t_sink, const ReadWrite& rewr, 
-                       const LapH::VdaggerV& vdaggerv, const char dilution, 
+                       const int t_sink, const char dilution, 
                        const int p, const int displ);
   void get_operator_charged(array_Xcd_d2_eigen& op_1, const int particle_no, const int t_sink, 
-                            const ReadWrite& rewr, const int dirac, const int p) const;
+                            const int dirac, const int p) const;
   void get_operator_g5(vec_Xcd_eigen& op_1, const int particle_no, 
                        const int dirac, const int p) const;
   void get_operator_uncharged(vec_Xcd_eigen& op_1, const int particle_no, 
                               const int dirac, const int p) const;
 
+  void read_rnd_vectors_from_file (const int config_i);
+
+  inline void set_basic(const size_t config){
+
+    peram.read_perambulators_from_file(config);
+    read_rnd_vectors_from_file(config);
+    vdaggerv.build_source_matrix(config);
+
+  }
 
 protected:
 //  void create_gamma(struct lookup* gamma, const int dirac);
+  LapH::Perambulator peram;
+  std::vector<LapH::RandomVector> rnd_vec;
+  LapH::VdaggerV vdaggerv;
   array_Xcd_d4_eigen contraction_dagger;
   array_Xcd_d4_eigen contraction;
   std::vector<struct lookup>  gamma;
