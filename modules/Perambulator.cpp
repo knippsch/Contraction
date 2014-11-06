@@ -13,8 +13,8 @@ static GlobalData * const global_data = GlobalData::Instance();
 LapH::Perambulator::Perambulator () : perambulator() {
 
   const int Lt = global_data->get_Lt();
-  const std::vector<quark> quarks = global_data->get_quarks();
   const int number_of_eigen_vec = global_data->get_number_of_eigen_vec();
+  const std::vector<quark> quarks = global_data->get_quarks();
   const int number_of_rnd_vec = quarks[0].number_of_rnd_vec;
   const int number_of_inversions = (Lt / quarks[0].number_of_dilution_T)
       * quarks[0].number_of_dilution_E * quarks[0].number_of_dilution_D;

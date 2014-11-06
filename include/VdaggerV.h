@@ -13,13 +13,13 @@
 
 #include "EigenVector.h"
 #include "GlobalData.h"
+#include "RandomVector.h"
 
 namespace LapH {
 
 typedef boost::multi_array<Eigen::MatrixXcd, 3> ArrayXcdd3Eigen;
+typedef boost::multi_array<Eigen::MatrixXcd, 5> ArrayXcdd5Eigen;
 
-//typedef std::array<int, 3> Array;
-//typedef std::vector<3dArray> MomDisVec; 
 typedef std::complex<double> cmplx;
 typedef boost::multi_array<cmplx, 2> ArrayCDd2;
 
@@ -27,22 +27,35 @@ typedef boost::multi_array<cmplx, 2> ArrayCDd2;
 ////////////////////////////////////////////////////////////////////////////////
 class VdaggerV {
 
-private:
-  // the onject containing [V^dagger * momentum * displacement * V]
+protected:
   ArrayXcdd3Eigen vdaggerv;
+  ArrayXcdd5Eigen rvdaggervr;
   ArrayCDd2 momentum;
-
+  size_t nb_mom;
+  bool is_vdaggerv_set;
   void create_momenta();
 
 public:
   VdaggerV ();
   ~VdaggerV () {};
 
-  void build_source_matrix (const int config_i);
-  // () operator to directly access the elements of vec
-  inline const Eigen::MatrixXcd& operator()(const size_t p, const size_t t, 
-                                      const size_t d) const {
+  void build_vdaggerv(const int config_i);
+  void build_rvdaggervr(const int config_i, 
+                        const std::vector<LapH::RandomVector>& rnd_vec);
+
+  // return reference on vdaggerv
+  inline const Eigen::MatrixXcd& return_vdaggerv(const size_t p, 
+                                                 const size_t t, 
+                                                 const size_t d) const {
     return vdaggerv[p][t][d];
+  }
+  // return reference on rvdaggervr
+  inline const Eigen::MatrixXcd& return_rvdaggervr(const size_t p, 
+                                                   const size_t t, 
+                                                   const size_t d, 
+                                                   const size_t rnd1,
+                                                   const size_t rnd2) const {
+    return rvdaggervr[p][t][d][rnd1][rnd2];
   }
 
 };

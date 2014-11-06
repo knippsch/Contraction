@@ -23,7 +23,9 @@ private:
 
 public:
   // standard ctor and dtor are enough - all else is handled by std::vector
-  RandomVector(const size_t length) : vec(length, cmplx(0.0,0.0)) {};
+  RandomVector(const size_t length) : vec(length, cmplx(0.0,0.0)) {
+    std::cout << "\tRandom vectors initialised" << std::endl;
+  };
   ~RandomVector() {};
 
   // [] operator to directly access the elements of vec

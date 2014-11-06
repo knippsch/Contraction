@@ -246,9 +246,6 @@ BasicOperator::BasicOperator() : peram(),
   for(int i = 0; i < 16; ++i)
     create_gamma(gamma, i);
 
-  for(int i = 0; i < 4; i++)
-    std::cout << gamma[5].row[i] << std::endl;
-
   // memory for the perambulator, random vector and basic operator
   // D_u^-1 = perambulator * basicoperator. Columns are always
   // the same, only permuted and multiplied with +-i or -1 by
@@ -259,12 +256,6 @@ BasicOperator::BasicOperator() : peram(),
   const size_t nrnd = number_of_rnd_vec;
   contraction.resize(boost::extents[2][nmom][nrnd][nrnd][4]);
   contraction_dagger.resize(boost::extents[2][nmom][nrnd][4]);
-
-  // TODO: the resize is unnasassarry if it is done in initialiser list 
-  // with the ctor
-  rnd_vec.resize(number_of_rnd_vec, 
-                 LapH::RandomVector(Lt*number_of_eigen_vec*4));
-
   for(int particle_no = 0; particle_no < 2; particle_no++){
     for(int p = 0; p < number_of_momenta; p++){
       for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i){
@@ -286,6 +277,11 @@ BasicOperator::BasicOperator() : peram(),
     }
   }
 
+  // TODO: the resize is unnasassarry if it is done in initialiser list 
+  // with the ctor
+  rnd_vec.resize(number_of_rnd_vec, 
+                 LapH::RandomVector(Lt*number_of_eigen_vec*4));
+
   std::cout << "\tallocated memory in BasicOperator" << std::endl;
 
 }
@@ -300,16 +296,15 @@ BasicOperator::BasicOperator() : peram(),
 
 void BasicOperator::init_operator_u (const int particle_no, const int t_source, 
                                      const int t_sink, const char dilution, 
-                                     const int p, const int displ){
+                                     const int displ){
 
-  clock_t t = clock();
-  const int number_of_eigen_vec = global_data->get_number_of_eigen_vec();
   const std::vector<quark> quarks = global_data->get_quarks();
-  const int number_of_rnd_vec = quarks[0].number_of_rnd_vec;
-  int t_sink_dil;
+  const size_t nb_rnd = quarks[0].number_of_rnd_vec;
+  const size_t dilE = quarks[0].number_of_dilution_E;
+  const size_t nb_ev = global_data->get_number_of_eigen_vec();
+  const size_t nb_mom = global_data->get_number_of_momenta();
 
-  //TODO parallelization should be possible
-
+  size_t t_sink_dil;
   switch(dilution) {
 
     case 'i':
@@ -324,71 +319,28 @@ void BasicOperator::init_operator_u (const int particle_no, const int t_source,
       exit(0);
     }
 
-  // for charged particles dilute u quark V^dagger*V in rows and cols
-  // memory for (P^(b) rho V)^dagger exp(-ipx) V P^(b) rho to build u quark in 
-  // s contains diluted basicoperator
-
-  array_Xcd_d3_eigen s(boost::extents[number_of_rnd_vec][number_of_rnd_vec][4]);
-  for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i){
-    for(int rnd_j = 0; rnd_j < number_of_rnd_vec; ++rnd_j){
-      for(int blocknr = 0; blocknr < 4; blocknr++){
-        s[rnd_i][rnd_j][blocknr] = Eigen::MatrixXcd::Zero(
-                                         quarks[0].number_of_dilution_E, 
-                                         quarks[0].number_of_dilution_E);
-      }
-    }
-  }
-  // TODO: put dilution into main loop
-  // dilution from the left
-  for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i) {
-    for(int rnd_j = rnd_i+1; rnd_j < number_of_rnd_vec; ++rnd_j){
-      for(int blocknr = 0; blocknr < 4; ++blocknr) {
-
-        // s holds left diluted basicoperator
-        for(int vec_i = 0; vec_i < number_of_eigen_vec; ++vec_i) {
-          for(int vec_j = 0; vec_j < number_of_eigen_vec; ++vec_j) {
-            s[rnd_i][rnd_j][blocknr](
-                         vec_i % quarks[0].number_of_dilution_E,
-                         vec_j % quarks[0].number_of_dilution_E) +=
   
-                std::conj(rnd_vec[rnd_i][blocknr + vec_i * 4 + 
-                  4 * number_of_eigen_vec * t_sink]) * 
-                rnd_vec[rnd_j][blocknr + vec_j * 4 + 
-                  4 * number_of_eigen_vec * t_sink] * 
-                vdaggerv(p, t_sink, displ)(vec_i, vec_j);
+  for(size_t p = 0; p < nb_mom; p++){
+    for(size_t rnd_i = 0; rnd_i < nb_rnd; ++rnd_i) {
+      for(size_t rnd_j = rnd_i+1; rnd_j < nb_rnd; ++rnd_j) { 
+        for(size_t col = 0; col < 4; ++col) {
+          for(size_t row = 0; row  < 4; ++row){
+    
+            // calculate columns of D_u^-1. gamma structure can be implented by
+            // reordering columns and multiplying them with constants 
+            contraction[particle_no][p][rnd_i][rnd_j][col].block(
+                                      row * nb_ev, 0, nb_ev, dilE) =
+
+              peram[rnd_i].block((4 * t_source + row) * nb_ev,
+                                 dilE * (quarks[0].number_of_dilution_D * 
+                                 t_sink_dil + col), nb_ev, dilE) * 
+                 vdaggerv.return_rvdaggervr(p, t_sink, col, rnd_i, rnd_j);
+    
           }
         }
-      }
+      }  
     }
-  }
-                
-  for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i) {
-    for(int rnd_j = rnd_i+1; rnd_j < number_of_rnd_vec; ++rnd_j) {
-  
-      for(int col = 0; col < 4; ++col) {
-        for(int row = 0; row  < 4; ++row){
-  
-          // propagator D_u^-1=perambulator(tsource, tsink) * basicoperator(tsink)
-          // calculate columns of D_u^-1. gamma structure can be implented by
-          // reordering columns and multiplying them with constants
-  
-          contraction[particle_no][p][rnd_i][rnd_j][col].block(
-                                    row * number_of_eigen_vec, 0,
-                                    number_of_eigen_vec, quarks[0].number_of_dilution_E) =
-
-            peram[rnd_i].block(4 * number_of_eigen_vec * t_source + number_of_eigen_vec * row,
-                               (quarks[0].number_of_dilution_E) * quarks[0].number_of_dilution_D * 
-                                t_sink_dil + (quarks[0].number_of_dilution_E) * col,
-                                number_of_eigen_vec,
-                                (quarks[0].number_of_dilution_E)) * s[rnd_i][rnd_j][col];
-  
-        }
-      }
-    }  
-  }
-
-  t = clock() - t;
-  //printf("\t\tSUCCESS - %.1f seconds\n", ((float) t)/CLOCKS_PER_SEC);
+  } // Loop over momenta ends here
 }
 
 /******************************************************************************/
@@ -397,21 +349,18 @@ void BasicOperator::init_operator_u (const int particle_no, const int t_source,
 
 
 // initializes contractions_dagger[col] with columns of D_d^-1
-
 void BasicOperator::init_operator_d (const int particle_no, const int t_source, 
                                      const int t_sink, const char dilution, 
-                                     const int p, const int displ){
+                                     const int displ){
 
   clock_t t = clock();
-  const int number_of_eigen_vec = global_data->get_number_of_eigen_vec();
+  const int nb_ev = global_data->get_number_of_eigen_vec();
   const std::vector<quark> quarks = global_data->get_quarks();
-  const int number_of_rnd_vec = quarks[0].number_of_rnd_vec;
+  const size_t nb_rnd = quarks[0].number_of_rnd_vec;
+  const size_t dilE = quarks[0].number_of_dilution_E;
+  const size_t nb_mom = global_data->get_number_of_momenta();
+
   int t_sink_dil;
-//  const vec_Xcd_eigen perambulator = rewr->get_perambulator(); 
-//  const array_Xcd_d3_eigen basicoperator = rewr->get_basicoperator(); 
-
-  //TODO parallelization should be possible
-
   switch(dilution) {
 
     case 'i':
@@ -424,48 +373,74 @@ void BasicOperator::init_operator_d (const int particle_no, const int t_source,
       std::cout << "Time dilution scheme not found in BasicOperator::\
         init_operator" << std::endl;
       exit(0);
-    }
-
-  for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i) {
-
-    for(int col = 0; col < 4; ++col) {
-      for(int row = 0; row  < 4; ++row){
-
-        // propagator D_d^-1 = perambulator(t_source, t_sink)^dagger * 
-        // basicoperator(tsource) 
-        // = gamma_5 D_u^-1 gamma_5 according to gamma_5 trick
-        // only necassary to build this for charged particles.
-        // TODO: implement a flag to omit this calculation
-        // TODO: implement more versatile momentum structure
-
-        contraction_dagger[particle_no][p][rnd_i][row].block(
-            col * quarks[0].number_of_dilution_E, 0,
-            quarks[0].number_of_dilution_E, number_of_eigen_vec) = 
-          (peram[rnd_i].block(4 * number_of_eigen_vec * t_source + 
-            number_of_eigen_vec * row,
-            (quarks[0].number_of_dilution_E) * quarks[0].number_of_dilution_D * 
-            t_sink_dil + (quarks[0].number_of_dilution_E) * col,
-            number_of_eigen_vec,
-            (quarks[0].number_of_dilution_E))).adjoint() *
-            vdaggerv(p, t_source, displ);
-          
-        // that's the best criterium I could think up for multiplication with
-        // gamma_5 from left and right side. It changes the sign of the two
-        // upper right and two lower left blocks in dirac space
-        if( ((row + col) == 3) || (abs(row - col) > 1) ){
-          contraction_dagger[particle_no][p][rnd_i][row].block(col * 
-              quarks[0].number_of_dilution_E, 0,
-              quarks[0].number_of_dilution_E, number_of_eigen_vec) *= -1;
-        }
-
-      }
-    }
-
   }
 
-  t = clock() - t;
-  //printf("\t\tSUCCESS - %.1f seconds\n", ((float) t)/CLOCKS_PER_SEC);
-  return;
+  for(size_t p = 0; p < nb_mom; p++){
+  // TODO: Just a work around for the time beeing
+  if(p <= nb_mom/2){
+    for(size_t rnd_i = 0; rnd_i < nb_rnd; ++rnd_i) {
+      for(size_t col = 0; col < 4; ++col) {
+        for(size_t row = 0; row  < 4; ++row){
+
+          // propagator D_d^-1 = perambulator(t_source, t_sink)^dagger * 
+          // basicoperator(tsource) 
+          // = gamma_5 D_u^-1 gamma_5 according to gamma_5 trick
+          // only necassary to build this for charged particles.
+          // TODO: implement a flag to omit this calculation
+          // TODO: implement more versatile momentum structure
+
+          contraction_dagger[particle_no][p][rnd_i][row]
+                                         .block(col * dilE, 0, dilE, nb_ev) = 
+                 (peram[rnd_i].block(4 * nb_ev * t_source + nb_ev * row, 
+                        dilE * quarks[0].number_of_dilution_D * t_sink_dil + 
+                        dilE * col, nb_ev, dilE)).adjoint() *
+              vdaggerv.return_vdaggerv(p, t_source, displ);
+            
+          // that's the best criterium I could think up for multiplication with
+          // gamma_5 from left and right side. It changes the sign of the two
+          // upper right and two lower left blocks in dirac space
+          if( ((row + col) == 3) || (abs(row - col) > 1) ){
+            contraction_dagger[particle_no][p][rnd_i][row]
+                                 .block(col * dilE, 0, dilE, nb_ev) *= -1;
+          }
+        }
+      }
+    }
+  }
+  else {
+    for(size_t rnd_i = 0; rnd_i < nb_rnd; ++rnd_i) {
+      for(size_t col = 0; col < 4; ++col) {
+        for(size_t row = 0; row  < 4; ++row){
+
+          // propagator D_d^-1 = perambulator(t_source, t_sink)^dagger * 
+          // basicoperator(tsource) 
+          // = gamma_5 D_u^-1 gamma_5 according to gamma_5 trick
+          // only necassary to build this for charged particles.
+          // TODO: implement a flag to omit this calculation
+          // TODO: implement more versatile momentum structure
+
+          contraction_dagger[particle_no][p][rnd_i][row].block(
+                                               col * dilE, 0, dilE, nb_ev) = 
+            (peram[rnd_i].block(4 * nb_ev * t_source + 
+              nb_ev * row,
+              dilE * quarks[0].number_of_dilution_D * 
+              t_sink_dil + dilE * col,
+              nb_ev,
+              dilE)).adjoint() *
+              (vdaggerv.return_vdaggerv(nb_mom-p-1, t_source, displ)).adjoint();
+            
+          // that's the best criterium I could think up for multiplication with
+          // gamma_5 from left and right side. It changes the sign of the two
+          // upper right and two lower left blocks in dirac space
+          if( ((row + col) == 3) || (abs(row - col) > 1) ){
+            contraction_dagger[particle_no][p][rnd_i][row].
+                  block(col * dilE, 0, dilE, nb_ev) *= -1;
+          }
+        }
+      }
+    }
+  }
+  } // Loop over momentum ends here
 }
 
 /******************************************************************************/
