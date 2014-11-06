@@ -168,7 +168,6 @@ int main (int ac, char* av[]) {
   // Loop over all configurations **********************************************
   // ***************************************************************************
   // ***************************************************************************
-
   for(int config_i = start_config; config_i <= end_config; config_i +=
       delta_config){
 
@@ -286,7 +285,6 @@ int main (int ac, char* av[]) {
            for(int p_d = p_min; p_d < p_max; ++p_d) {
             if(mom_squared[p_u] <= mom_squared[p_d]){
               for(int dirac_u = 0; dirac_u < number_of_dirac; ++dirac_u){
-//                int dirac_d = dirac_u;
                 for(int dirac_d = 0; dirac_d < number_of_dirac; ++dirac_d){
                   for(int displ_u = 0; displ_u < number_of_displ; displ_u++){
                     for(int displ_d = 0; displ_d < number_of_displ; displ_d++){

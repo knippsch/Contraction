@@ -235,52 +235,34 @@ BasicOperator::BasicOperator() : peram(),
                                  contraction(), 
                                  gamma() {
 
-  const int Lt = global_data->get_Lt();
-  const int number_of_eigen_vec = global_data->get_number_of_eigen_vec();
+  const size_t Lt = global_data->get_Lt();
+  const size_t nb_ev = global_data->get_number_of_eigen_vec();
+  const size_t nb_mom = global_data->get_number_of_momenta();
   const std::vector<quark> quarks = global_data->get_quarks();
-  const int number_of_rnd_vec = quarks[0].number_of_rnd_vec;
-  const int number_of_momenta = global_data->get_number_of_momenta();
+  const size_t nb_rnd = quarks[0].number_of_rnd_vec;
+  const size_t dilE = quarks[0].number_of_dilution_E;
 
   // creating gamma matrices
   gamma.resize(16);
   for(int i = 0; i < 16; ++i)
     create_gamma(gamma, i);
 
-  // memory for the perambulator, random vector and basic operator
   // D_u^-1 = perambulator * basicoperator. Columns are always
   // the same, only permuted and multiplied with +-i or -1 by
   // gamma matrices. contraction holds the for columns, contraction_dagger
   // holds the columns after gamma_5 trick
-
-  const size_t nmom = number_of_momenta;
-  const size_t nrnd = number_of_rnd_vec;
-  contraction.resize(boost::extents[2][nmom][nrnd][nrnd][4]);
-  contraction_dagger.resize(boost::extents[2][nmom][nrnd][4]);
-  for(int particle_no = 0; particle_no < 2; particle_no++){
-    for(int p = 0; p < number_of_momenta; p++){
-      for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i){
-        for(int blocknr = 0; blocknr < 4; ++blocknr){
-          // for charged pion the necessary matrix size is 
-          // 4 * quarks[0].number_of_dilution_E, number_of_eigen_vec
-          // but to use the same object as for pi0, the allocated size 
-          // is larger. Could unite contraction_dagger and contraction
-          for(int rnd_j = 0; rnd_j < number_of_rnd_vec; ++rnd_j){
-            contraction[particle_no][p][rnd_i][rnd_j][blocknr] = 
-                Eigen::MatrixXcd::Zero(4 * number_of_eigen_vec, 
-                 quarks[0].number_of_dilution_E);
-          }
-          contraction_dagger[particle_no][p][rnd_i][blocknr] =  
-              Eigen::MatrixXcd::Zero(4 * quarks[0].number_of_dilution_E, 
-              number_of_eigen_vec);
-        }
-      }
-    }
-  }
+  contraction.resize(boost::extents[2][nb_mom][nb_rnd][nb_rnd][4]);
+  std::fill(contraction.origin(), contraction.origin() + 
+                                  contraction.num_elements(), 
+                                  Eigen::MatrixXcd::Zero(4 * nb_ev, dilE));
+  contraction_dagger.resize(boost::extents[2][nb_mom][nb_rnd][4]);
+  std::fill(contraction_dagger.origin(), contraction_dagger.origin() + 
+                                      contraction_dagger.num_elements(), 
+                                      Eigen::MatrixXcd::Zero(4 * dilE, nb_ev));
 
   // TODO: the resize is unnasassarry if it is done in initialiser list 
   // with the ctor
-  rnd_vec.resize(number_of_rnd_vec, 
-                 LapH::RandomVector(Lt*number_of_eigen_vec*4));
+  rnd_vec.resize(nb_rnd, LapH::RandomVector(Lt*nb_ev*4));
 
   std::cout << "\tallocated memory in BasicOperator" << std::endl;
 
@@ -317,15 +299,13 @@ void BasicOperator::init_operator_u (const int particle_no, const int t_source,
       std::cout << "Time dilution scheme not found in BasicOperator::\
         init_operator" << std::endl;
       exit(0);
-    }
+  }
 
-  
   for(size_t p = 0; p < nb_mom; p++){
     for(size_t rnd_i = 0; rnd_i < nb_rnd; ++rnd_i) {
       for(size_t rnd_j = rnd_i+1; rnd_j < nb_rnd; ++rnd_j) { 
         for(size_t col = 0; col < 4; ++col) {
-          for(size_t row = 0; row  < 4; ++row){
-    
+          for(size_t row = 0; row  < 4; ++row){ 
             // calculate columns of D_u^-1. gamma structure can be implented by
             // reordering columns and multiplying them with constants 
             contraction[particle_no][p][rnd_i][rnd_j][col].block(
@@ -346,7 +326,6 @@ void BasicOperator::init_operator_u (const int particle_no, const int t_source,
 /******************************************************************************/
 /******************************************************************************/
 /******************************************************************************/
-
 
 // initializes contractions_dagger[col] with columns of D_d^-1
 void BasicOperator::init_operator_d (const int particle_no, const int t_source, 
@@ -376,8 +355,6 @@ void BasicOperator::init_operator_d (const int particle_no, const int t_source,
   }
 
   for(size_t p = 0; p < nb_mom; p++){
-  // TODO: Just a work around for the time beeing
-  if(p <= nb_mom/2){
     for(size_t rnd_i = 0; rnd_i < nb_rnd; ++rnd_i) {
       for(size_t col = 0; col < 4; ++col) {
         for(size_t row = 0; row  < 4; ++row){
@@ -388,14 +365,22 @@ void BasicOperator::init_operator_d (const int particle_no, const int t_source,
           // only necassary to build this for charged particles.
           // TODO: implement a flag to omit this calculation
           // TODO: implement more versatile momentum structure
-
+          if(p <= nb_mom/2){
           contraction_dagger[particle_no][p][rnd_i][row]
                                          .block(col * dilE, 0, dilE, nb_ev) = 
                  (peram[rnd_i].block(4 * nb_ev * t_source + nb_ev * row, 
                         dilE * quarks[0].number_of_dilution_D * t_sink_dil + 
                         dilE * col, nb_ev, dilE)).adjoint() *
               vdaggerv.return_vdaggerv(p, t_source, displ);
-            
+          }
+          else {
+          contraction_dagger[particle_no][p][rnd_i][row]
+                                         .block(col * dilE, 0, dilE, nb_ev) = 
+                 (peram[rnd_i].block(4 * nb_ev * t_source + nb_ev * row,
+                        dilE * quarks[0].number_of_dilution_D * t_sink_dil + 
+                        dilE * col, nb_ev, dilE)).adjoint() *
+              (vdaggerv.return_vdaggerv(nb_mom-p-1, t_source, displ)).adjoint();
+          }  
           // that's the best criterium I could think up for multiplication with
           // gamma_5 from left and right side. It changes the sign of the two
           // upper right and two lower left blocks in dirac space
@@ -406,40 +391,6 @@ void BasicOperator::init_operator_d (const int particle_no, const int t_source,
         }
       }
     }
-  }
-  else {
-    for(size_t rnd_i = 0; rnd_i < nb_rnd; ++rnd_i) {
-      for(size_t col = 0; col < 4; ++col) {
-        for(size_t row = 0; row  < 4; ++row){
-
-          // propagator D_d^-1 = perambulator(t_source, t_sink)^dagger * 
-          // basicoperator(tsource) 
-          // = gamma_5 D_u^-1 gamma_5 according to gamma_5 trick
-          // only necassary to build this for charged particles.
-          // TODO: implement a flag to omit this calculation
-          // TODO: implement more versatile momentum structure
-
-          contraction_dagger[particle_no][p][rnd_i][row].block(
-                                               col * dilE, 0, dilE, nb_ev) = 
-            (peram[rnd_i].block(4 * nb_ev * t_source + 
-              nb_ev * row,
-              dilE * quarks[0].number_of_dilution_D * 
-              t_sink_dil + dilE * col,
-              nb_ev,
-              dilE)).adjoint() *
-              (vdaggerv.return_vdaggerv(nb_mom-p-1, t_source, displ)).adjoint();
-            
-          // that's the best criterium I could think up for multiplication with
-          // gamma_5 from left and right side. It changes the sign of the two
-          // upper right and two lower left blocks in dirac space
-          if( ((row + col) == 3) || (abs(row - col) > 1) ){
-            contraction_dagger[particle_no][p][rnd_i][row].
-                  block(col * dilE, 0, dilE, nb_ev) *= -1;
-          }
-        }
-      }
-    }
-  }
   } // Loop over momentum ends here
 }
 
@@ -479,8 +430,6 @@ void BasicOperator::get_operator_charged (array_Xcd_d2_eigen& op_1,
     } // end for rnd_j
   } // end for rnd_i
 
-//  delete [] s_temp;
-
 }
 
 /******************************************************************************/
@@ -516,8 +465,6 @@ void BasicOperator::get_operator_g5 (vec_Xcd_eigen& op_1,
 /*uncharged********************************************************************/
 /******************************************************************************/
 /******************************************************************************/
-
-
 
 // returns D_u^-1 Gamma
 

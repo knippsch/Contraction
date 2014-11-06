@@ -164,7 +164,6 @@ void LapH::VdaggerV::build_rvdaggervr(const int config_i,
   const size_t nb_rnd = quarks[0].number_of_rnd_vec;
 
   for(size_t p = 0; p < nb_mom; p++){
-    if(p <= nb_mom/2){
     for(size_t t = 0; t < Lt; t++){
       for(size_t blocknr = 0; blocknr < 4; ++blocknr) {
         for(size_t rnd_i = 0; rnd_i < nb_rnd; ++rnd_i) {
@@ -173,35 +172,23 @@ void LapH::VdaggerV::build_rvdaggervr(const int config_i,
               for(size_t vec_j = 0; vec_j < nb_ev; ++vec_j) {
                 size_t blk_i =  blocknr + vec_i * 4 + 4 * nb_ev * t;
                 size_t blk_j =  blocknr + vec_j * 4 + 4 * nb_ev * t;
+                if(p <= nb_mom/2){
                 rvdaggervr[p][t][blocknr][rnd_i][rnd_j]
                                               (vec_i % dilE, vec_j % dilE) +=
                             std::conj(rnd_vec[rnd_i][blk_i]) * 
                                       rnd_vec[rnd_j][blk_j] * 
                                       vdaggerv[p][t][0](vec_i, vec_j);
-            }}// loops over vec_j and vec_i
-        }}// loops over rnd vec
-      }
-    }
-    }
-    else{
-    for(size_t t = 0; t < Lt; t++){
-      for(size_t blocknr = 0; blocknr < 4; ++blocknr) {
-        for(size_t rnd_i = 0; rnd_i < nb_rnd; ++rnd_i) {
-          for(size_t rnd_j = rnd_i+1; rnd_j < nb_rnd; ++rnd_j){
-            for(size_t vec_i = 0; vec_i < nb_ev; ++vec_i) {
-              for(size_t vec_j = 0; vec_j < nb_ev; ++vec_j) {
-                size_t blk_i =  blocknr + vec_i * 4 + 4 * nb_ev * t;
-                size_t blk_j =  blocknr + vec_j * 4 + 4 * nb_ev * t;
+                }
+                else{
                 rvdaggervr[p][t][blocknr][rnd_i][rnd_j]
                                               (vec_i % dilE, vec_j % dilE) +=
-                            std::conj(rnd_vec[rnd_i][blk_i]) * 
+                        std::conj(rnd_vec[rnd_i][blk_i]) * 
                                       rnd_vec[rnd_j][blk_j] * 
-                            std::conj(vdaggerv[nb_mom - p -1][t][0](vec_j, vec_i));
-
+                        std::conj(vdaggerv[nb_mom - p -1][t][0](vec_j, vec_i));
+                }
             }}// loops over vec_j and vec_i
         }}// loops over rnd vec
       }
-    }
     }
   }// momemtum loop ends here
 
