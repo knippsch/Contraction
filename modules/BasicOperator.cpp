@@ -308,19 +308,28 @@ void BasicOperator::init_operator_u (const int particle_no, const int t_source,
           for(size_t row = 0; row  < 4; ++row){ 
             // calculate columns of D_u^-1. gamma structure can be implented by
             // reordering columns and multiplying them with constants 
-            contraction[particle_no][p][rnd_i][rnd_j][col].block(
+            if(p <= nb_mom/2){
+              contraction[particle_no][p][rnd_i][rnd_j][col].block(
                                       row * nb_ev, 0, nb_ev, dilE) =
-
-              peram[rnd_i].block((4 * t_source + row) * nb_ev,
-                                 dilE * (quarks[0].number_of_dilution_D * 
-                                 t_sink_dil + col), nb_ev, dilE) * 
+                peram[rnd_i].block((4 * t_source + row) * nb_ev,
+                                   dilE * (quarks[0].number_of_dilution_D * 
+                                   t_sink_dil + col), nb_ev, dilE) * 
                  vdaggerv.return_rvdaggervr(p, t_sink, col, rnd_i, rnd_j);
-    
-          }
-        }
-      }  
-    }
-  } // Loop over momenta ends here
+            }
+            else {
+              contraction[particle_no][p][rnd_i][rnd_j][col].block(
+                                      row * nb_ev, 0, nb_ev, dilE) =
+                peram[rnd_i].block((4 * t_source + row) * nb_ev,
+                                   dilE * (quarks[0].number_of_dilution_D * 
+                                   t_sink_dil + col), nb_ev, dilE) * 
+                 (vdaggerv.return_rvdaggervr(nb_mom-p-1, t_sink, col, 
+                                             rnd_i, rnd_j)).adjoint();
+
+
+            }
+        }}// loops over col and row
+    }}// loops over rnd_i and rnd_j
+  }// loop over momenta ends here
 }
 
 /******************************************************************************/
