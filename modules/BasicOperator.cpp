@@ -300,7 +300,7 @@ void BasicOperator::init_operator_u (const int particle_no, const int t_source,
         init_operator" << std::endl;
       exit(0);
   }
-
+  // TODO: rvdaggevr is not qudaratic yet, so it must be stored until change
   for(size_t p = 0; p < nb_mom; p++){
     for(size_t rnd_i = 0; rnd_i < nb_rnd; ++rnd_i) {
       for(size_t rnd_j = rnd_i+1; rnd_j < nb_rnd; ++rnd_j) { 
@@ -314,7 +314,8 @@ void BasicOperator::init_operator_u (const int particle_no, const int t_source,
                 peram[rnd_i].block((4 * t_source + row) * nb_ev,
                                    dilE * (quarks[0].number_of_dilution_D * 
                                    t_sink_dil + col), nb_ev, dilE) * 
-                 vdaggerv.return_rvdaggervr(p, t_sink, col, rnd_i, rnd_j);
+                 (vdaggerv.return_rvdaggervr(p, t_sink, 0, rnd_i, rnd_j))
+                                      .block(0, col*dilE, dilE, dilE);
             }
             else {
               contraction[particle_no][p][rnd_i][rnd_j][col].block(
@@ -322,10 +323,8 @@ void BasicOperator::init_operator_u (const int particle_no, const int t_source,
                 peram[rnd_i].block((4 * t_source + row) * nb_ev,
                                    dilE * (quarks[0].number_of_dilution_D * 
                                    t_sink_dil + col), nb_ev, dilE) * 
-                 (vdaggerv.return_rvdaggervr(nb_mom-p-1, t_sink, col, 
-                                             rnd_i, rnd_j)).adjoint();
-
-
+                 (vdaggerv.return_rvdaggervr(nb_mom-p-1, t_sink, 0, rnd_j, 
+                       rnd_i).block(0, col*dilE, dilE, dilE)).adjoint();
             }
         }}// loops over col and row
     }}// loops over rnd_i and rnd_j

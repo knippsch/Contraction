@@ -19,6 +19,9 @@ LapH::VdaggerV::VdaggerV() : vdaggerv(), rvdaggervr(), momentum(), nb_mom(1),
   const size_t nb_rnd = quarks[0].number_of_rnd_vec;
   const size_t dilE = quarks[0].number_of_dilution_E;
 
+  // TODO: just a workaround, must be read in via infile
+  const size_t nb_dis = 1;
+
   // only half of the array is stored to save memory. But be carefull, it 
   // must be mapped correctly from outside by addressing the memomentum
   // correctly and daggering
@@ -27,10 +30,10 @@ LapH::VdaggerV::VdaggerV() : vdaggerv(), rvdaggervr(), momentum(), nb_mom(1),
             Eigen::MatrixXcd::Zero(nb_ev, nb_ev));
 
   //rvdaggervr.resize(boost::extents[nb_mom][Lt][4][nb_rnd][nb_rnd]);
-  rvdaggervr.resize(boost::extents[nb_mom/2+1][Lt][4][nb_rnd][nb_rnd]);
+  rvdaggervr.resize(boost::extents[nb_mom/2+1][Lt][nb_dis][nb_rnd][nb_rnd]);
   std::fill(rvdaggervr.origin(), 
             rvdaggervr.origin() + rvdaggervr.num_elements(), 
-            Eigen::MatrixXcd::Zero(dilE, dilE));
+            Eigen::MatrixXcd::Zero(dilE, 4*dilE));
 
   momentum.resize(boost::extents[nb_mom][Vs]);
   create_momenta();
@@ -163,22 +166,39 @@ void LapH::VdaggerV::build_rvdaggervr(const int config_i,
   const size_t dilE = quarks[0].number_of_dilution_E;
   const size_t nb_rnd = quarks[0].number_of_rnd_vec;
 
+  // TODO: just a workaround
+  const size_t nb_dis = 1;
+
   for(size_t p = 0; p <= nb_mom/2; p++){
     for(size_t t = 0; t < Lt; t++){
-      for(size_t blocknr = 0; blocknr < 4; ++blocknr) {
+      for(size_t dis = 0; dis < nb_dis; ++dis) {
         for(size_t rnd_i = 0; rnd_i < nb_rnd; ++rnd_i) {
-          for(size_t rnd_j = rnd_i+1; rnd_j < nb_rnd; ++rnd_j){
+
+          Eigen::MatrixXcd M = Eigen::MatrixXcd::Zero(nb_ev, 4*dilE);
+          for(size_t dirac = 0; dirac < 4; dirac++){
             for(size_t vec_i = 0; vec_i < nb_ev; ++vec_i) {
-              for(size_t vec_j = 0; vec_j < nb_ev; ++vec_j) {
-                size_t blk_i =  blocknr + vec_i * 4 + 4 * nb_ev * t;
-                size_t blk_j =  blocknr + vec_j * 4 + 4 * nb_ev * t;
-                rvdaggervr[p][t][blocknr][rnd_i][rnd_j]
-                                              (vec_i % dilE, vec_j % dilE) +=
-                            std::conj(rnd_vec[rnd_i][blk_i]) * 
-                                      rnd_vec[rnd_j][blk_j] * 
-                                      vdaggerv[p][t][0](vec_i, vec_j);
-            }}// loops over vec_j and vec_i
-        }}// loops over rnd vec
+              size_t blk_i =  dirac + vec_i * 4 + 4 * nb_ev * t;
+            
+                M.block(0, vec_i%dilE + dilE*dirac, nb_ev, 1) += 
+                                  vdaggerv[p][t][dis].col(vec_i) * 
+                        rnd_vec[rnd_i][blk_i];
+            }
+          }
+          for(size_t rnd_j = 0; rnd_j < nb_rnd; ++rnd_j){
+            if(rnd_i != rnd_j){
+              for(size_t dirac = 0; dirac < 4; dirac++){
+                for(size_t vec_j = 0; vec_j < nb_ev; ++vec_j) {
+                  size_t blk_j =  dirac + vec_j * 4 + 4 * nb_ev * t;
+
+                  rvdaggervr[p][t][dis][rnd_j][rnd_i]
+                                .block(vec_j%dilE, dilE*dirac , 1, dilE) +=
+                                       M.block(vec_j, dilE*dirac, 1, dilE) * 
+                                               std::conj(rnd_vec[rnd_j][blk_j]);
+                }
+              }
+            }
+          }
+        }
       }
     }
   }// momemtum loop ends here
@@ -186,6 +206,7 @@ void LapH::VdaggerV::build_rvdaggervr(const int config_i,
   t2 = clock() - t2;
   std::cout << std::setprecision(1) << "\t\tSUCCESS - " << std::fixed 
     << ((float) t2)/CLOCKS_PER_SEC << " seconds" << std::endl;
+
 }
 
 
