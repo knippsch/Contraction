@@ -101,7 +101,6 @@ void LapH::Perambulator::read_perambulators_from_file (const int config_i) {
       // copy into matrix structure
       int col_i, row_i;
       int t1, t2, ev1, ev2, dirac1, dirac2;
-#pragma omp parallel for private(col_i, row_i, t1, t2, ev1, ev2, dirac1, dirac2) schedule(guided)
       for(t1 = 0; t1 < Lt; ++t1)
         for(ev1 = 0; ev1 < number_of_eigen_vec; ++ev1)
           for(dirac1 = 0; dirac1 < 4; ++dirac1)

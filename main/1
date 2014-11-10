@@ -30,7 +30,7 @@ int main (int ac, char* av[]) {
   // initialization of OMP paralization
   // TODO: number of thread must be set via inputfile
   Eigen::initParallel();
-  omp_set_num_threads(2);
+  omp_set_num_threads(4);
   Eigen::setNbThreads(1); // parallel eigen makes everything slower
 
   // reading in global parameters from input file
@@ -88,12 +88,14 @@ int main (int ac, char* av[]) {
 
   // abbreviations for clearer memory allocation. Wont be used in loops and 
   // when building the contractions
+
   const size_t nmom = number_of_momenta;
   const size_t nrnd = number_of_rnd_vec;
   const size_t ndir = number_of_dirac;
   const size_t ndis = number_of_displ;
 
   // memory for intermediate matrices when building C4_3 (save multiplications)
+
   array_Xcd_d3_eigen X(boost::extents[nrnd][nrnd][nrnd]);
   array_Xcd_d3_eigen Y(boost::extents[nrnd][nrnd][nrnd]);
 	for(int rnd1 = 0; rnd1 < number_of_rnd_vec; rnd1++){
@@ -111,9 +113,8 @@ int main (int ac, char* av[]) {
 
   // memory for the correlation function
   //TODO: dont need the memory for p_u^2 > p_d^2
+
   array_cd_d5 C4_mes(boost::extents[nmom][nmom][ndir][ndir][Lt]);
-  array_cd_d10 Corr(boost::extents[nmom][nmom][ndir][ndir][ndis][ndis][Lt][Lt]
-                                    [nrnd][nrnd]);
 
   int norm = 0;
   for(int rnd1 = 0; rnd1 < number_of_rnd_vec; ++rnd1){
@@ -166,6 +167,8 @@ int main (int ac, char* av[]) {
     // setting the correlation function to zero
     std::cout << "\n\tcomputing the connected contribution of pi_+/-:\r";
     time = clock();
+    array_cd_d10 Corr(boost::extents[nmom][nmom][ndir][ndir][ndis][ndis][Lt][Lt]
+                                    [nrnd][nrnd]);
     std::fill(Corr.origin(), Corr.origin() + Corr.num_elements(), 
                                                               cmplx(0.0, 0.0));
     // calculate all two-operator traces of the form tr(u \Gamma \bar{d}) and 
@@ -175,8 +178,6 @@ int main (int ac, char* av[]) {
       std::cout << "\tcomputing the connected contribution of pi_+/-: " 
           << std::setprecision(2) << (float) t_source/Lt*100 <<"%\r" 
           << std::flush;
-    basic->init_operator_u(0, t_source, 'b', 0);
-    basic->init_operator_d(0, t_source, 'b', 0);
     for(int t_sink = 0; t_sink < Lt; ++t_sink){
       for(int displ_u = 0; displ_u < number_of_displ; displ_u++){
       for(int displ_d = 0; displ_d < number_of_displ; displ_d++){ 
@@ -184,20 +185,23 @@ int main (int ac, char* av[]) {
         // choose 'i' for interlace or 'b' for block time dilution scheme
         // TODO: get that from input file
         // choose 'c' for charged or 'u' for uncharged particles
+        basic->init_operator_u(0, t_source, t_sink, 'b', displ_min + displ_u);
+        basic->init_operator_d(0, t_source, t_sink, 'b', displ_min + displ_d);
         for(int dirac_u = 0; dirac_u < number_of_dirac; ++dirac_u){
         for(int p_u = p_min; p_u < p_max; ++p_u) {
           // "multiply contraction[rnd_i] with gamma structure"
           // contraction[rnd_i] are the columns of D_u^-1 which get
           // reordered by gamma multiplication. No actual multiplication
           // is carried out
-          basic->get_operator_charged(op_1, 0, t_sink, dirac_ind.at(dirac_u), p_u);
+          basic->get_operator_charged(op_1, 0, t_sink, 
+                                      dirac_ind.at(dirac_u), p_u);
           for(int dirac_d = 0; dirac_d < number_of_dirac; ++dirac_d){
           for(int p_d = p_min; p_d < p_max; ++p_d) {
             // same as get_operator but with gamma_5 trick. D_u^-1 is
             // daggered and multipied with g_5 from left and right
             // the momentum is changed to reflect the switched sign 
             // in the momentum exponential for pi_+-
-            basic->get_operator_g5(op_2, 0, t_sink, dirac_ind.at(dirac_d), p_d);
+            basic->get_operator_g5(op_2, 0, dirac_ind.at(dirac_d), p_d);
             for(int rnd1 = 0; rnd1 < number_of_rnd_vec; ++rnd1){
             for(int rnd2 = rnd1+1; rnd2 < number_of_rnd_vec; ++rnd2){
               // build all 2pt traces leading to C2_mes
@@ -534,126 +538,263 @@ int main (int ac, char* av[]) {
 //    time = clock();
 //
 //    // setting the correlation function to zero
-//    std::fill(C4_mes.data(), C4_mes.data() + C4_mes.num_elements(), 
-//                                                               cmplx(0.0, 0.0));
 //
-//    for(size_t t_source = 0; t_source < Lt; ++t_source){
-//      std::cout << "\tcomputing the big trace of pi_+/-: " 
-//          << std::setprecision(2) << (float) t_source/Lt*100 <<"%\r" 
-//          << std::flush;
-//      size_t t_source_1 = (t_source + 1) % Lt;
-//      // this is a way to reuse the already computed operators from t_source_1
-//      if(t_source != 0){
-//        basic->swap_operators();
-//        basic->init_operator_u(1, t_source_1, 'b', 0);
-//        basic->init_operator_d(0, t_source_1, 'b', 0);
-//      }
-//      else {
-//        basic->init_operator_u(0, t_source,   'b', 0);
-//        basic->init_operator_u(1, t_source_1, 'b', 0);
-//        basic->init_operator_d(0, t_source_1, 'b', 0);
-//        basic->init_operator_d(1, t_source,   'b', 0);
-//      }
-//      for(size_t t_sink = 0; t_sink < Lt; ++t_sink){
-//        size_t t_sink_1 = (t_sink + 1) % Lt;
+//    for(int p_u = 0; p_u < number_of_momenta; ++p_u)
+//      for(int p_d = 0; p_d < number_of_momenta; ++p_d)
+//        for(int dirac_u = 0; dirac_u < number_of_dirac; ++dirac_u)
+//          for(int dirac_d = 0; dirac_d < number_of_dirac; ++dirac_d)
+//            for(int t1 = 0; t1 < Lt; ++t1)
+//              C4_mes[p_u][p_d][dirac_u][dirac_d][t1] = 
+//                  std::complex<double>(0.0, 0.0);
+//
+//    for(int t_source = 0; t_source < Lt; ++t_source){
+//      for(int t_sink = 0; t_sink < Lt; ++t_sink){
+//
+//        int t_source_1 = (t_source + 1) % Lt;
+//        int t_sink_1 = (t_sink + 1) % Lt;
+//
+//        // initialize basic->contraction[]
+//        // p_u = number_of_momenta/2 and the break; statement arrange
+//        // for one-to-all calculation in momentum space. (only one source
+//        // momentum is used. the first five are {(0,0,0), (0,0,1), 
+//        // (0,1,-1), (1,-1,-1), (0,0,2)}
+//
+//        for(int dirac_u = 0; dirac_u < number_of_dirac; ++dirac_u){
+//          for(int p = 0; p <= max_mom_squared; p++){
+//            for(int p_u = number_of_momenta/2; p_u < p_max; ++p_u){
+//              if(mom_squared[p_u] == p){
+//                basic->init_operator_u(0, t_source, t_sink, 'b', p_u, 0);
+//                basic->init_operator_u(1, t_source_1, t_sink_1, 'b', 
+//                                       number_of_momenta - p_u - 1, 0);
+//                break;
+//              }
+//            }
+//          }
+//        }
+//
+//        // initialize basic->contraction_dagger[]
+//        // build all momenta for sinks
+//
+//        for(int dirac_d = 0; dirac_d < number_of_dirac; ++dirac_d){
+//          for(int p = 0; p <= max_mom_squared; p++){
+//            for(int p_d = number_of_momenta/2; p_d > p_min; --p_d){
+//              if(mom_squared[p_d] == p){
+//
+//                basic->init_operator_d(0, t_source_1, t_sink, 'b', p_d, 0);
+//                basic->init_operator_d(1, t_source, t_sink_1, 'b', 
+//                                       number_of_momenta - p_d - 1, 0);
+//                break;
+//              }
+//            }
+//          }
+//        }
 //
 //        // build 4pt-function C4_mes for pi^+pi^+ Equivalent two just summing
 //        // up the four-trace with same time difference between source and sink 
 //        // (all to all) for every dirac structure, momentum
 //        // displacement not supported at the moment
 //        // to build the trace with four matrices, build combinations 
+//        // X = D_d^-1(t_sink | t_source + 1) 
+//        //     Gamma D_u^-1(t_source + 1 | t_sink + 1) Gamma
+//        // Y = D_d^-1(t_sink + 1| t_source) 
+//        //     Gamma D_u^-1(t_source| t_sink) Gamma
 //        // these have dimension // (4 * quarks[0].number_of_dilution_E) x (4 * 
 //        //     quarks[0].number_of_dilution_E)
 //        // thus the multiplication in this order is fastest
-//        for(size_t dirac_1 = 0; dirac_1 < number_of_dirac; ++dirac_1){     
-//          for(size_t p = 0; p <= max_mom_squared; p++){
-//          for(size_t p_u = p_min; p_u < p_max; ++p_u) {
-//          if(mom_squared[p_u] == p){
-//            basic->get_operator_charged(op_1, 0, t_sink, dirac_ind.at(dirac_1), p_u);
-//            for(size_t dirac_2 = 0; dirac_2 < number_of_dirac; ++dirac_2){
-//              basic->get_operator_charged(op_3, 1, t_sink_1, dirac_ind.at(dirac_2), 
-//                                          number_of_momenta - p_u - 1);
-//              for(size_t p_d = p_min; p_d < p_max; ++p_d) {
-//              if(p_d == p_u){
+//
+//        for(int dirac_1 = 0; dirac_1 < number_of_dirac; ++dirac_1){     
+//          for(int p = 0; p <= max_mom_squared; p++){
+//             for(int p_u = number_of_momenta / 2; p_u < p_max; ++p_u) {
+//              if(mom_squared[p_u] == p){
+//                for(int dirac_2 = 0; dirac_2 < number_of_dirac; ++dirac_2){
+//                  for(int p_d = p_min; p_d < p_max; ++p_d) {
+//                    if(p_u == p_d){
+//
+//                      // initialisation of X. rnd loops and if-statements rule
+//                      // forbidden randomvector combinations (to improve 
+//                      // statistical error never use the same randomvector
+//                      // for different indices
 //    
-//                basic->get_operator_g5(op_2, 0, t_sink, dirac_ind.at(dirac_1), p_d);
-//                basic->get_operator_g5(op_4, 1, t_sink_1, dirac_ind.at(dirac_2), 
-//                                       number_of_momenta - p_d - 1);
+//                      basic->get_operator_g5(op_2, 0, dirac_ind.at(dirac_1), 
+//                          number_of_momenta - p_d - 1);
+//                      basic->get_operator_charged(op_3, 1, t_sink_1, 
+//                          dirac_ind.at(dirac_2), number_of_momenta - p_u - 1);
+//          
+//                      // second u quark: t_source_1 -> t_sink_1
 //
-//                // TODO: Make X and Y dependent on p and dirac -> SPEEDUP
-//                // X = D_d^-1(t_sink | t_source + 1) 
-//                //     Gamma D_u^-1(t_source + 1 | t_sink + 1) Gamma
-//                #pragma omp parallel for collapse(2) schedule(dynamic)
-//                for(size_t rnd1 = 0; rnd1 < number_of_rnd_vec; ++rnd1){
-//                for(size_t rnd2 = 0; rnd2 < number_of_rnd_vec; ++rnd2){
-//                if(rnd2 != rnd1){
-//                for(int rnd3 = 0; rnd3 < number_of_rnd_vec; ++rnd3){
-//                if(rnd3 != rnd1 && rnd3 != rnd2){
+//                      for(int rnd3 = 1; rnd3 < number_of_rnd_vec; ++rnd3){
+//                        for(int rnd2 = 0; rnd2 < number_of_rnd_vec; ++rnd2){
+//                          if(rnd2 != rnd3){
 //
-//                  X[rnd1][rnd2][rnd3] = op_2[rnd1] * op_3[rnd2][rnd3];
-//                  Y[rnd1][rnd2][rnd3] = op_4[rnd1] * op_1[rnd2][rnd3];
+//                            // first d quark: t_sink_1 -> t_source
 //
-//                }}}}}
+//                            for(int rnd4 = rnd2 + 1; rnd4 < number_of_rnd_vec; ++rnd4){
+//                              if(rnd4 != rnd3){
 //
-//                // complete diagramm. combine X and Y to four-trace
-//                // C4_mes = tr(D_u^-1(t_source     | t_sink      ) Gamma 
-//                //             D_d^-1(t_sink       | t_source + 1) Gamma 
-//                //             D_u^-1(t_source + 1 | t_sink + 1  ) Gamma 
-//                //             D_d^-1(t_sink + 1   | t_source    ) Gamma)
-//                #pragma omp parallel for collapse(2) schedule(dynamic)
-//                for(size_t rnd1 = 0; rnd1 < number_of_rnd_vec; ++rnd1){
-//                for(size_t rnd2 = 0; rnd2 < number_of_rnd_vec; ++rnd2){      
-//                if(rnd2 != rnd1){
-//                for(size_t rnd3 = 0; rnd3 < number_of_rnd_vec; ++rnd3){
-//                if((rnd3 != rnd2) && (rnd3 != rnd1)){
-//                for(size_t rnd4 = 0; rnd4 < number_of_rnd_vec; ++rnd4){
-//                if((rnd4 != rnd1) && (rnd4 != rnd2) && (rnd4 != rnd3)){
+//                                X[rnd3][rnd2][rnd4] = op_2[rnd3] * 
+//                                    op_3[rnd2][rnd4] ;
+//                              }
+//                            }
+//                          }
+//                        }
+//                      }
 //
-//                  C4_mes[p_u][p_d][dirac_1][dirac_2]
-//                        [abs((t_sink - t_source - Lt) % Lt)] += 
-//                    (X[rnd3][rnd2][rnd4] * Y[rnd4][rnd1][rnd3]).trace();
+//                      // initialisation of Y. see initialisation of X
+//    
+//                      basic->get_operator_g5(op_4, 1, dirac_ind.at(dirac_2), p_d);
+//                      basic->get_operator_charged(op_1, 0, t_sink, 
+//                          dirac_ind.at(dirac_1), p_u);
+//    
+//                      // first u quark: t_source -> t_sink
 //
-//                }}}}}}}
-//              }}// loop and if condition p_d
-//            }// loop dirac_2
-//            break;
-//          }}}// loop and if conditions p_u
-//        }// loop dirac_1
-//    }}// loops over t_source and t_sink end here
-//    // Normalization of 4pt-function
-//    for(auto i = C4_mes.data(); i < (C4_mes.data()+C4_mes.num_elements()); i++)
-//      *i /= norm1;
+//                      for(int rnd1 = 0; rnd1 < number_of_rnd_vec; ++rnd1){
+//                        for(int rnd3 = rnd1 + 1; rnd3 < number_of_rnd_vec; ++rnd3){      
+//
+//                          // second d quark: t_sink -> t_source_1
+//
+//                          for(int rnd4 = 1; rnd4 < number_of_rnd_vec; ++rnd4){
+//                            if((rnd4 != rnd1) && (rnd4 != rnd3)){
+//
+//                              Y[rnd4][rnd1][rnd3] = op_4[rnd4] * 
+//                                  op_1[rnd1][rnd3];
+//                            }
+//                          }
+//                        }
+//                      }
+//              
+//                      // complete diagramm. combine X and Y to four-trace
+//                      // C4_mes = tr(D_u^-1(t_source| t_sink) Gamma 
+//                      //     D_d^-1(t_sink | t_source + 1) Gamma 
+//                      //     D_u^-1(t_source + 1 | t_sink + 1) Gamma 
+//                      //     D_d^-1(t_sink + 1| t_source) Gamma)
+//                      // every quark line must have its own random vec
+//
+//                      for(int rnd1 = 0; rnd1 < number_of_rnd_vec; ++rnd1){
+//                        for(int rnd3 = rnd1 + 1; rnd3 < number_of_rnd_vec; ++rnd3){
+//                          for(int rnd2 = 0; rnd2 < number_of_rnd_vec; ++rnd2){      
+//                            if((rnd2 != rnd1) && (rnd2 != rnd3)){
+//                              for(int rnd4 = rnd2 + 1; rnd4 < number_of_rnd_vec; ++rnd4){
+//                                if((rnd4 != rnd1) && (rnd4 != rnd3)){
+//
+//                                  C4_mes[p_u][p_d][dirac_1][dirac_2]
+//                                      [abs((t_sink - t_source - Lt) % Lt)] += 
+//                                    ((X[rnd3][rnd2][rnd4] * 
+//                                      Y[rnd4][rnd1][rnd3]).trace());
+//                                }
+//                              }
+//                            }
+//                          }
+//                        }
+//                      }
+//    
+//                    }
+//                  }
+//                }
+//
+//                break;
+//
+//              }
+//            }
+//          }
+//        }
+//
+//      }
+//    }
+//
+//    // Normalization of 4pt-function. Accounts for all rnd-number combinations
+//
+//    for(int p1 = 0; p1 < number_of_momenta; ++p1)
+//      for(int p2 = 0; p2 < number_of_momenta; ++p2)
+//        for(int dirac_u = 0; dirac_u < number_of_dirac; ++dirac_u)
+//          for(int dirac_d = 0; dirac_d < number_of_dirac; ++dirac_d)
+//            for(int t = 0; t < Lt; ++t)
+//              C4_mes[p1][p2][dirac_u][dirac_d][t] /= norm1;
+//
 //
 //    // output to binary file
-//    for(size_t dirac_1 = 0; dirac_1 < number_of_dirac; ++dirac_1){     
-//      for(size_t p = 0; p <= max_mom_squared; p++){
-//      for(size_t p_u = p_min; p_u < p_max; ++p_u) {
-//      if(mom_squared[p_u] == p){
-//        for(size_t dirac_2 = 0; dirac_2 < number_of_dirac; ++dirac_2){
-//          for(size_t p_d = p_min; p_d < p_max; ++p_d) {
-//          if(p_d == p_u){
+//
+//    // see output to binary file for C2. 
+//    // for the C4_3 diagram the four propagators are connected in the same
+//    // trace. Thus there are no gluon lines which could be cut to create a
+//    // disconnected diagrams and thus no Zweig suppression.
+//    // To build a GEVP, the correlators are written into a seperate folder
+//    // for every dirac structure, momentum, (entry of the GEVP matrix).
+//    // displacement is not supported at the moment
+//
+//    for(int dirac_u = 0; dirac_u < number_of_dirac; ++dirac_u){
+//      for(int dirac_d = 0; dirac_d < number_of_dirac; ++dirac_d){
+//        for(int p1 = 0; p1 <= max_mom_squared; p1++){
+//          for(int p2 = p1; p2 <= max_mom_squared; p2++){
 //
 //            sprintf(outfile, 
 //                "%s/dirac_%02d_%02d_p_%01d_%01d_displ_%01d_%01d/"
 //                "C4_3_conf%04d.dat", 
-//                outpath.c_str(), dirac_ind.at(dirac_1), dirac_ind.at(dirac_2), 
-//                p, p, displ_min, displ_max, config_i);
+//                outpath.c_str(), dirac_ind.at(dirac_u), dirac_ind.at(dirac_d), 
+//                p1, p2, displ_min, displ_max, config_i);
 //            if((fp = fopen(outfile, "wb")) == NULL)
 //              std::cout << "fail to open outputfile" << std::endl;
 //
+//            for(int p_u = number_of_momenta / 2; p_u < p_max; ++p_u){
+//              if(mom_squared[p_u] == p1){
+//                for(int p_d = p_min; p_d < p_max; ++p_d){
+//                  if(mom_squared[p_d] == p2){
 //
-//             fwrite((double*) &(C4_mes[p_u][p_d][dirac_1][dirac_2][0]), 
-//                    sizeof(double), 2 * Lt, fp);
-//          }}
-//         }
-//         break;
+//                    fwrite((double*) &(C4_mes[p_u][p_d][dirac_u][dirac_d][0]), 
+//                        sizeof(double), 2 * Lt, fp);
+//                  }
+//                }
+//
+//                break;
+//
+//              }
+//            }
+//
+//            fclose(fp);
+//
+//          }
+//        }
 //      }
-//      fclose(fp);
-//      }}
 //    }
+//
+//#if 0
+//    sprintf(outfile, 
+//        "%s/dirac_%02d_%02d_p_0_%01d_displ_%01d_%01d/C4_3_conf%04d.dat", 
+//        outpath.c_str(), dirac_min, dirac_max, 0, displ_min, 
+//        displ_max, config_i);
+//    if((fp = fopen(outfile, "wb")) == NULL)
+//      std::cout << "fail to open outputfile" << std::endl;
+//    for(int dirac = dirac_min; dirac < dirac_max + 1; ++dirac)
+//      fwrite((double*) C4_mes[number_of_momenta/2]
+//          [number_of_momenta/2][dirac][dirac], sizeof(double), 2 * Lt, fp);
+//    fclose(fp);
+//#endif
+//
+//    // output to terminal
+////    printf("\n");
+////    for(int dirac = dirac_min; dirac < dirac_max + 1; ++dirac){
+////      printf("\tdirac    = %02d\n", dirac);
+////      for(int p = p_min; p < p_max; ++p) {
+////        printf("\tmomentum = %02d\n", p);
+////        //printf(
+////        //    "\t t\tRe(C4_3_con)\tIm(C4_3_con)\n\t----------------------------------\n");
+////        for(int t1 = 0; t1 < Lt; ++t1){
+////          printf("\t%02d\t%.5e\t%.5e\n", t1, real(C4_mes[p][p][dirac][dirac][t1]),
+////              imag(C4_mes[p][p][dirac][dirac][t1]));
+////        }
+////        printf("\n");
+////      }
+////      printf("\n");
+////    }
+//
 //
 //    time = clock() - time;
 //    printf("\t\tSUCCESS - %.1f seconds\n", ((float) time)/CLOCKS_PER_SEC);
+//
+//    // *************************************************************************
+//    // FOUR PT CONTRACTION 4 ***************************************************
+//    // *************************************************************************
+//
+//    // identical to FOUR PT CONTRACTION 3
 
   } // loop over configs ends here
 

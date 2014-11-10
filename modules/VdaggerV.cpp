@@ -114,9 +114,10 @@ void LapH::VdaggerV::build_vdaggerv (const int config_i) {
 
   Eigen::MatrixXcd W_t = Eigen::MatrixXcd::Zero(dim_row, nb_ev);
   Eigen::VectorXcd mom = Eigen::VectorXcd::Zero(dim_row);
-
-  LapH::EigenVector V_t(1, dim_row, nb_ev);
-
+#pragma omp parallel
+{
+  LapH::EigenVector V_t(1, dim_row, nb_ev);// each thread needs its own copy
+  #pragma omp for schedule(dynamic)
   for(size_t t = 0; t < Lt; ++t){
 
     read_eigenvectors_from_file(V_t, config_i, t);
@@ -130,9 +131,9 @@ void LapH::VdaggerV::build_vdaggerv (const int config_i) {
         mom(x) = momentum[p][x/3];
       }
       vdaggerv[p][t][0] = V_t[0].adjoint() * mom.asDiagonal() * V_t[0];
-    } // end for momentum
-
-  } // loop over time ends here
+    } // loop over momentum
+  } // loop over time
+}// pragma omp parallel ends here
 
   // set flag that vdaggerv is set
   is_vdaggerv_set = true;
@@ -169,8 +170,9 @@ void LapH::VdaggerV::build_rvdaggervr(const int config_i,
   // TODO: just a workaround
   const size_t nb_dis = 1;
 
-  for(size_t p = 0; p <= nb_mom/2; p++){
-    for(size_t t = 0; t < Lt; t++){
+  #pragma omp parallel for
+  for(size_t t = 0; t < Lt; t++){
+    for(size_t p = 0; p <= nb_mom/2; p++){
       for(size_t dis = 0; dis < nb_dis; ++dis) {
         for(size_t rnd_i = 0; rnd_i < nb_rnd; ++rnd_i) {
 

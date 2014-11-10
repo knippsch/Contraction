@@ -25,6 +25,7 @@ public:
   // standard ctor and dtor are enough - all else is handled by std::vector
   EigenVector(const size_t t, const size_t row_size, const size_t col_size) : 
                V(t, Eigen::MatrixXcd(row_size, col_size)) {};
+  EigenVector() {};
   ~EigenVector() {};
 
   // [] operator to directly access the elements of V

@@ -42,15 +42,17 @@ public:
   BasicOperator();
 //  ~BasicOperator ();
 
-  void init_operator_u (const int particle_no, const int t_source, 
-                        const int t_sink, const char dilution, const int displ);
-  void init_operator_d(const int particle_no, const int t_source, 
-                       const int t_sink, const char dilution, const int displ);
-  void get_operator_charged(array_Xcd_d2_eigen& op_1, const int particle_no, 
-                            const int t_sink, 
-                            const int dirac, const int p) const;
-  void get_operator_g5(vec_Xcd_eigen& op_1, const int particle_no, 
-                       const int dirac, const int p) const;
+  void init_operator_u(const size_t particle_no, const size_t t_source, 
+                       const char dilution, const size_t displ);
+  void init_operator_d(const size_t particle_no, const size_t t_source, 
+                       const char dilution, const size_t displ);
+  void swap_operators();
+  void get_operator_charged(array_Xcd_d2_eigen& op_1, const size_t particle_no, 
+                            const size_t t_sink, const size_t dirac, 
+                            const size_t p) const;
+  void get_operator_g5(vec_Xcd_eigen& op_1, const size_t particle_no, 
+                       const size_t t_sink, const size_t dirac, 
+                       const size_t p) const;
   void get_operator_uncharged(vec_Xcd_eigen& op_1, const int particle_no, 
                               const int dirac, const int p) const;
 
@@ -67,8 +69,8 @@ protected:
   LapH::Perambulator peram;
   std::vector<LapH::RandomVector> rnd_vec;
   LapH::VdaggerV vdaggerv;
-  array_Xcd_d4_eigen contraction_dagger;
-  array_Xcd_d5_eigen contraction;
+  array_Xcd_d5_eigen contraction_dagger;
+  array_Xcd_d6_eigen contraction;
   std::vector<struct lookup>  gamma;
 
 };
