@@ -252,13 +252,13 @@ BasicOperator::BasicOperator() : peram(),
   // gamma matrices. contraction holds the for columns, contraction_dagger
   // holds the columns after gamma_5 trick
   contraction.resize(boost::extents[2][Lt][nb_mom][nb_rnd][nb_rnd][4]);
-  std::fill(contraction.origin(), contraction.origin() + 
-                                  contraction.num_elements(), 
-                                  Eigen::MatrixXcd::Zero(4 * nb_ev, dilE));
+  std::fill(contraction.data(), contraction.data() + 
+                                contraction.num_elements(), 
+                                Eigen::MatrixXcd::Zero(4 * nb_ev, dilE));
   contraction_dagger.resize(boost::extents[2][Lt][nb_mom][nb_rnd][4]);
-  std::fill(contraction_dagger.origin(), contraction_dagger.origin() + 
-                                      contraction_dagger.num_elements(), 
-                                      Eigen::MatrixXcd::Zero(4 * dilE, nb_ev));
+  std::fill(contraction_dagger.data(), contraction_dagger.data() + 
+                                       contraction_dagger.num_elements(), 
+                                       Eigen::MatrixXcd::Zero(4 * dilE, nb_ev));
 
   // TODO: the resize is unnasassarry if it is done in initialiser list 
   // with the ctor
@@ -287,7 +287,7 @@ void BasicOperator::init_operator_u (const size_t particle_no,
   const size_t nb_ev = global_data->get_number_of_eigen_vec();
   const size_t nb_mom = global_data->get_number_of_momenta();
 
-  #pragma omp parallel for schedule(guided)
+  #pragma omp parallel for schedule(dynamic)
   for(size_t t = 0; t < Lt; t++){
   // TODO: just a workaround
   size_t t_sink_dil;
@@ -306,7 +306,8 @@ void BasicOperator::init_operator_u (const size_t particle_no,
   }
   for(size_t p = 0; p < nb_mom; p++){
     for(size_t rnd_i = 0; rnd_i < nb_rnd; ++rnd_i) {
-    for(size_t rnd_j = rnd_i+1; rnd_j < nb_rnd; ++rnd_j) { 
+    for(size_t rnd_j = 0; rnd_j < nb_rnd; ++rnd_j) { 
+    if(rnd_i != rnd_j){
       for(size_t col = 0; col < 4; ++col) {
       for(size_t row = 0; row  < 4; ++row){ 
         // calculate columns of D_u^-1. gamma structure can be implented by
@@ -330,7 +331,7 @@ void BasicOperator::init_operator_u (const size_t particle_no,
                    rnd_i).block(0, col*dilE, dilE, dilE)).adjoint();
         }
       }}// loops over col and row
-    }}// loops over rnd_i and rnd_j
+    }}}// loops over rnd_i and rnd_j
   }}// loops over momenta and time end here
 }
 /******************************************************************************/
@@ -348,7 +349,7 @@ void BasicOperator::init_operator_d (const size_t particle_no,
   const size_t dilE = quarks[0].number_of_dilution_E;
   const size_t nb_mom = global_data->get_number_of_momenta();
 
-  #pragma omp parallel for schedule(guided)
+  #pragma omp parallel for schedule(dynamic)
   for(size_t t = 0; t < Lt; t++){
   // TODO: just a workaround
   int t_sink_dil;
@@ -408,14 +409,27 @@ void BasicOperator::init_operator_d (const size_t particle_no,
 /******************************************************************************/
 void BasicOperator::swap_operators(){
   
-  auto help1 = contraction[0];
-  contraction[0] = contraction[1];
-  contraction[1] = help1; 
+  const size_t Lt = global_data->get_Lt();
+  const std::vector<quark> quarks = global_data->get_quarks();
+  const size_t nb_rnd = quarks[0].number_of_rnd_vec;
+  const size_t nb_mom = global_data->get_number_of_momenta();
 
-  auto help2 = contraction_dagger[0];
-  contraction_dagger[0] = contraction_dagger[1];
-  contraction_dagger[1] = help2;
-
+  #pragma omp parallel for schedule(dynamic)
+  for(size_t t = 0; t < Lt; t++){
+  for(size_t p = 0; p < nb_mom; p++){
+    for(size_t rnd_i = 0; rnd_i < nb_rnd; ++rnd_i) {
+      for(size_t col = 0; col < 4; ++col) {
+        contraction_dagger[0][t][p][rnd_i][col].swap(
+        contraction_dagger[1][t][p][rnd_i][col]);
+      }
+      for(size_t rnd_j = rnd_i+1; rnd_j < nb_rnd; ++rnd_j) { 
+        for(size_t col = 0; col < 4; ++col) {
+          contraction[0][t][p][rnd_i][rnd_j][col].swap(
+          contraction[1][t][p][rnd_i][rnd_j][col]);
+        }
+      }
+    }
+  }}
 }
 /******************************************************************************/
 /******************************************************************************/
@@ -437,7 +451,8 @@ void BasicOperator::get_operator_charged (array_Xcd_d2_eigen& op_1,
   const size_t dilE = quarks[0].number_of_dilution_E;
 
   for(size_t rnd_i = 0; rnd_i < nb_rnd; ++rnd_i){
-  for(size_t rnd_j = rnd_i+1; rnd_j < nb_rnd; ++rnd_j) {
+  for(size_t rnd_j = 0; rnd_j < nb_rnd; ++rnd_j) {
+  if(rnd_i != rnd_j){
     // column number of contraction correspondes to blocknr in init_operator
     for(size_t col = 0; col < 4; col++){
       // introducing gamma structure via reordering of columns. Blockwise
@@ -448,8 +463,7 @@ void BasicOperator::get_operator_charged (array_Xcd_d2_eigen& op_1,
                      [gamma[dirac].row[col]];
 
     } // end for col
-  }} // end for rnd_j and rnd_i
-
+  }}} // end for rnd_j and rnd_i
 }
 
 /******************************************************************************/

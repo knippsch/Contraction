@@ -8,6 +8,7 @@
 #ifndef BASICOPERATOR_H_
 #define BASICOPERATOR_H_
 
+#include <algorithm>
 #include <cmath>
 #include <complex>
 #include <cstdio>
@@ -40,7 +41,7 @@ public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
   BasicOperator();
-//  ~BasicOperator ();
+  ~BasicOperator () {};
 
   void init_operator_u(const size_t particle_no, const size_t t_source, 
                        const char dilution, const size_t displ);
@@ -58,6 +59,8 @@ public:
 
   void read_rnd_vectors_from_file (const int config_i);
 
+  // TODO: should be called on all functions which need that and afterward it should be freed
+  //       from outside to free all the memory
   inline void set_basic(const size_t config){
     peram.read_perambulators_from_file(config);
     read_rnd_vectors_from_file(config);

@@ -112,10 +112,10 @@ void LapH::VdaggerV::build_vdaggerv (const int config_i) {
   const size_t displ_max = global_data->get_displ_max();
   const size_t nb_ev = global_data->get_number_of_eigen_vec();
 
-  Eigen::MatrixXcd W_t = Eigen::MatrixXcd::Zero(dim_row, nb_ev);
-  Eigen::VectorXcd mom = Eigen::VectorXcd::Zero(dim_row);
 #pragma omp parallel
 {
+  Eigen::MatrixXcd W_t = Eigen::MatrixXcd::Zero(dim_row, nb_ev);
+  Eigen::VectorXcd mom = Eigen::VectorXcd::Zero(dim_row);
   LapH::EigenVector V_t(1, dim_row, nb_ev);// each thread needs its own copy
   #pragma omp for schedule(dynamic)
   for(size_t t = 0; t < Lt; ++t){
@@ -170,40 +170,38 @@ void LapH::VdaggerV::build_rvdaggervr(const int config_i,
   // TODO: just a workaround
   const size_t nb_dis = 1;
 
-  #pragma omp parallel for
   for(size_t t = 0; t < Lt; t++){
-    for(size_t p = 0; p <= nb_mom/2; p++){
-      for(size_t dis = 0; dis < nb_dis; ++dis) {
-        for(size_t rnd_i = 0; rnd_i < nb_rnd; ++rnd_i) {
+  for(size_t p = 0; p <= nb_mom/2; p++){
+    for(size_t dis = 0; dis < nb_dis; ++dis) {
+      for(size_t rnd_i = 0; rnd_i < nb_rnd; ++rnd_i) {
 
-          Eigen::MatrixXcd M = Eigen::MatrixXcd::Zero(nb_ev, 4*dilE);
-          for(size_t dirac = 0; dirac < 4; dirac++){
-            for(size_t vec_i = 0; vec_i < nb_ev; ++vec_i) {
-              size_t blk_i =  dirac + vec_i * 4 + 4 * nb_ev * t;
-            
-                M.block(0, vec_i%dilE + dilE*dirac, nb_ev, 1) += 
-                                  vdaggerv[p][t][dis].col(vec_i) * 
-                        rnd_vec[rnd_i][blk_i];
-            }
+        Eigen::MatrixXcd M = Eigen::MatrixXcd::Zero(nb_ev, 4*dilE);
+        for(size_t dirac = 0; dirac < 4; dirac++){
+          for(size_t vec_i = 0; vec_i < nb_ev; ++vec_i) {
+            size_t blk_i =  dirac + vec_i * 4 + 4 * nb_ev * t;
+          
+              M.block(0, vec_i%dilE + dilE*dirac, nb_ev, 1) += 
+                                vdaggerv[p][t][dis].col(vec_i) * 
+                      rnd_vec[rnd_i][blk_i];
           }
-          for(size_t rnd_j = 0; rnd_j < nb_rnd; ++rnd_j){
-            if(rnd_i != rnd_j){
-              for(size_t dirac = 0; dirac < 4; dirac++){
-                for(size_t vec_j = 0; vec_j < nb_ev; ++vec_j) {
-                  size_t blk_j =  dirac + vec_j * 4 + 4 * nb_ev * t;
+        }
+        for(size_t rnd_j = 0; rnd_j < nb_rnd; ++rnd_j){
+          if(rnd_i != rnd_j){
+            for(size_t dirac = 0; dirac < 4; dirac++){
+              for(size_t vec_j = 0; vec_j < nb_ev; ++vec_j) {
+                size_t blk_j =  dirac + vec_j * 4 + 4 * nb_ev * t;
 
-                  rvdaggervr[p][t][dis][rnd_j][rnd_i]
-                                .block(vec_j%dilE, dilE*dirac , 1, dilE) +=
-                                       M.block(vec_j, dilE*dirac, 1, dilE) * 
-                                               std::conj(rnd_vec[rnd_j][blk_j]);
-                }
+                rvdaggervr[p][t][dis][rnd_j][rnd_i]
+                              .block(vec_j%dilE, dilE*dirac , 1, dilE) =
+                                     M.block(vec_j, dilE*dirac, 1, dilE) * 
+                                             std::conj(rnd_vec[rnd_j][blk_j]);
               }
             }
           }
         }
       }
     }
-  }// momemtum loop ends here
+  }}// time and momemtum loop ends here
 
   t2 = clock() - t2;
   std::cout << std::setprecision(1) << "\t\tSUCCESS - " << std::fixed 

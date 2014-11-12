@@ -17,6 +17,8 @@
 #include "Eigen/SparseCore"
 #include "boost/multi_array.hpp"
 
+// TODO: Must be in Namespace
+
 // cpp standard library typedefs
 typedef std::complex<double> cmplx;
 typedef std::vector<cmplx> vec;
