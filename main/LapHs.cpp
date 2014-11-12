@@ -174,6 +174,7 @@ int main (int ac, char* av[]) {
     for(int t_sink = 0; t_sink < Lt; ++t_sink){
       int t_sink_1 = (t_sink + 1) % Lt;
 
+int bla = 0;
       for(int displ_u = 0; displ_u < number_of_displ; displ_u++){
       for(int displ_d = 0; displ_d < number_of_displ; displ_d++){ 
         // initialize contraction[rnd_i] = perambulator * basicoperator = D_u^-1
@@ -200,13 +201,18 @@ int main (int ac, char* av[]) {
               //     D_u^-1(t_source) Gamma)
               Corr[p_u][p_d][dirac_u][dirac_d][displ_u][displ_d]
                   [t_source][t_sink][rnd1][rnd2] = 
-                  (basic->get_operator_g5(1, t_sink, dirac_d, p_d, rnd2) *
-                   basic->get_operator_charged(0, t_sink, dirac_u, p_u, rnd1, rnd2)).trace();
+                  (basic->get_operator_charged(0, t_sink, dirac_u, p_u, rnd1, rnd2) *
+                   basic->get_operator_g5(1, t_sink, dirac_d, p_d, rnd2)).trace();
+
+//if(p_u == 3 && p_d == 3)
+//std::cout << "\n" << rnd1 << rnd2 << "\t" << Corr[p_u][p_d][dirac_u][dirac_d][displ_u][displ_d][t_source][t_sink][rnd1][rnd2] << std::endl; 
+
             }} // Loops over random vectors end here! 
           }}// Loops over dirac_d and p_d end here
         }}// Loops over dirac_u and p_u end here
       }}// Loops over displacements end here
 
+//exit(0);
       // Using the dagger operation to get all possible random vector combinations
       // TODO: Think about imaginary correlations functions - There might be an 
       //       additional minus sign involved

@@ -288,7 +288,10 @@ void BasicOperator::init_operator_u (const size_t particle_no,
   const size_t nb_ev = global_data->get_number_of_eigen_vec();
   const size_t nb_mom = global_data->get_number_of_momenta();
 
-  #pragma omp parallel for schedule(dynamic)
+  #pragma omp parallel 
+  {
+  Eigen::MatrixXcd M(4 * nb_ev, 4 * dilE);
+  #pragma omp for schedule(dynamic)
   for(size_t t = 0; t < Lt; t++){
   // TODO: just a workaround
   size_t t_sink_dil;
@@ -312,7 +315,6 @@ void BasicOperator::init_operator_u (const size_t particle_no,
     for(size_t rnd_i = 0; rnd_i < nb_rnd; ++rnd_i) {
     for(size_t rnd_j = 0; rnd_j < nb_rnd; ++rnd_j) { 
     if(rnd_i != rnd_j){
-      Eigen::MatrixXcd M(4 * nb_ev, 4 * dilE);
       for(size_t col = 0; col < 4; ++col) {
       for(size_t row = 0; row  < 4; ++row){ 
         // calculate columns of D_u^-1. gamma structure can be implented by
@@ -343,6 +345,7 @@ void BasicOperator::init_operator_u (const size_t particle_no,
       }}// loop dirac ends here
     }}}// loops over rnd_i and rnd_j
   }}// loops over momenta and time end here
+  }// pragma omp ends
 }
 /******************************************************************************/
 /******************************************************************************/
@@ -359,7 +362,10 @@ void BasicOperator::init_operator_d (const size_t particle_no,
   const size_t dilE = quarks[0].number_of_dilution_E;
   const size_t nb_mom = global_data->get_number_of_momenta();
 
-  #pragma omp parallel for schedule(dynamic)
+  #pragma omp parallel 
+  {
+  Eigen::MatrixXcd M(4 * dilE, 4 * nb_ev);
+  #pragma omp for schedule(dynamic)
   for(size_t t = 0; t < Lt; t++){
   // TODO: just a workaround
   int t_sink_dil;
@@ -381,7 +387,6 @@ void BasicOperator::init_operator_d (const size_t particle_no,
   // TODO: Dirac loop must vanish 
   for(size_t p = 0; p < nb_mom; p++){
     for(size_t rnd_i = 0; rnd_i < nb_rnd; ++rnd_i) {
-      Eigen::MatrixXcd M(4 * dilE, 4 * nb_ev);
       for(size_t col = 0; col < 4; ++col) {
       for(size_t row = 0; row  < 4; ++row){
         // propagator D_d^-1 = perambulator(t_source, t_sink)^dagger * 
@@ -406,9 +411,8 @@ void BasicOperator::init_operator_d (const size_t particle_no,
         }  
         // gamma_5 trick. It changes the sign of the two upper right and two
         // lower left blocks in dirac space
-        if( ((row + col) == 3) || (abs(row - col) > 1) ){
-          M.block(col * dilE, row * nb_ev, dilE, nb_ev) *= -1;
-        }
+        if( ((row + col) == 3) || (abs(row - col) > 1) )
+          M.block(col * dilE, row * nb_ev, dilE, nb_ev) *= -1.;
       }}// loops over row and col end here
       for(size_t dirac = 5; dirac < 6; dirac++){    
       for(size_t col = 0; col < 4; col++) {
@@ -419,6 +423,7 @@ void BasicOperator::init_operator_d (const size_t particle_no,
       }}// loop dirac ends here
     }// loop over rnd_i ends here
   }}// loops over momenta and time end here
+  }// pragma omp ends
 }
 /******************************************************************************/
 /******************************************************************************/
@@ -438,12 +443,13 @@ void BasicOperator::swap_operators(){
         contraction_dagger[0][t][p][rnd_i][col].swap(
         contraction_dagger[1][t][p][rnd_i][col]);
       }
-      for(size_t rnd_j = rnd_i+1; rnd_j < nb_rnd; ++rnd_j) { 
+      for(size_t rnd_j = 0; rnd_j < nb_rnd; ++rnd_j) { 
+      if(rnd_i != rnd_j){
         for(size_t col = 0; col < 1; ++col) {
           contraction[0][t][p][rnd_i][rnd_j][col].swap(
           contraction[1][t][p][rnd_i][rnd_j][col]);
         }
-      }
+      }}
     }
   }}
 }
