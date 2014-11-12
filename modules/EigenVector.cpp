@@ -40,7 +40,7 @@ void LapH::EigenVector::read_eigen_vector(const std::string& filename, const siz
 void LapH::EigenVector::read_eigen_vector(const std::string& filename, 
                                           const size_t verbose){
   std::cout << "Reading eigenvectors!" << std::endl;
-  for(size_t t = 0; t < V.size(); t++){
+  for(int t = 0; t < V.size(); t++){
     char buff[10];
     sprintf(buff, "%03d", t);
     read_eigen_vector(filename + buff, t, verbose);

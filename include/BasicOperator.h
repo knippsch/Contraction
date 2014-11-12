@@ -29,7 +29,6 @@
 // struct for Look-up table in create_gamma and get_operator. To read as
 // "in column i the row[i]-element is non-zero and its value is value[i]"
 // As Gamma matrices are 4x4 matrices, row and value are 4-vectors
-
 struct lookup {
   int row[4];
   std::complex<double> value[4];
@@ -38,8 +37,6 @@ struct lookup {
 class BasicOperator {
 
 public:
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-
   BasicOperator();
   ~BasicOperator () {};
 
@@ -48,9 +45,6 @@ public:
   void init_operator_d(const size_t particle_no, const size_t t_source, 
                        const char dilution, const size_t displ);
   void swap_operators();
-  void get_operator_charged(array_Xcd_d2_eigen& op_1, const size_t particle_no, 
-                            const size_t t_sink, const size_t dirac, 
-                            const size_t p) const;
   // returns D_u^-1 Gamma
   inline const Eigen::MatrixXcd& get_operator_charged(
                                  const size_t particle_no, const size_t t_sink, 

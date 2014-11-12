@@ -207,7 +207,7 @@ static void create_gamma (std::vector<struct lookup>& gamma, const int i) {
       gamma[16].value[3] = 1;
       break;
     default:
-      printf("Dirac component %d not found in BasicOperator::create_gamma\n", i);
+      printf("Dirac component %d not found in BasicOperator::create_gamma\n",i);
       exit(0);
     }
   return;
@@ -223,11 +223,8 @@ static void create_gamma (std::vector<struct lookup>& gamma, const int i) {
 } // internal namespace ends here
 
 /******************************************************************************/
-/******************************************************************************/
 // constructor ****************************************************************/
 /******************************************************************************/
-/******************************************************************************/
-
 BasicOperator::BasicOperator() : peram(),
                                  rnd_vec(),
                                  vdaggerv(),
@@ -258,8 +255,8 @@ BasicOperator::BasicOperator() : peram(),
                                 Eigen::MatrixXcd::Zero(4 * nb_ev, 4 * dilE));
   contraction_dagger.resize(boost::extents[2][Lt][nb_mom][nb_rnd][1]);
   std::fill(contraction_dagger.data(), contraction_dagger.data() + 
-                                       contraction_dagger.num_elements(), 
-                                       Eigen::MatrixXcd::Zero(4 * dilE, 4 * nb_ev));
+                                contraction_dagger.num_elements(), 
+                                Eigen::MatrixXcd::Zero(4 * dilE, 4 * nb_ev));
 
   // TODO: the resize is unnasassarry if it is done in initialiser list 
   // with the ctor
@@ -269,18 +266,10 @@ BasicOperator::BasicOperator() : peram(),
 
 }
 
-/******************************************************************************/
-/******************************************************************************/
-// destructor *****************************************************************/
-/******************************************************************************/
-/******************************************************************************/
-
 // initializes contractions[col] with columns of D_u^-1
-
 void BasicOperator::init_operator_u (const size_t particle_no, 
                                      const size_t t_source, 
                                      const char dilution, const size_t displ){
-
   const size_t Lt = global_data->get_Lt();
   const std::vector<quark> quarks = global_data->get_quarks();
   const size_t nb_rnd = quarks[0].number_of_rnd_vec;
