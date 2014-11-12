@@ -51,9 +51,20 @@ public:
   void get_operator_charged(array_Xcd_d2_eigen& op_1, const size_t particle_no, 
                             const size_t t_sink, const size_t dirac, 
                             const size_t p) const;
-  void get_operator_g5(vec_Xcd_eigen& op_1, const size_t particle_no, 
-                       const size_t t_sink, const size_t dirac, 
-                       const size_t p) const;
+  // returns D_u^-1 Gamma
+  inline const Eigen::MatrixXcd& get_operator_charged(
+                                 const size_t particle_no, const size_t t_sink, 
+                                 const size_t dirac, const size_t p,
+                                 const size_t rnd_i, const size_t rnd_j) const {
+    return contraction[particle_no][t_sink][p][rnd_i][rnd_j][dirac];
+  }
+  //returns D_d^-1 Gamma
+  inline const Eigen::MatrixXcd& get_operator_g5(const size_t particle_no, 
+                                 const size_t t_sink, const size_t dirac, 
+                                 const size_t p, const size_t rnd_i) const{
+    return contraction_dagger[particle_no][t_sink][p][rnd_i][dirac];
+  } 
+
   void get_operator_uncharged(vec_Xcd_eigen& op_1, const int particle_no, 
                               const int dirac, const int p) const;
 
