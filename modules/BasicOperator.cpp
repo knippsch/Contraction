@@ -444,12 +444,11 @@ void BasicOperator::swap_operators(){
         contraction_dagger[1][t][p][rnd_i][col]);
       }
       for(size_t rnd_j = 0; rnd_j < nb_rnd; ++rnd_j) { 
-      if(rnd_i != rnd_j){
         for(size_t col = 0; col < 1; ++col) {
           contraction[0][t][p][rnd_i][rnd_j][col].swap(
           contraction[1][t][p][rnd_i][rnd_j][col]);
         }
-      }}
+      }
     }
   }}
 }

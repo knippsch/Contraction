@@ -26,14 +26,9 @@ LapH::VdaggerV::VdaggerV() : vdaggerv(), rvdaggervr(), momentum(), nb_mom(1),
   // must be mapped correctly from outside by addressing the memomentum
   // correctly and daggering
   vdaggerv.resize(boost::extents[nb_mom/2+1][Lt][4]);
-  std::fill(vdaggerv.origin(), vdaggerv.origin() + vdaggerv.num_elements(), 
-            Eigen::MatrixXcd::Zero(nb_ev, nb_ev));
 
   //rvdaggervr.resize(boost::extents[nb_mom][Lt][4][nb_rnd][nb_rnd]);
   rvdaggervr.resize(boost::extents[nb_mom/2+1][Lt][nb_dis][nb_rnd][nb_rnd]);
-  std::fill(rvdaggervr.origin(), 
-            rvdaggervr.origin() + rvdaggervr.num_elements(), 
-            Eigen::MatrixXcd::Zero(dilE, 4*dilE));
 
   momentum.resize(boost::extents[nb_mom][Vs]);
   create_momenta();
@@ -112,6 +107,9 @@ void LapH::VdaggerV::build_vdaggerv (const int config_i) {
   const size_t displ_max = global_data->get_displ_max();
   const size_t nb_ev = global_data->get_number_of_eigen_vec();
 
+  std::fill(vdaggerv.origin(), vdaggerv.origin() + vdaggerv.num_elements(), 
+            Eigen::MatrixXcd::Zero(nb_ev, nb_ev));
+
 #pragma omp parallel
 {
   Eigen::MatrixXcd W_t = Eigen::MatrixXcd::Zero(dim_row, nb_ev);
@@ -167,9 +165,14 @@ void LapH::VdaggerV::build_rvdaggervr(const int config_i,
   const size_t dilE = quarks[0].number_of_dilution_E;
   const size_t nb_rnd = quarks[0].number_of_rnd_vec;
 
+  std::fill(rvdaggervr.origin(), 
+            rvdaggervr.origin() + rvdaggervr.num_elements(), 
+            Eigen::MatrixXcd::Zero(dilE, 4*dilE));
+
   // TODO: just a workaround
   const size_t nb_dis = 1;
 
+  #pragma omp parallel for schedule(dynamic)
   for(size_t t = 0; t < Lt; t++){
   for(size_t p = 0; p <= nb_mom/2; p++){
     for(size_t dis = 0; dis < nb_dis; ++dis) {
@@ -192,7 +195,7 @@ void LapH::VdaggerV::build_rvdaggervr(const int config_i,
                 size_t blk_j =  dirac + vec_j * 4 + 4 * nb_ev * t;
 
                 rvdaggervr[p][t][dis][rnd_j][rnd_i]
-                              .block(vec_j%dilE, dilE*dirac , 1, dilE) =
+                              .block(vec_j%dilE, dilE*dirac , 1, dilE) +=
                                      M.block(vec_j, dilE*dirac, 1, dilE) * 
                                              std::conj(rnd_vec[rnd_j][blk_j]);
               }

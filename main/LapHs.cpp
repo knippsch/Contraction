@@ -99,9 +99,9 @@ int main (int ac, char* av[]) {
   // memory for intermediate matrices when building C4_3 (save multiplications)
   array_Xcd_d3_eigen X(boost::extents[nrnd][nrnd][nrnd]);
   array_Xcd_d3_eigen Y(boost::extents[nrnd][nrnd][nrnd]);
-  std::fill(X.origin(), X.origin() + X.num_elements(), 
+  std::fill(X.data(), X.data() + X.num_elements(), 
             Eigen::MatrixXcd(4 * dilE, 4 * dilE));
-  std::fill(Y.origin(), Y.origin() + Y.num_elements(), 
+  std::fill(Y.data(), Y.data() + Y.num_elements(), 
             Eigen::MatrixXcd(4 * dilE, 4 * dilE));
 
   // memory for the correlation function
@@ -163,18 +163,17 @@ int main (int ac, char* av[]) {
     if(t_source != 0){
       basic->swap_operators();
       basic->init_operator_u(1, t_source_1, 'b', 0);
-      basic->init_operator_d(0, t_source_1, 'b', 0);
+      basic->init_operator_d(1, t_source_1, 'b', 0);
     }
     else {
       basic->init_operator_u(0, t_source,   'b', 0);
       basic->init_operator_u(1, t_source_1, 'b', 0);
-      basic->init_operator_d(0, t_source_1, 'b', 0);
-      basic->init_operator_d(1, t_source,   'b', 0);
+      basic->init_operator_d(0, t_source,   'b', 0);
+      basic->init_operator_d(1, t_source_1, 'b', 0);
     }
     for(int t_sink = 0; t_sink < Lt; ++t_sink){
       int t_sink_1 = (t_sink + 1) % Lt;
 
-int bla = 0;
       for(int displ_u = 0; displ_u < number_of_displ; displ_u++){
       for(int displ_d = 0; displ_d < number_of_displ; displ_d++){ 
         // initialize contraction[rnd_i] = perambulator * basicoperator = D_u^-1
@@ -202,17 +201,13 @@ int bla = 0;
               Corr[p_u][p_d][dirac_u][dirac_d][displ_u][displ_d]
                   [t_source][t_sink][rnd1][rnd2] = 
                   (basic->get_operator_charged(0, t_sink, dirac_u, p_u, rnd1, rnd2) *
-                   basic->get_operator_g5(1, t_sink, dirac_d, p_d, rnd2)).trace();
-
-//if(p_u == 3 && p_d == 3)
-//std::cout << "\n" << rnd1 << rnd2 << "\t" << Corr[p_u][p_d][dirac_u][dirac_d][displ_u][displ_d][t_source][t_sink][rnd1][rnd2] << std::endl; 
+                   basic->get_operator_g5(0, t_sink, dirac_d, p_d, rnd2)).trace();
 
             }} // Loops over random vectors end here! 
           }}// Loops over dirac_d and p_d end here
         }}// Loops over dirac_u and p_u end here
       }}// Loops over displacements end here
 
-//exit(0);
       // Using the dagger operation to get all possible random vector combinations
       // TODO: Think about imaginary correlations functions - There might be an 
       //       additional minus sign involved
@@ -248,66 +243,67 @@ int bla = 0;
       // these have dimension // (4 * quarks[0].number_of_dilution_E) x (4 * 
       //     quarks[0].number_of_dilution_E)
       // thus the multiplication in this order is fastest
-//      for(size_t dirac_1 = 0; dirac_1 < number_of_dirac; ++dirac_1){     
-//        for(size_t p = 0; p <= max_mom_squared; p++){
-//        for(size_t p_u = number_of_momenta/2; p_u < p_max; ++p_u) {
-//        if(mom_squared[p_u] == p){
-//          basic->get_operator_charged(op_1, 0, t_sink, dirac_ind.at(dirac_1), p_u);
-//            for(size_t dirac_2 = 0; dirac_2 < number_of_dirac; ++dirac_2){
-//            basic->get_operator_charged(op_3, 1, t_sink_1, dirac_ind.at(dirac_2), 
-//                                          number_of_momenta - p_u - 1);
-//            for(size_t p_d = p_min; p_d < p_max; ++p_d) {
-//            if(p_d == p_u){
-//              basic->get_operator_g5(op_2, 0, t_sink, dirac_ind.at(dirac_1), p_d);
-//              basic->get_operator_g5(op_4, 1, t_sink_1, dirac_ind.at(dirac_2), 
-//                                     number_of_momenta - p_d - 1);
-//
-//              // TODO: Make X and Y dependent on p and dirac -> SPEEDUP
-//              // X = D_d^-1(t_sink | t_source + 1) 
-//              //     Gamma D_u^-1(t_source + 1 | t_sink + 1) Gamma
-//              #pragma omp parallel for collapse(2) schedule(dynamic)
-//              for(size_t rnd1 = 0; rnd1 < number_of_rnd_vec; ++rnd1){
-//              for(size_t rnd2 = 0; rnd2 < number_of_rnd_vec; ++rnd2){
-//              if(rnd2 != rnd1){
-//              for(size_t rnd3 = 0; rnd3 < number_of_rnd_vec; ++rnd3){
-//              if((rnd3 != rnd1) && (rnd3 != rnd2)){
-//
-//                X[rnd1][rnd2][rnd3] = op_2[rnd1] * op_3[rnd2][rnd3];
-//                Y[rnd1][rnd2][rnd3] = op_4[rnd1] * op_1[rnd2][rnd3];
-//
-//              }}}}}
-//
-//              // complete diagramm. combine X and Y to four-trace
-//              // C4_mes = tr(D_u^-1(t_source     | t_sink      ) Gamma 
-//              //             D_d^-1(t_sink       | t_source + 1) Gamma 
-//              //             D_u^-1(t_source + 1 | t_sink + 1  ) Gamma 
-//              //             D_d^-1(t_sink + 1   | t_source    ) Gamma)
-//              #pragma omp parallel shared(C4_mes)
-//              {
-//                cmplx priv_C4(0.0,0.0);
-//                #pragma omp for collapse(2) schedule(dynamic)
-//                for(size_t rnd1 = 0; rnd1 < number_of_rnd_vec; ++rnd1){
-//                for(size_t rnd2 = 0; rnd2 < number_of_rnd_vec; ++rnd2){      
-//                if(rnd2 != rnd1){
-//                for(size_t rnd3 = 0; rnd3 < number_of_rnd_vec; ++rnd3){
-//                if((rnd3 != rnd2) && (rnd3 != rnd1)){
-//                for(size_t rnd4 = 0; rnd4 < number_of_rnd_vec; ++rnd4){
-//                if((rnd4 != rnd1) && (rnd4 != rnd2) && (rnd4 != rnd3)){
-//
-//                    priv_C4 += (X[rnd3][rnd2][rnd4] * Y[rnd4][rnd1][rnd3]).trace();
-//
-//                }}}}}}}
-//                #pragma omp critical
-//                {
-//                  C4_mes[p_u][p_d][dirac_1][dirac_2]
-//                      [abs((t_sink - t_source) - Lt) % Lt] += priv_C4;
-//                }
-//              }
-//            }}// loop and if condition p_d
-//          }// loop dirac_2
-//          break;
-//        }}}// loop and if conditions p_u
-//      }// loop dirac_1
+      for(size_t dirac_1 = 0; dirac_1 < number_of_dirac; ++dirac_1){     
+        for(size_t p = 0; p <= max_mom_squared; p++){
+        for(size_t p_u = number_of_momenta/2; p_u < p_max; ++p_u) {
+        if(mom_squared[p_u] == p){
+            for(size_t dirac_2 = 0; dirac_2 < number_of_dirac; ++dirac_2){
+            for(size_t p_d = p_min; p_d < p_max; ++p_d) {
+            if(p_d == p_u){
+
+              // TODO: Make X and Y dependent on p and dirac -> SPEEDUP
+              // X = D_d^-1(t_sink | t_source + 1) 
+              //     Gamma D_u^-1(t_source + 1 | t_sink + 1) Gamma
+              #pragma omp parallel for collapse(2) schedule(dynamic)
+              for(size_t rnd1 = 0; rnd1 < number_of_rnd_vec; ++rnd1){
+              for(size_t rnd2 = 0; rnd2 < number_of_rnd_vec; ++rnd2){
+              if(rnd2 != rnd1){
+              for(size_t rnd3 = 0; rnd3 < number_of_rnd_vec; ++rnd3){
+              if((rnd3 != rnd1) && (rnd3 != rnd2)){
+
+                X[rnd1][rnd2][rnd3] = 
+                        basic->get_operator_g5(1, t_sink, dirac_1, p_d, rnd1) * 
+                        basic->get_operator_charged(1, t_sink_1, dirac_2, 
+                                      number_of_momenta - p_u - 1, rnd2, rnd3);
+                Y[rnd1][rnd2][rnd3] = 
+                        basic->get_operator_g5(0, t_sink_1, dirac_2, 
+                                      number_of_momenta - p_d - 1, rnd1) * 
+                        basic->get_operator_charged(0, t_sink, dirac_1, 
+                                                    p_u, rnd2, rnd3);
+
+              }}}}}
+
+              // complete diagramm. combine X and Y to four-trace
+              // C4_mes = tr(D_u^-1(t_source     | t_sink      ) Gamma 
+              //             D_d^-1(t_sink       | t_source + 1) Gamma 
+              //             D_u^-1(t_source + 1 | t_sink + 1  ) Gamma 
+              //             D_d^-1(t_sink + 1   | t_source    ) Gamma)
+              #pragma omp parallel shared(C4_mes)
+              {
+                cmplx priv_C4(0.0,0.0);
+                #pragma omp for collapse(2) schedule(dynamic)
+                for(size_t rnd1 = 0; rnd1 < number_of_rnd_vec; ++rnd1){
+                for(size_t rnd2 = 0; rnd2 < number_of_rnd_vec; ++rnd2){      
+                if(rnd2 != rnd1){
+                for(size_t rnd3 = 0; rnd3 < number_of_rnd_vec; ++rnd3){
+                if((rnd3 != rnd2) && (rnd3 != rnd1)){
+                for(size_t rnd4 = 0; rnd4 < number_of_rnd_vec; ++rnd4){
+                if((rnd4 != rnd1) && (rnd4 != rnd2) && (rnd4 != rnd3)){
+
+                    priv_C4 += (X[rnd3][rnd2][rnd4] * Y[rnd4][rnd1][rnd3]).trace();
+
+                }}}}}}}
+                #pragma omp critical
+                {
+                  C4_mes[p_u][p_d][dirac_1][dirac_2]
+                      [abs((t_sink - t_source) - Lt) % Lt] += priv_C4;
+                }
+              }
+            }}// loop and if condition p_d
+          }// loop dirac_2
+          break;
+        }}}// loop and if conditions p_u
+      }// loop dirac_1
     }}// Loops over time end here
 
     // *************************************************************************
