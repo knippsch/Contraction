@@ -268,7 +268,7 @@ BasicOperator::BasicOperator() : peram(),
 
 // initializes contractions[col] with columns of D_u^-1
 void BasicOperator::init_operator_u (const size_t particle_no, 
-                                     const size_t t_source, 
+                                     const size_t t_in, 
                                      const char dilution, const size_t displ){
   const size_t Lt = global_data->get_Lt();
   const std::vector<quark> quarks = global_data->get_quarks();
@@ -283,14 +283,14 @@ void BasicOperator::init_operator_u (const size_t particle_no,
   #pragma omp for schedule(dynamic)
   for(size_t t = 0; t < Lt; t++){
   // TODO: just a workaround
-  size_t t_sink_dil;
+  size_t t_in_dil;
   switch(dilution) {
 
     case 'i':
-      t_sink_dil = t % quarks[0].number_of_dilution_T;
+      t_in_dil = t_in % quarks[0].number_of_dilution_T;
       break;
     case 'b':
-      t_sink_dil = t / quarks[0].number_of_dilution_T;
+      t_in_dil = t_in / quarks[0].number_of_dilution_T;
       break;
     default:
       std::cout << "Time dilution scheme not found in BasicOperator::\
@@ -310,18 +310,18 @@ void BasicOperator::init_operator_u (const size_t particle_no,
         // reordering columns and multiplying them with constants 
         if(p <= nb_mom/2){
           M.block(row * nb_ev, col * dilE, nb_ev, dilE) =
-            peram[rnd_i].block((4 * t_source + row) * nb_ev,
+            peram[rnd_i].block((4 * t + row) * nb_ev,
                                dilE * (quarks[0].number_of_dilution_D * 
-                               t_sink_dil + col), nb_ev, dilE) * 
-             (vdaggerv.return_rvdaggervr(p, t, 0, rnd_i, rnd_j))
+                               t_in_dil + col), nb_ev, dilE) * 
+             (vdaggerv.return_rvdaggervr(p, t_in, 0, rnd_i, rnd_j))
                               .block(0, col*dilE, dilE, dilE);
         }
         else {
           M.block(row * nb_ev, col * dilE, nb_ev, dilE) =
-            peram[rnd_i].block((4 * t_source + row) * nb_ev,
+            peram[rnd_i].block((4 * t + row) * nb_ev,
                                dilE * (quarks[0].number_of_dilution_D * 
-                               t_sink_dil + col), nb_ev, dilE) * 
-             (vdaggerv.return_rvdaggervr(nb_mom-p-1, t, 0, rnd_j, rnd_i)
+                               t_in_dil + col), nb_ev, dilE) * 
+             (vdaggerv.return_rvdaggervr(nb_mom-p-1, t_in, 0, rnd_j, rnd_i)
                               .block(0, col*dilE, dilE, dilE)).adjoint();
         }
       }}// loops over col and row
@@ -341,7 +341,7 @@ void BasicOperator::init_operator_u (const size_t particle_no,
 /******************************************************************************/
 // initializes contractions_dagger[col] with columns of D_d^-1
 void BasicOperator::init_operator_d (const size_t particle_no, 
-                                     const size_t t_source, 
+                                     const size_t t_in, 
                                      const char dilution, const size_t displ){
 
   const size_t Lt = global_data->get_Lt();
@@ -357,14 +357,14 @@ void BasicOperator::init_operator_d (const size_t particle_no,
   #pragma omp for schedule(dynamic)
   for(size_t t = 0; t < Lt; t++){
   // TODO: just a workaround
-  int t_sink_dil;
+  int t_in_dil;
   switch(dilution) {
 
     case 'i':
-      t_sink_dil = t % quarks[0].number_of_dilution_T;
+      t_in_dil = t_in % quarks[0].number_of_dilution_T;
       break;
     case 'b':
-      t_sink_dil = t / quarks[0].number_of_dilution_T;
+      t_in_dil = t_in / quarks[0].number_of_dilution_T;
       break;
     default:
       std::cout << "Time dilution scheme not found in BasicOperator::\
@@ -386,17 +386,17 @@ void BasicOperator::init_operator_d (const size_t particle_no,
         // TODO: implement more versatile momentum structure
         if(p <= nb_mom/2){
           M.block(col * dilE, nb_ev * row, dilE, nb_ev) = 
-            (peram[rnd_i].block(4 * nb_ev * t_source + nb_ev * row, 
-                      dilE * quarks[0].number_of_dilution_D * t_sink_dil + 
+            (peram[rnd_i].block(4 * nb_ev * t + nb_ev * row, 
+                      dilE * quarks[0].number_of_dilution_D * t_in_dil + 
                       dilE * col, nb_ev, dilE)).adjoint() *
-            vdaggerv.return_vdaggerv(p, t_source, displ);
+            vdaggerv.return_vdaggerv(p, t, displ);
         }
         else {
           M.block(col * dilE, row * nb_ev, dilE, nb_ev) = 
-            (peram[rnd_i].block(4 * nb_ev * t_source + nb_ev * row,
-                      dilE * quarks[0].number_of_dilution_D * t_sink_dil + 
+            (peram[rnd_i].block(4 * nb_ev * t + nb_ev * row,
+                      dilE * quarks[0].number_of_dilution_D * t_in_dil + 
                       dilE * col, nb_ev, dilE)).adjoint() *
-            (vdaggerv.return_vdaggerv(nb_mom-p-1, t_source, displ)).adjoint();
+            (vdaggerv.return_vdaggerv(nb_mom-p-1, t, displ)).adjoint();
         }  
         // gamma_5 trick. It changes the sign of the two upper right and two
         // lower left blocks in dirac space

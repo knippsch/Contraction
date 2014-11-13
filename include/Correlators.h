@@ -10,6 +10,7 @@
 #include <cstdlib>
 #include <typeinfo>
 
+#include "CrossOperator.h" 
 #include "GlobalData.h"
 #include "BasicOperator.h"
 #include "Perambulator.h"
@@ -34,7 +35,7 @@ private:
    array_cd_d10 Corr;
 
    void compute_meson_corr(const int t_source, const int t_sink);
-   void compute_meson_4pt_cross(array_Xcd_d7_eigen& X, array_Xcd_d7_eigen& Y, 
+   void compute_meson_4pt_cross(LapH::CrossOperator& X, 
                                 const int t_source, const int t_sink);
 
 };

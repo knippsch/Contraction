@@ -40,9 +40,9 @@ public:
   BasicOperator();
   ~BasicOperator () {};
 
-  void init_operator_u(const size_t particle_no, const size_t t_source, 
+  void init_operator_u(const size_t particle_no, const size_t t_in, 
                        const char dilution, const size_t displ);
-  void init_operator_d(const size_t particle_no, const size_t t_source, 
+  void init_operator_d(const size_t particle_no, const size_t t_in, 
                        const char dilution, const size_t displ);
   void swap_operators();
   // returns D_u^-1 Gamma
