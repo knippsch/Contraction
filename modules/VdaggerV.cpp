@@ -1,4 +1,4 @@
-#include "VDaggerV.h"
+#include "VdaggerV.h"
 
 // Definition of a pointer on global data
 static GlobalData * const global_data = GlobalData::Instance();
