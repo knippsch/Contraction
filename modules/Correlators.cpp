@@ -91,15 +91,103 @@ void LapH::Correlators::compute_meson_corr(const int t_source,
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
+void LapH::Correlators::compute_meson_4pt_cross(array_Xcd_d7_eigen& X,
+                                                array_Xcd_d7_eigen& Y, 
+                                                const int t_source, 
+                                                const int t_sink){
+  const size_t Lt = global_data->get_Lt();
+  int t_source_1 = (t_source + 1) % Lt;
+  int t_sink_1 = (t_sink + 1) % Lt;
+  const size_t nb_mom = global_data->get_number_of_momenta();
+  const int max_mom_squared = global_data->get_number_of_max_mom();
+  const std::vector<int> mom_squared = global_data->get_momentum_squared();
+  const std::vector<quark> quarks = global_data->get_quarks();
+  const size_t nb_rnd = quarks[0].number_of_rnd_vec;
+  // TODO: must be changed in GlobalData {
+  int displ_min = global_data->get_displ_min();
+  int displ_max = global_data->get_displ_max();
+  const size_t nb_dis = displ_max - displ_min + 1;
+  std::vector<int> dirac_ind {5};
+  const size_t nb_dir = dirac_ind.size();
+  // TODO: }
+  // FOUR PT CONTRACTION 3 *************************************************
+  // X = D_d^-1(t_sink | t_source + 1) 
+  //     Gamma D_u^-1(t_source + 1 | t_sink + 1) Gamma
+  for(size_t p_so = 3; p_so < 4; p_so++){
+  for(size_t p_si = 3; p_si < 4; p_si++){
+    for(size_t d_so = 0; d_so < nb_dir; d_so++){
+    for(size_t d_si = 0; d_si < nb_dir; d_si++){
+      #pragma omp parallel for collapse(2) schedule(dynamic)
+      for(size_t rnd1 = 0; rnd1 < nb_rnd; ++rnd1){
+      for(size_t rnd2 = 0; rnd2 < nb_rnd; ++rnd2){
+      if(rnd2 != rnd1){
+      for(size_t rnd3 = 0; rnd3 < nb_rnd; ++rnd3){
+      if((rnd3 != rnd1) && (rnd3 != rnd2)){
+
+        X[p_so][p_si][d_so][d_si][rnd1][rnd2][rnd3] = 
+              basic.get_operator_g5(1, t_sink, d_si, p_si, rnd1) * 
+              basic.get_operator_charged(1, t_sink_1, d_so, p_so, rnd2, rnd3);
+        Y[p_so][p_si][d_so][d_si][rnd1][rnd2][rnd3] = 
+              basic.get_operator_g5(0, t_sink_1, d_si, p_si, rnd1) * 
+              basic.get_operator_charged(0, t_sink, d_so, p_so, rnd2, rnd3);
+
+      }}}}}// loops random vectors
+    }}// loops dirac indices
+  }}// loops momenta
+
+  for(size_t dirac_1 = 0; dirac_1 < nb_dir; ++dirac_1){     
+    for(size_t p = 0; p <= max_mom_squared; p++){
+    for(size_t p_u = 3; p_u < 4; ++p_u) {
+    if(mom_squared[p_u] == p){
+        for(size_t dirac_2 = 0; dirac_2 < nb_dir; ++dirac_2){
+        for(size_t p_d = 3; p_d < 4; ++p_d) {
+        if(mom_squared[p_d] == p){
+          // complete diagramm. combine X and Y to four-trace
+          // C4_mes = tr(D_u^-1(t_source     | t_sink      ) Gamma 
+          //             D_d^-1(t_sink       | t_source + 1) Gamma 
+          //             D_u^-1(t_source + 1 | t_sink + 1  ) Gamma 
+          //             D_d^-1(t_sink + 1   | t_source    ) Gamma)
+          #pragma omp parallel
+          {
+            cmplx priv_C4(0.0,0.0);
+            #pragma omp for collapse(2) schedule(dynamic)
+            for(size_t rnd1 = 0; rnd1 < nb_rnd; ++rnd1){
+            for(size_t rnd2 = 0; rnd2 < nb_rnd; ++rnd2){      
+            if(rnd2 != rnd1){
+            for(size_t rnd3 = 0; rnd3 < nb_rnd; ++rnd3){
+            if((rnd3 != rnd2) && (rnd3 != rnd1)){
+            for(size_t rnd4 = 0; rnd4 < nb_rnd; ++rnd4){
+            if((rnd4 != rnd1) && (rnd4 != rnd2) && (rnd4 != rnd3)){
+
+                priv_C4 += (X[p_d][p_u][dirac_1][dirac_2]
+                                       [rnd3][rnd2][rnd4] * 
+                            Y[nb_mom - p_d - 1][nb_mom - p_u - 1]
+                             [dirac_1][dirac_2][rnd4][rnd1][rnd3]).trace();
+
+            }}}}}}}
+            #pragma omp critical
+            {
+              C4_mes[p][p][dirac_1][dirac_2]
+                  [abs((t_sink - t_source) - Lt) % Lt] += priv_C4;
+            }
+          }
+        }}// loop and if condition p_d
+      }// loop dirac_2
+    }}}// loop and if conditions p_u
+  }// loop dirac_1
+}
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 void LapH::Correlators::build_everything(const size_t config_i){
 
   // initialising the big arrays
   basic.set_basic(config_i);
-  std::fill(Corr.data(), Corr.data() + Corr.num_elements(), cmplx(0.0, 0.0));
-  std::fill(C4_mes.data(), C4_mes.data() + C4_mes.num_elements(), 
-                                                             cmplx(0.0, 0.0));
+  // setting the correlation functions to zero
+  std::fill(Corr.data(), Corr.data()+Corr.num_elements(), cmplx(.0,.0));
+  std::fill(C4_mes.data(), C4_mes.data()+C4_mes.num_elements(), cmplx(.0,.0));
 
-  // global variables from input file needed in main function
+  // global variables from input file needed here
   const int Lt = global_data->get_Lt();
 
   const int max_mom_squared = global_data->get_number_of_max_mom();
@@ -150,108 +238,40 @@ void LapH::Correlators::build_everything(const size_t config_i){
   std::fill(Y.data(), Y.data() + Y.num_elements(), 
             Eigen::MatrixXcd(4 * dilE, 4 * dilE));
 
-  // setting the correlation function to zero
   std::cout << "\n\tcomputing the traces of pi_+/-:\r";
   clock_t time = clock();
   // calculate all two-operator traces of the form tr(u \Gamma \bar{d}) and 
   // build all combinations of momenta, dirac_structures and displacements as
   // specified in infile
   for(int t_source = 0; t_source < Lt; ++t_source){
-  std::cout << "\tcomputing the traces of pi_+/-: " 
-      << std::setprecision(2) << (float) t_source/Lt*100 << "%\r" 
-      << std::flush;
-  int t_source_1 = (t_source + 1) % Lt;
-  // this is a way to reuse the already computed operators from t_source_1
-  // initialize contraction[rnd_i] = perambulator * basicoperator = D_u^-1
-  // choose 'i' for interlace or 'b' for block time dilution scheme
-  // TODO: get that from input file
-  // choose 'c' for charged or 'u' for uncharged particles
-  if(t_source != 0){
-    basic.swap_operators();
-    basic.init_operator_u(1, t_source_1, 'b', 0);
-    basic.init_operator_d(1, t_source_1, 'b', 0);
-  }
-  else {
-    basic.init_operator_u(0, t_source,   'b', 0);
-    basic.init_operator_u(1, t_source_1, 'b', 0);
-    basic.init_operator_d(0, t_source,   'b', 0);
-    basic.init_operator_d(1, t_source_1, 'b', 0);
-  }
-  for(int t_sink = 0; t_sink < Lt; ++t_sink){
-    int t_sink_1 = (t_sink + 1) % Lt;
-
-    // computing the meson correlator which can be used to compute all small
-    // trace combinations for 2pt and 4pt functions
-    compute_meson_corr(t_source, t_sink);
-
-    // TODO: should be in a static or private function
-
-    // FOUR PT CONTRACTION 3 *************************************************
-    // X = D_d^-1(t_sink | t_source + 1) 
-    //     Gamma D_u^-1(t_source + 1 | t_sink + 1) Gamma
-    for(size_t p_so = 3; p_so < 4; p_so++){
-    for(size_t p_si = 3; p_si < 4; p_si++){
-      for(size_t d_so = 0; d_so < nb_dir; d_so++){
-      for(size_t d_si = 0; d_si < nb_dir; d_si++){
-        #pragma omp parallel for collapse(2) schedule(dynamic)
-        for(size_t rnd1 = 0; rnd1 < nb_rnd; ++rnd1){
-        for(size_t rnd2 = 0; rnd2 < nb_rnd; ++rnd2){
-        if(rnd2 != rnd1){
-        for(size_t rnd3 = 0; rnd3 < nb_rnd; ++rnd3){
-        if((rnd3 != rnd1) && (rnd3 != rnd2)){
-
-          X[p_so][p_si][d_so][d_si][rnd1][rnd2][rnd3] = 
-                basic.get_operator_g5(1, t_sink, d_si, p_si, rnd1) * 
-                basic.get_operator_charged(1, t_sink_1, d_so, p_so, rnd2, rnd3);
-          Y[p_so][p_si][d_so][d_si][rnd1][rnd2][rnd3] = 
-                basic.get_operator_g5(0, t_sink_1, d_si, p_si, rnd1) * 
-                basic.get_operator_charged(0, t_sink, d_so, p_so, rnd2, rnd3);
-
-        }}}}}// loops random vectors
-      }}// loops dirac indices
-    }}// loops momenta
-
-    for(size_t dirac_1 = 0; dirac_1 < nb_dir; ++dirac_1){     
-      for(size_t p = 0; p <= max_mom_squared; p++){
-      for(size_t p_u = 3; p_u < 4; ++p_u) {
-      if(mom_squared[p_u] == p){
-          for(size_t dirac_2 = 0; dirac_2 < nb_dir; ++dirac_2){
-          for(size_t p_d = 3; p_d < 4; ++p_d) {
-          if(mom_squared[p_d] == p){
-            // complete diagramm. combine X and Y to four-trace
-            // C4_mes = tr(D_u^-1(t_source     | t_sink      ) Gamma 
-            //             D_d^-1(t_sink       | t_source + 1) Gamma 
-            //             D_u^-1(t_source + 1 | t_sink + 1  ) Gamma 
-            //             D_d^-1(t_sink + 1   | t_source    ) Gamma)
-            #pragma omp parallel
-            {
-              cmplx priv_C4(0.0,0.0);
-              #pragma omp for collapse(2) schedule(dynamic)
-              for(size_t rnd1 = 0; rnd1 < nb_rnd; ++rnd1){
-              for(size_t rnd2 = 0; rnd2 < nb_rnd; ++rnd2){      
-              if(rnd2 != rnd1){
-              for(size_t rnd3 = 0; rnd3 < nb_rnd; ++rnd3){
-              if((rnd3 != rnd2) && (rnd3 != rnd1)){
-              for(size_t rnd4 = 0; rnd4 < nb_rnd; ++rnd4){
-              if((rnd4 != rnd1) && (rnd4 != rnd2) && (rnd4 != rnd3)){
-
-                  priv_C4 += (X[p_d][p_u][dirac_1][dirac_2]
-                                         [rnd3][rnd2][rnd4] * 
-                              Y[nb_mom - p_d - 1][nb_mom - p_u - 1]
-                               [dirac_1][dirac_2][rnd4][rnd1][rnd3]).trace();
-
-              }}}}}}}
-              #pragma omp critical
-              {
-                C4_mes[p][p][dirac_1][dirac_2]
-                    [abs((t_sink - t_source) - Lt) % Lt] += priv_C4;
-              }
-            }
-          }}// loop and if condition p_d
-        }// loop dirac_2
-      }}}// loop and if conditions p_u
-    }// loop dirac_1
-  }}// Loops over time end here
+    std::cout << "\tcomputing the traces of pi_+/-: " 
+        << std::setprecision(2) << (float) t_source/Lt*100 << "%\r" 
+        << std::flush;
+    int t_source_1 = (t_source + 1) % Lt;
+    // this is a way to reuse the already computed operators from t_source_1
+    // initialize contraction[rnd_i] = perambulator * basicoperator = D_u^-1
+    // choose 'i' for interlace or 'b' for block time dilution scheme
+    // TODO: get that from input file
+    // choose 'c' for charged or 'u' for uncharged particles
+    if(t_source != 0){
+      basic.swap_operators();
+      basic.init_operator_u(1, t_source_1, 'b', 0);
+      basic.init_operator_d(1, t_source_1, 'b', 0);
+    }
+    else {
+      basic.init_operator_u(0, t_source,   'b', 0);
+      basic.init_operator_u(1, t_source_1, 'b', 0);
+      basic.init_operator_d(0, t_source,   'b', 0);
+      basic.init_operator_d(1, t_source_1, 'b', 0);
+    }
+    for(int t_sink = 0; t_sink < Lt; ++t_sink){
+      // computing the meson correlator which can be used to compute all small
+      // trace combinations for 2pt and 4pt functions
+      compute_meson_corr(t_source, t_sink);
+      // computing the meson 4pt big cross trace
+      compute_meson_4pt_cross(X, Y, t_source, t_sink);
+    }
+  }// Loops over time end here
 
   // *************************************************************************
   // FOUR PT CONTRACTION 3 ***************************************************
