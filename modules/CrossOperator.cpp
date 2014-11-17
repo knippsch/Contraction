@@ -48,9 +48,9 @@ void LapH::CrossOperator::construct(const BasicOperator& basic, const size_t nb,
       for(size_t rnd3 = 0; rnd3 < nb_rnd; ++rnd3){
       if((rnd3 != rnd1) && (rnd3 != rnd2)){
 
-        X[nb][p_so][p_si][d_so][d_si][rnd1][rnd2][rnd3] = 
-              basic.get_operator_g5(particle_d, t_in, d_si, p_si, rnd1) * 
-              basic.get_operator_charged(particle_u, t_in, d_so, p_so, rnd2, rnd3);
+//        X[nb][p_so][p_si][d_so][d_si][rnd1][rnd2][rnd3] = 
+//              basic.get_operator_g5(particle_d, t_in, d_si, p_si, rnd1) * 
+//              basic.get_operator_charged(particle_u, t_in, d_so, p_so, rnd2, rnd3);
 
       }}}}}// loops random vectors
     }}// loops dirac indices

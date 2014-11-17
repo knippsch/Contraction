@@ -6,20 +6,10 @@
 // Description : stochastic LapH code
 //============================================================================
 
-#include <algorithm>
 #include <iostream>
-#include <iomanip>
-#include <complex>
-#include <cmath>
-#include <cstdio>
-#include <cstdlib>
-#include <typeinfo>
 
 #include "Correlators.h"
 #include "GlobalData.h"
-#include "BasicOperator.h"
-#include "Perambulator.h"
-#include "typedefs.h"
 
 #include "omp.h"
 

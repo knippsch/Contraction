@@ -112,7 +112,6 @@ void LapH::VdaggerV::build_vdaggerv (const int config_i) {
 
 #pragma omp parallel
 {
-  Eigen::MatrixXcd W_t = Eigen::MatrixXcd::Zero(dim_row, nb_ev);
   Eigen::VectorXcd mom = Eigen::VectorXcd::Zero(dim_row);
   LapH::EigenVector V_t(1, dim_row, nb_ev);// each thread needs its own copy
   #pragma omp for schedule(dynamic)
@@ -165,8 +164,7 @@ void LapH::VdaggerV::build_rvdaggervr(const int config_i,
   const size_t dilE = quarks[0].number_of_dilution_E;
   const size_t nb_rnd = quarks[0].number_of_rnd_vec;
 
-  std::fill(rvdaggervr.origin(), 
-            rvdaggervr.origin() + rvdaggervr.num_elements(), 
+  std::fill(rvdaggervr.data(), rvdaggervr.data() + rvdaggervr.num_elements(), 
             Eigen::MatrixXcd::Zero(dilE, 4*dilE));
 
   // TODO: just a workaround

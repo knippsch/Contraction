@@ -4,10 +4,12 @@
 static GlobalData * const global_data = GlobalData::Instance();
 
 
-LapH::Correlators::Correlators() : basic(), C4_mes(), C2_mes(), Corr()  {
+LapH::Correlators::Correlators() : basic(), peram(), rnd_vec(), vdaggerv(),
+                                   C4_mes(), C2_mes(), Corr()  {
 
   const size_t Lt = global_data->get_Lt();
   const size_t nb_mom = global_data->get_number_of_momenta();
+  const size_t nb_ev = global_data->get_number_of_eigen_vec();
   const std::vector<quark> quarks = global_data->get_quarks();
   const size_t nb_rnd = quarks[0].number_of_rnd_vec;
   // TODO: must be changed in GlobalData {
@@ -18,14 +20,16 @@ LapH::Correlators::Correlators() : basic(), C4_mes(), C2_mes(), Corr()  {
   const size_t nb_dir = dirac_ind.size();
   // TODO: }
 
+  rnd_vec.resize(nb_rnd, LapH::RandomVector(Lt*nb_ev*4));
+
   C4_mes.resize(boost::extents[nb_mom][nb_mom][nb_dir][nb_dir][Lt]);
   C2_mes.resize(boost::extents[nb_mom][nb_dir][nb_dir][nb_dis][nb_dis][Lt]);
   Corr.resize(boost::extents[nb_mom][nb_mom][nb_dir][nb_dir][nb_dis]
                                     [nb_dis][Lt][Lt][nb_rnd][nb_rnd]);
 }
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
+/******************************************************************************/
+/******************************************************************************/
+/******************************************************************************/
 void LapH::Correlators::compute_meson_corr(const int t_source, 
                                            const int t_sink){
 
@@ -33,6 +37,8 @@ void LapH::Correlators::compute_meson_corr(const int t_source,
   const size_t nb_mom = global_data->get_number_of_momenta();
   const std::vector<quark> quarks = global_data->get_quarks();
   const size_t nb_rnd = quarks[0].number_of_rnd_vec;
+  const size_t dilE = quarks[0].number_of_dilution_E;
+  const size_t dilT = quarks[0].number_of_dilution_T;
   // TODO: must be changed in GlobalData {
   int displ_min = global_data->get_displ_min();
   int displ_max = global_data->get_displ_max();
@@ -54,12 +60,28 @@ void LapH::Correlators::compute_meson_corr(const int t_source,
         for(int rnd2 = rnd1+1; rnd2 < nb_rnd; ++rnd2){
           // build all 2pt traces leading to C2_mes
           // Corr = tr(D_d^-1(t_sink) Gamma D_u^-1(t_source) Gamma)
-          Corr[p_u][p_d][dirac_u][dirac_d][displ_u][displ_d]
-              [t_source][t_sink][rnd1][rnd2] = 
-              (basic.get_operator_charged(0, t_source, dirac_u, p_u, 
-                                                              rnd1, rnd2) *
-               basic.get_operator_g5(0, t_source, dirac_d, p_d, rnd2)
-                                                                  ).trace();
+          std::array<double, 4> bla = {{1., 1., -1., -1.}};
+          for(size_t block = 0; block < 4; block++){
+            // TODO: dilution scheme in time should be choosable
+            const size_t so = (t_source/dilT)*4*dilE + block*dilE;
+            if(p_d <= nb_mom/2){
+              Corr[p_u][p_d][dirac_u][dirac_d][displ_u][displ_d]
+                [t_source][t_sink][rnd1][rnd2] += bla[block] *
+                ((basic.get_operator(0, dirac_u, p_u, rnd1, rnd2))
+                                     .block(so, so, dilE, dilE) *
+                 vdaggerv.return_rvdaggervr(p_d, t_source, dirac_d, rnd2, rnd1)
+                                    .block(0, block*dilE, dilE, dilE)).trace();
+            }
+            else {
+              Corr[p_u][p_d][dirac_u][dirac_d][displ_u][displ_d]
+                [t_source][t_sink][rnd1][rnd2] += bla[block] *
+                ((basic.get_operator(0, dirac_u, p_u, rnd1, rnd2))
+                                     .block(so, so, dilE, dilE) *
+                 (vdaggerv.return_rvdaggervr(nb_mom - p_d - 1, t_source, 
+                                             dirac_d, rnd1, rnd2)
+                          .block(0, block*dilE, dilE, dilE)).adjoint()).trace();
+            }
+          }
         }} // Loops over random vectors end here! 
       }}// Loops over dirac_d and p_d end here
     }}// Loops over dirac_u and p_u end here
@@ -88,9 +110,9 @@ void LapH::Correlators::compute_meson_corr(const int t_source,
     }}// Loops over dirac_u and p_u end here
   }}// Loops over displacements end here
 }
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
+/******************************************************************************/
+/******************************************************************************/
+/******************************************************************************/
 void LapH::Correlators::compute_meson_4pt_cross(LapH::CrossOperator& X,
                                                 const int t_source, 
                                                 const int t_sink){
@@ -169,13 +191,13 @@ void LapH::Correlators::compute_meson_4pt_cross(LapH::CrossOperator& X,
     }}}// loop and if conditions p_u
   }// loop dirac_1
 }
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
+/******************************************************************************/
+/******************************************************************************/
+/******************************************************************************/
 void LapH::Correlators::build_everything(const size_t config_i){
 
   // initialising the big arrays
-  basic.set_basic(config_i);
+  set_corr(config_i);
   // setting the correlation functions to zero
   std::fill(Corr.data(), Corr.data()+Corr.num_elements(), cmplx(.0,.0));
   std::fill(C4_mes.data(), C4_mes.data()+C4_mes.num_elements(), cmplx(.0,.0));
@@ -244,17 +266,13 @@ void LapH::Correlators::build_everything(const size_t config_i){
     // initialize contraction[rnd_i] = perambulator * basicoperator = D_u^-1
     // choose 'i' for interlace or 'b' for block time dilution scheme
     // TODO: get that from input file
-    // choose 'c' for charged or 'u' for uncharged particles
     if(t_sink != 0){
       basic.swap_operators();
-      basic.init_operator_u(1, t_sink_1, 'b', 0);
-      basic.init_operator_d(1, t_sink_1, 'b', 0);
+      basic.init_operator(1, t_sink_1, 'b', 0, vdaggerv, peram);
     }
     else {
-      basic.init_operator_u(0, t_sink,   'b', 0);
-      basic.init_operator_u(1, t_sink_1, 'b', 0);
-      basic.init_operator_d(0, t_sink,   'b', 0);
-      basic.init_operator_d(1, t_sink_1, 'b', 0);
+      basic.init_operator(0, t_sink,   'b', 0, vdaggerv, peram);
+      basic.init_operator(1, t_sink_1, 'b', 0, vdaggerv, peram);
     }
     for(int t_source = 0; t_source < Lt; ++t_source){
       const int t_source_1 = (t_source + 1) % Lt;
@@ -263,7 +281,7 @@ void LapH::Correlators::build_everything(const size_t config_i){
       compute_meson_corr(t_source, t_sink);
       // computing the meson 4pt big cross trace
       // TODO: if condition that at least four random vectos are needed
-      compute_meson_4pt_cross(X, t_source, t_sink);
+//      compute_meson_4pt_cross(X, t_source, t_sink);
     }
   }// Loops over time end here
 
@@ -583,4 +601,59 @@ void LapH::Correlators::build_everything(const size_t config_i){
   }
   time = clock() - time;
   printf("\t\tSUCCESS - %.1f seconds\n", ((float) time)/CLOCKS_PER_SEC);
+}
+/******************************************************************************/
+/******************************************************************************/
+/******************************************************************************/
+void LapH::Correlators::read_rnd_vectors_from_file (const int config_i) {
+
+  clock_t t = clock();
+  char infile[400];
+  const int Lt = global_data->get_Lt();
+  const int verbose = global_data->get_verbose();
+  const std::vector<quark> quarks = global_data->get_quarks();
+  const int number_of_rnd_vec = quarks[0].number_of_rnd_vec;
+  const int number_of_eigen_vec = global_data->get_number_of_eigen_vec();
+  const int rnd_vec_length = Lt * number_of_eigen_vec * 4;
+
+  char temp[100];
+
+  if(verbose){
+    std::cout << "\treading randomvectors from files:" << std::endl;
+  } else {
+    std::cout << "\treading randomvectors:";
+  }
+
+  int check_read_in = 0;
+  for(int rnd_vec_i = 0; rnd_vec_i < number_of_rnd_vec; ++rnd_vec_i){
+    // data path Christians perambulators
+//      std::string filename = global_data->get_path_perambulators() + "/";
+
+    // data path for qbig contractions
+    sprintf(temp, "cnfg%d/rnd_vec_%01d/", config_i, rnd_vec_i);
+    std::string filename = global_data->get_path_perambulators()
+      + "/" + temp;
+
+    // data path for juqueen contractions
+//      sprintf(temp, "cnfg%d/", config_i);
+//      std::string filename = global_data->get_path_perambulators()
+//				+ "/" + temp;
+
+    // read random vector
+    sprintf(infile, "%srandomvector.rndvecnb%02d.u.nbev%04d.%04d", 
+        filename.c_str(), rnd_vec_i, number_of_eigen_vec, config_i);
+//      sprintf(infile, "%srandomvector.rndvecnb%02d.u.nbev0120.%04d", 
+//          filename.c_str(), rnd_vec_i, config_i);
+
+//      sprintf(infile, "%s.%03d.u.Ti.%04d", filename.c_str(), rnd_vec_i,
+//          config_i);
+
+    // TODO:: explicit type conversion - Bad style
+    rnd_vec[rnd_vec_i].read_random_vector(infile);
+  }
+  t = clock() - t;
+  if(!verbose) std::cout << "\t\tSUCCESS - " << std::fixed 
+                         << std::setprecision(1)
+                         << ((float) t)/CLOCKS_PER_SEC << " seconds" 
+                         << std::endl; 
 }

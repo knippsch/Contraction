@@ -225,302 +225,107 @@ static void create_gamma (std::vector<struct lookup>& gamma, const int i) {
 /******************************************************************************/
 // constructor ****************************************************************/
 /******************************************************************************/
-BasicOperator::BasicOperator() : peram(),
-                                 rnd_vec(),
-                                 vdaggerv(),
-                                 contraction_dagger(), 
-                                 contraction(), 
+BasicOperator::BasicOperator() : Q2(), 
                                  gamma() {
 
   const size_t Lt = global_data->get_Lt();
-  const size_t nb_ev = global_data->get_number_of_eigen_vec();
   const size_t nb_mom = global_data->get_number_of_momenta();
   const std::vector<quark> quarks = global_data->get_quarks();
   const size_t nb_rnd = quarks[0].number_of_rnd_vec;
-  const size_t dilE = quarks[0].number_of_dilution_E;
-
+  const size_t Q2_size = 4 * quarks[0].number_of_dilution_E * 
+                             Lt/quarks[0].number_of_dilution_T;
   // creating gamma matrices
   gamma.resize(16);
   for(int i = 0; i < 16; ++i)
     create_gamma(gamma, i);
 
-  // D_u^-1 = perambulator * basicoperator. Columns are always
-  // the same, only permuted and multiplied with +-i or -1 by
-  // gamma matrices. contraction holds the for columns, contraction_dagger
-  // holds the columns after gamma_5 trick
-  // TODO: Last index will be dirac index and must be changed in the future
-  contraction.resize(boost::extents[2][Lt][nb_mom][nb_rnd][nb_rnd][1]);
-  std::fill(contraction.data(), contraction.data() + 
-                                contraction.num_elements(), 
-                                Eigen::MatrixXcd::Zero(4 * nb_ev, 4 * dilE));
-  contraction_dagger.resize(boost::extents[2][Lt][nb_mom][nb_rnd][1]);
-  std::fill(contraction_dagger.data(), contraction_dagger.data() + 
-                                contraction_dagger.num_elements(), 
-                                Eigen::MatrixXcd::Zero(4 * dilE, 4 * nb_ev));
-
-  // TODO: the resize is unnasassarry if it is done in initialiser list 
-  // with the ctor
-  rnd_vec.resize(nb_rnd, LapH::RandomVector(Lt*nb_ev*4));
+  Q2.resize(boost::extents[2][nb_mom][1][nb_rnd][nb_rnd]);
+  std::fill(Q2.data(), Q2.data() + Q2.num_elements(), 
+                    Eigen::MatrixXcd::Zero(Q2_size, Q2_size));
 
   std::cout << "\tallocated memory in BasicOperator" << std::endl;
-
-}
-
-// initializes contractions[col] with columns of D_u^-1
-void BasicOperator::init_operator_u (const size_t particle_no, 
-                                     const size_t t_in, 
-                                     const char dilution, const size_t displ){
-  const size_t Lt = global_data->get_Lt();
-  const std::vector<quark> quarks = global_data->get_quarks();
-  const size_t nb_rnd = quarks[0].number_of_rnd_vec;
-  const size_t dilE = quarks[0].number_of_dilution_E;
-  const size_t nb_ev = global_data->get_number_of_eigen_vec();
-  const size_t nb_mom = global_data->get_number_of_momenta();
-
-  #pragma omp parallel 
-  {
-  Eigen::MatrixXcd M(4 * nb_ev, 4 * dilE);
-  #pragma omp for schedule(dynamic)
-  for(size_t t = 0; t < Lt; t++){
-  // TODO: just a workaround
-  size_t t_in_dil;
-  switch(dilution) {
-
-    case 'i':
-      t_in_dil = t_in % quarks[0].number_of_dilution_T;
-      break;
-    case 'b':
-      t_in_dil = t_in / quarks[0].number_of_dilution_T;
-      break;
-    default:
-      std::cout << "Time dilution scheme not found in BasicOperator::\
-        init_operator" << std::endl;
-      exit(0);
-  }
-  // TODO: think about dirac structure and the last index - we do not want
-  //       to calculate these objects too often
-  // TODO: Dirac loop must vanish 
-  for(size_t p = 0; p < nb_mom; p++){
-    for(size_t rnd_i = 0; rnd_i < nb_rnd; ++rnd_i) {
-    for(size_t rnd_j = 0; rnd_j < nb_rnd; ++rnd_j) { 
-    if(rnd_i != rnd_j){
-      for(size_t col = 0; col < 4; ++col) {
-      for(size_t row = 0; row  < 4; ++row){ 
-        // calculate columns of D_u^-1. gamma structure can be implented by
-        // reordering columns and multiplying them with constants 
-        if(p <= nb_mom/2){
-          M.block(row * nb_ev, col * dilE, nb_ev, dilE) =
-            peram[rnd_i].block((4 * t + row) * nb_ev,
-                               dilE * (quarks[0].number_of_dilution_D * 
-                               t_in_dil + col), nb_ev, dilE) * 
-             (vdaggerv.return_rvdaggervr(p, t_in, 0, rnd_i, rnd_j))
-                              .block(0, col*dilE, dilE, dilE);
-        }
-        else {
-          M.block(row * nb_ev, col * dilE, nb_ev, dilE) =
-            peram[rnd_i].block((4 * t + row) * nb_ev,
-                               dilE * (quarks[0].number_of_dilution_D * 
-                               t_in_dil + col), nb_ev, dilE) * 
-             (vdaggerv.return_rvdaggervr(nb_mom-p-1, t_in, 0, rnd_j, rnd_i)
-                              .block(0, col*dilE, dilE, dilE)).adjoint();
-        }
-      }}// loops over col and row
-      for(size_t dirac = 5; dirac < 6; dirac++){    
-      for(size_t col = 0; col < 4; col++) {
-        contraction[particle_no][t][p][rnd_i][rnd_j][0]
-                          .block(0, col*dilE, 4*nb_ev, dilE) =
-          gamma[dirac].value[col] * 
-          M.block(0, gamma[dirac].row[col]*dilE, 4*nb_ev, dilE);
-      }}// loop dirac ends here
-    }}}// loops over rnd_i and rnd_j
-  }}// loops over momenta and time end here
-  }// pragma omp ends
 }
 /******************************************************************************/
 /******************************************************************************/
 /******************************************************************************/
-// initializes contractions_dagger[col] with columns of D_d^-1
-void BasicOperator::init_operator_d (const size_t particle_no, 
-                                     const size_t t_in, 
-                                     const char dilution, const size_t displ){
+void BasicOperator::init_operator(const size_t particle_no, const size_t t_in, 
+                                  const char dilution, const size_t displ,
+                                  const LapH::VdaggerV& vdaggerv, 
+                                  const LapH::Perambulator& peram){
 
   const size_t Lt = global_data->get_Lt();
   const size_t nb_ev = global_data->get_number_of_eigen_vec();
   const std::vector<quark> quarks = global_data->get_quarks();
   const size_t nb_rnd = quarks[0].number_of_rnd_vec;
   const size_t dilE = quarks[0].number_of_dilution_E;
+  const size_t dilT = quarks[0].number_of_dilution_T;
+  const size_t Q2_size = 4 * dilE * Lt/dilT;
   const size_t nb_mom = global_data->get_number_of_momenta();
 
-  #pragma omp parallel 
-  {
-  Eigen::MatrixXcd M(4 * dilE, 4 * nb_ev);
+#pragma omp parallel 
+{
+  // TODO: Dirac Structure is still missing
+  vec_Xcd_eigen M(2, Eigen::MatrixXcd::Zero(Q2_size, 4 * nb_ev));
   #pragma omp for schedule(dynamic)
-  for(size_t t = 0; t < Lt; t++){
-  // TODO: just a workaround
-  int t_in_dil;
-  switch(dilution) {
-
-    case 'i':
-      t_in_dil = t_in % quarks[0].number_of_dilution_T;
-      break;
-    case 'b':
-      t_in_dil = t_in / quarks[0].number_of_dilution_T;
-      break;
-    default:
-      std::cout << "Time dilution scheme not found in BasicOperator::\
-        init_operator" << std::endl;
-      exit(0);
-  }
-  // TODO: think about dirac structure and the last index - we do not want
-  //       to calculate these objects too often
-  // TODO: Dirac loop must vanish 
   for(size_t p = 0; p < nb_mom; p++){
     for(size_t rnd_i = 0; rnd_i < nb_rnd; ++rnd_i) {
-      for(size_t col = 0; col < 4; ++col) {
-      for(size_t row = 0; row  < 4; ++row){
-        // propagator D_d^-1 = perambulator(t_source, t_sink)^dagger * 
-        // basicoperator(tsource) 
-        // = gamma_5 D_u^-1 gamma_5 according to gamma_5 trick
-        // only necassary to build this for charged particles.
-        // TODO: implement a flag to omit this calculation
-        // TODO: implement more versatile momentum structure
-        if(p <= nb_mom/2){
-          M.block(col * dilE, nb_ev * row, dilE, nb_ev) = 
-            (peram[rnd_i].block(4 * nb_ev * t + nb_ev * row, 
-                      dilE * quarks[0].number_of_dilution_D * t_in_dil + 
-                      dilE * col, nb_ev, dilE)).adjoint() *
-            vdaggerv.return_vdaggerv(p, t, displ);
-        }
-        else {
-          M.block(col * dilE, row * nb_ev, dilE, nb_ev) = 
-            (peram[rnd_i].block(4 * nb_ev * t + nb_ev * row,
-                      dilE * quarks[0].number_of_dilution_D * t_in_dil + 
-                      dilE * col, nb_ev, dilE)).adjoint() *
-            (vdaggerv.return_vdaggerv(nb_mom-p-1, t, displ)).adjoint();
-        }  
-        // gamma_5 trick. It changes the sign of the two upper right and two
-        // lower left blocks in dirac space
-        if( ((row + col) == 3) || (abs(row - col) > 1) )
-          M.block(col * dilE, row * nb_ev, dilE, nb_ev) *= -1.;
-      }}// loops over row and col end here
+      for(size_t tend = 0; tend < Lt/dilT; tend++){
+        for(size_t col = 0; col < 4; ++col) {
+        for(size_t row = 0; row < 4; ++row) {
+          if(p <= nb_mom/2){
+            M[0].block(dilE*(4 * tend + col), nb_ev * row, dilE, nb_ev) = 
+              (peram[rnd_i].block(nb_ev * (4 * t_in + row), 
+                                  dilE * (4 * tend + col), 
+                                  nb_ev, dilE)).adjoint() *
+              vdaggerv.return_vdaggerv(p, t_in, displ);
+          }
+          else {
+            M[0].block(dilE*(4 * tend + col), nb_ev * row, dilE, nb_ev) = 
+              (peram[rnd_i].block(nb_ev * (4 * t_in + row), 
+                                  dilE * (4 * tend + col), 
+                                  nb_ev, dilE)).adjoint() *
+              (vdaggerv.return_vdaggerv(nb_mom-p-1, t_in, displ)).adjoint();
+          }  
+          // gamma_5 trick. It changes the sign of the two upper right and two
+          // lower left blocks in dirac space
+          if( ((row + col) == 3) || (abs(row - col) > 1) )
+            M[0].block(dilE*(4 * tend + col), row * nb_ev, dilE, nb_ev) *= -1.;
+        }}// loops over row and col end here
+      }// loop over tend ends here
       for(size_t dirac = 5; dirac < 6; dirac++){    
-      for(size_t col = 0; col < 4; col++) {
-        contraction_dagger[particle_no][t][p][rnd_i][0]
-                          .block(0, col*nb_ev, 4*dilE, nb_ev) =
-          gamma[dirac].value[col] * 
-          M.block(0, gamma[dirac].row[col]*nb_ev, 4*dilE, nb_ev);
-      }}// loop dirac ends here
+        for(size_t col = 0; col < 4; col++) {
+          M[1].block(0, col*nb_ev, Q2_size, nb_ev) =
+            gamma[dirac].value[col] * 
+            M[0].block(0, gamma[dirac].row[col]*nb_ev, Q2_size, nb_ev);
+        }
+        for(size_t rnd_j = 0; rnd_j < nb_rnd; ++rnd_j) {
+          if(rnd_i != rnd_j)
+            Q2[particle_no][p][0][rnd_i][rnd_j] = M[1] * 
+                peram[rnd_j].block(4 * nb_ev * t_in, 0, 4 * nb_ev, Q2_size);
+        }// loop over rnd_j ends here
+      }// loop over dirac ends here
     }// loop over rnd_i ends here
-  }}// loops over momenta and time end here
-  }// pragma omp ends
+  }// loop over momenta ends here
+}// pragma omp ends
 }
 /******************************************************************************/
 /******************************************************************************/
 /******************************************************************************/
 void BasicOperator::swap_operators(){
-  
-  const size_t Lt = global_data->get_Lt();
+
   const std::vector<quark> quarks = global_data->get_quarks();
   const size_t nb_rnd = quarks[0].number_of_rnd_vec;
   const size_t nb_mom = global_data->get_number_of_momenta();
-  // TODO: change the col entry to dirac
   #pragma omp parallel for schedule(dynamic)
-  for(size_t t = 0; t < Lt; t++){
   for(size_t p = 0; p < nb_mom; p++){
-    for(size_t rnd_i = 0; rnd_i < nb_rnd; ++rnd_i) {
-      for(size_t col = 0; col < 1; ++col) {
-        contraction_dagger[0][t][p][rnd_i][col].swap(
-        contraction_dagger[1][t][p][rnd_i][col]);
-      }
-      for(size_t rnd_j = 0; rnd_j < nb_rnd; ++rnd_j) { 
-        for(size_t col = 0; col < 1; ++col) {
-          contraction[0][t][p][rnd_i][rnd_j][col].swap(
-          contraction[1][t][p][rnd_i][rnd_j][col]);
+    for(size_t dir = 0; dir < 1; ++dir) {// TODO: dirac still hard coded
+      for(size_t rnd_i = 0; rnd_i < nb_rnd; ++rnd_i) {
+        for(size_t rnd_j = 0; rnd_j < nb_rnd; ++rnd_j) { 
+          Q2[0][p][dir][rnd_i][rnd_j].swap(
+          Q2[1][p][dir][rnd_i][rnd_j]);
         }
       }
     }
-  }}
-}
-/******************************************************************************/
-/******************************************************************************/
-/*uncharged********************************************************************/
-/******************************************************************************/
-/******************************************************************************/
-
-// returns D_u^-1 Gamma
-void BasicOperator::get_operator_uncharged (vec_Xcd_eigen& op_1, 
-    const int particle_no, const int dirac, const int p) const{
-
-//  const int number_of_eigen_vec = global_data->get_number_of_eigen_vec();
-//  const std::vector<quark> quarks = global_data->get_quarks();
-//  const int number_of_rnd_vec = quarks[0].number_of_rnd_vec;
-//
-//  for(int rnd_i = 0; rnd_i < number_of_rnd_vec; ++rnd_i){
-//  for(int rnd_j = 0; rnd_j < number_of_rnd_vec; ++rnd_j){
-//
-//    for(int i = 0; i < 4; i++) {
-// 
-//      op_1[rnd_i].block(0, gamma[dirac].row[i] * number_of_eigen_vec,
-//          4 * number_of_eigen_vec, number_of_eigen_vec) =
-//      gamma[dirac].value[i] * contraction[particle_no][p][rnd_i][rnd_j][i];
-//  
-//    }}
-//  }
-}
-/******************************************************************************/
-/******************************************************************************/
-/******************************************************************************/
-void BasicOperator::read_rnd_vectors_from_file (const int config_i) {
-
-  clock_t t = clock();
-  char infile[400];
-  const int Lt = global_data->get_Lt();
-  const int verbose = global_data->get_verbose();
-  const std::vector<quark> quarks = global_data->get_quarks();
-  const int number_of_rnd_vec = quarks[0].number_of_rnd_vec;
-  const int number_of_eigen_vec = global_data->get_number_of_eigen_vec();
-  const int rnd_vec_length = Lt * number_of_eigen_vec * 4;
-
-  char temp[100];
-
-  if(verbose){
-    std::cout << "\treading randomvectors from files:" << std::endl;
-  } else {
-    std::cout << "\treading randomvectors:";
   }
-
-  int check_read_in = 0;
-  for(int rnd_vec_i = 0; rnd_vec_i < number_of_rnd_vec; ++rnd_vec_i){
-    // data path Christians perambulators
-//      std::string filename = global_data->get_path_perambulators() + "/";
-
-    // data path for qbig contractions
-    sprintf(temp, "cnfg%d/rnd_vec_%01d/", config_i, rnd_vec_i);
-    std::string filename = global_data->get_path_perambulators()
-      + "/" + temp;
-
-    // data path for juqueen contractions
-//      sprintf(temp, "cnfg%d/", config_i);
-//      std::string filename = global_data->get_path_perambulators()
-//				+ "/" + temp;
-
-    // read random vector
-    sprintf(infile, "%srandomvector.rndvecnb%02d.u.nbev%04d.%04d", 
-        filename.c_str(), rnd_vec_i, number_of_eigen_vec, config_i);
-//      sprintf(infile, "%srandomvector.rndvecnb%02d.u.nbev0120.%04d", 
-//          filename.c_str(), rnd_vec_i, config_i);
-
-//      sprintf(infile, "%s.%03d.u.Ti.%04d", filename.c_str(), rnd_vec_i,
-//          config_i);
-
-    // TODO:: explicit type conversion - Bad style
-    rnd_vec[rnd_vec_i].read_random_vector(infile);
-  }
-  t = clock() - t;
-  if(!verbose) std::cout << "\t\tSUCCESS - " << std::fixed 
-                         << std::setprecision(1)
-                         << ((float) t)/CLOCKS_PER_SEC << " seconds" 
-                         << std::endl; 
 }
-
 
