@@ -26,9 +26,7 @@ LapH::VdaggerV::VdaggerV() : vdaggerv(), rvdaggervr(), momentum(), nb_mom(1),
   // must be mapped correctly from outside by addressing the memomentum
   // correctly and daggering
   vdaggerv.resize(boost::extents[nb_mom/2+1][Lt][4]);
-
-  //rvdaggervr.resize(boost::extents[nb_mom][Lt][4][nb_rnd][nb_rnd]);
-  rvdaggervr.resize(boost::extents[nb_mom/2+1][Lt][nb_dis][nb_rnd][nb_rnd]);
+  rvdaggervr.resize(boost::extents[nb_mom][Lt][nb_dis][nb_rnd][nb_rnd]);
 
   momentum.resize(boost::extents[nb_mom][Vs]);
   create_momenta();
@@ -198,6 +196,19 @@ void LapH::VdaggerV::build_rvdaggervr(const int config_i,
                                              std::conj(rnd_vec[rnd_j][blk_j]);
               }
             }
+          }
+        }
+      }
+      // building the other half of momenta
+      if(p != nb_mom/2){
+        for(size_t rnd_i = 0; rnd_i < nb_rnd; ++rnd_i) {
+          for(size_t rnd_j = 0; rnd_j < nb_rnd; ++rnd_j){
+            if(rnd_i != rnd_j)
+              for(size_t blk = 0; blk < 4; blk++)
+              rvdaggervr[nb_mom - p - 1][t][dis][rnd_j][rnd_i]
+                                  .block(0, blk*dilE, dilE, dilE) =
+                (rvdaggervr[p][t][dis][rnd_i][rnd_j]
+                                  .block(0, blk*dilE, dilE, dilE)).adjoint();
           }
         }
       }

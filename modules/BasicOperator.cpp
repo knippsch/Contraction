@@ -266,7 +266,7 @@ void BasicOperator::init_operator(const size_t particle_no, const size_t t_in,
 {
   // TODO: Dirac Structure is still missing
   vec_Xcd_eigen M(2, Eigen::MatrixXcd::Zero(Q2_size, 4 * nb_ev));
-  #pragma omp for schedule(dynamic)
+  #pragma omp for collapse(2) schedule(dynamic)
   for(size_t p = 0; p < nb_mom; p++){
     for(size_t rnd_i = 0; rnd_i < nb_rnd; ++rnd_i) {
       for(size_t tend = 0; tend < Lt/dilT; tend++){

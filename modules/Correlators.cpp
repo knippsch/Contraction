@@ -60,27 +60,17 @@ void LapH::Correlators::compute_meson_corr(const int t_source,
         for(int rnd2 = rnd1+1; rnd2 < nb_rnd; ++rnd2){
           // build all 2pt traces leading to C2_mes
           // Corr = tr(D_d^-1(t_sink) Gamma D_u^-1(t_source) Gamma)
+          // TODO: Just a workaround
           std::array<double, 4> bla = {{1., 1., -1., -1.}};
           for(size_t block = 0; block < 4; block++){
             // TODO: dilution scheme in time should be choosable
             const size_t so = (t_source/dilT)*4*dilE + block*dilE;
-            if(p_d <= nb_mom/2){
-              Corr[p_u][p_d][dirac_u][dirac_d][displ_u][displ_d]
-                [t_source][t_sink][rnd1][rnd2] += bla[block] *
-                ((basic.get_operator(0, dirac_u, p_u, rnd1, rnd2))
-                                     .block(so, so, dilE, dilE) *
-                 vdaggerv.return_rvdaggervr(p_d, t_source, dirac_d, rnd2, rnd1)
-                                    .block(0, block*dilE, dilE, dilE)).trace();
-            }
-            else {
-              Corr[p_u][p_d][dirac_u][dirac_d][displ_u][displ_d]
-                [t_source][t_sink][rnd1][rnd2] += bla[block] *
-                ((basic.get_operator(0, dirac_u, p_u, rnd1, rnd2))
-                                     .block(so, so, dilE, dilE) *
-                 (vdaggerv.return_rvdaggervr(nb_mom - p_d - 1, t_source, 
-                                             dirac_d, rnd1, rnd2)
-                          .block(0, block*dilE, dilE, dilE)).adjoint()).trace();
-            }
+            Corr[p_u][p_d][dirac_u][dirac_d][displ_u][displ_d]
+              [t_source][t_sink][rnd1][rnd2] += bla[block] *
+              ((basic.get_operator(0, dirac_u, p_u, rnd1, rnd2))
+                                   .block(so, so, dilE, dilE) *
+               vdaggerv.return_rvdaggervr(p_d, t_source, dirac_d, rnd2, rnd1)
+                                  .block(0, block*dilE, dilE, dilE)).trace();
           }
         }} // Loops over random vectors end here! 
       }}// Loops over dirac_d and p_d end here
@@ -132,19 +122,21 @@ void LapH::Correlators::compute_meson_4pt_cross(LapH::CrossOperator& X,
   const size_t nb_dir = dirac_ind.size();
   // TODO: }
 
-  if(t_source != 0){
-    X.swap(0, 1);
-    if(t_source%2 == 0)
-      X.construct(basic, 1, t_source_1, 1, 0);
-    else
-      X.construct(basic, 1, t_source_1, 0, 1);
-  }
-  else{
-    X.construct(basic, 0, t_source,   0, 1);
-    X.construct(basic, 1, t_source_1, 1, 0);
-  }
+//  if(t_source != 0){
+//    X.swap(0, 1);
+//    X.construct(basic, vdaggerv, 1, t_source, 1);
+//  }
+//  else{
+//    X.construct(basic, vdaggerv, 0, t_source, 0);
+//    X.construct(basic, vdaggerv, 1, t_source, 1);
+//  }
+//  if(t_source == t_sink)
+//    return;
+
   if(t_source == t_sink)
     return;
+  X.construct(basic, vdaggerv, 0, t_source, 0);
+  X.construct(basic, vdaggerv, 1, t_source, 1);
 
   for(size_t dirac_1 = 0; dirac_1 < nb_dir; ++dirac_1){     
     for(size_t p = 0; p <= max_mom_squared; p++){
@@ -170,15 +162,15 @@ void LapH::Correlators::compute_meson_4pt_cross(LapH::CrossOperator& X,
             for(size_t rnd4 = 0; rnd4 < nb_rnd; ++rnd4){
             if((rnd4 != rnd1) && (rnd4 != rnd2) && (rnd4 != rnd3)){
 // TODO: think about dirac structure for off-diagonal elements
-              if(t_source%2 == 0)
-                priv_C4 += (X(0, p_d, p_u, dirac_1, dirac_2, rnd3, rnd2, rnd4) * 
+//              if(t_source%2 == 0)
+                priv_C4 += (X(0, p_d, p_u, dirac_1, dirac_2, rnd3, rnd2, rnd4) *
                             X(1, nb_mom - p_d - 1, nb_mom - p_u - 1,
                               dirac_1, dirac_2, rnd4, rnd1, rnd3)).trace();
-              else
-                priv_C4 += std::conj(
-                           (X(0, p_d, p_u, dirac_1, dirac_2, rnd3, rnd2, rnd4) * 
-                            X(1, nb_mom - p_d - 1, nb_mom - p_u - 1,
-                              dirac_1, dirac_2, rnd4, rnd1, rnd3)).trace());
+//              else
+//                priv_C4 += std::conj(
+//                           (X(0, p_d, p_u, dirac_1, dirac_2, rnd3, rnd2, rnd4) * 
+//                            X(1, nb_mom - p_d - 1, nb_mom - p_u - 1,
+//                              dirac_1, dirac_2, rnd4, rnd1, rnd3)).trace());
             }}}}}}}
             #pragma omp critical
             {
@@ -275,13 +267,12 @@ void LapH::Correlators::build_everything(const size_t config_i){
       basic.init_operator(1, t_sink_1, 'b', 0, vdaggerv, peram);
     }
     for(int t_source = 0; t_source < Lt; ++t_source){
-      const int t_source_1 = (t_source + 1) % Lt;
       // computing the meson correlator which can be used to compute all small
       // trace combinations for 2pt and 4pt functions
       compute_meson_corr(t_source, t_sink);
       // computing the meson 4pt big cross trace
       // TODO: if condition that at least four random vectos are needed
-//      compute_meson_4pt_cross(X, t_source, t_sink);
+      compute_meson_4pt_cross(X, t_source, t_sink);
     }
   }// Loops over time end here
 

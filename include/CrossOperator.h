@@ -10,8 +10,8 @@
 
 #include "GlobalData.h"
 #include "BasicOperator.h"
-#include "Perambulator.h"
 #include "typedefs.h"
+#include "VdaggerV.h"
 
 namespace LapH {
 
@@ -22,9 +22,8 @@ public:
   CrossOperator(const size_t number);
   ~CrossOperator() {};
 
-  void construct(const BasicOperator& basic, const size_t nb,
-                 const int t_in, const size_t particle_u,
-                 const size_t particle_d);
+  void construct(const BasicOperator& basic, const VdaggerV& vdaggerv, 
+                 const size_t nb, const int t_in, const size_t particle_no);
 
   void swap(const size_t nb1, const size_t nb2);
 
