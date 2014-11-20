@@ -8,16 +8,13 @@
 #ifndef _TYPEDEFS_H_
 #define _TYPEDEFS_H_
 
+#include <algorithm>
 #include <complex>
 #include <vector>
 
 #include "Eigen/Core"
 #include "Eigen/Dense"
-#include "Eigen/Sparse"
-#include "Eigen/SparseCore"
 #include "boost/multi_array.hpp"
-
-// TODO: Must be in Namespace
 
 // cpp standard library typedefs
 typedef std::complex<double> cmplx;

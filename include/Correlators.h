@@ -26,7 +26,7 @@ public:
   Correlators();
   ~Correlators() {};
 
-  void build_everything(const size_t config_i);
+  void compute_correlators(const size_t config_i);
 
 private:
   BasicOperator basic;
@@ -44,9 +44,9 @@ private:
     peram.read_perambulators_from_file(config);
   }
   void read_rnd_vectors_from_file (const int config_i);
-  void compute_meson_corr(const int t_source, const int t_sink);
-  void compute_meson_4pt_cross(LapH::CrossOperator& X, 
-                               const int t_source, const int t_sink);
+  void compute_meson_small_traces(const int t_source, const int t_sink);
+  void compute_meson_4pt_corss_trace(LapH::CrossOperator& X, 
+                                     const int t_source, const int t_sink);
 
 };
 

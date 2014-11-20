@@ -41,16 +41,16 @@ void LapH::CrossOperator::construct(const BasicOperator& basic,
   // TODO: }
 
   const std::array<double, 4> bla = {{1., 1., -1., -1.}};
-  size_t t0, t1, t2;
-  if(nb == 0){
-    t0 = (((t_in+1)%Lt)/dilT)*4*dilE;
-    t1 = (t_in/dilT)*4*dilE;
-    t2 = (t_in+1)%Lt;
+  size_t tu, td, t2;
+  if(particle_no == 0){
+    tu = (t_in/dilT)*4*dilE;
+    td = (((t_in+1)%Lt)/dilT)*4*dilE;
+    t2 = t_in;
   }
   else {
-    t0 = (t_in/dilT)*4*dilE;
-    t1 = (((t_in+1)%Lt)/dilT)*4*dilE;
-    t2 = t_in;
+    tu = (((t_in+1)%Lt)/dilT)*4*dilE;
+    td = (t_in/dilT)*4*dilE;
+    t2 = (t_in+1)%Lt;
   }
   for(size_t p_so = 0; p_so < nb_mom; p_so++){
   for(size_t p_si = 0; p_si < nb_mom; p_si++){
@@ -63,9 +63,9 @@ void LapH::CrossOperator::construct(const BasicOperator& basic,
       for(size_t rnd3 = 0; rnd3 < nb_rnd; ++rnd3){
       if((rnd3 != rnd1) && (rnd3 != rnd2)){
         for(size_t col = 0; col < 4; col++){
-          const size_t cc = t0 + col*dilE;
+          const size_t cc = tu + col*dilE;
           for(size_t row = 0; row < 4; row++){
-            const size_t rr = t1 + row*dilE;
+            const size_t rr = td + row*dilE;
 
             X[nb][p_so][p_si][d_so][d_si][rnd1][rnd2][rnd3]
                                     .block(row*dilE, col*dilE, dilE, dilE) = 

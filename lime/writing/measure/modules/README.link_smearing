@@ -1,0 +1,67 @@
+*********************************************************************
+
+							Link-Smearing
+							
+*********************************************************************
+
+
+List of functions
+-----------------
+
+extern void approx_project_to_su3_dble(su3_dble *u, int iter)
+	Projects the matrix u back to SU(3). iter is the number of 
+	iterations. In the linksmearing-functions it is set to 4.
+
+extern void copy_bnd_ud_reverse(su3_dble *u1[VOLUME][4])
+	Does the reverse thing of copy_bnd_ud. This function is needed
+	because with pud for example not all links can be reached. u1
+	are the linkfields on which the function acts.
+
+extern void free_ucom_bufs_reverse(void)
+	Frees the memoryspace which is needed fpr copy_bnd_ud_reverse().
+	
+extern void alloc_pud_sm1(void)
+extern void alloc_pud_sm2(void)
+	pud_sm1 and pud_sm2 are two new linkfields which are of the same type 
+	as pud. These fields can be used to store the smeared links. The
+	alloc functions reserve the needed memory space and write unity
+	3x3 matrices in these link fields.
+
+extern void free_pud_sm1(void)
+extern void free_pud_sm1(void)
+	These functions free the memory space for pud_sm1 and pud_sm2.
+	
+extern void su3_dble_to_su3(su3_dble *um1, su3 *um2)
+	Converts a double SU(3) matrix into a single SU(3) matrix.
+	
+extern void su3_to_su3_dble(su3_dble *um1, su3 *um2)
+	Converts a single SU(3) matrix into a double SU(3) matrix.
+	
+extern void pud_output(su3_dble *doublelinks[VOLUME][4])
+	Writes the doubke linkfields doublelinks in the log file. This can be 
+	useful to check if the smearing does the right thing on several 
+	choises of parallelisation. The order of the output is independent
+	of the parallelisation.
+	
+extern void pu_output(su3 *singlelinks[VOLUME][4])
+	Does the the same thing as pud_output but for single linkfilds
+	
+extern void cmp_2pud(su3_dble *doublelinks1[VOLUME][4], su3_dble *doublelinks2[VOLUME][4])
+	This is a check routin which compares the two double linkfields
+	doublelinks1 and doublelinks2 on all littice sites.
+	
+extern void pud_copy(su3_dble *u1[VOLUME][4], su3_dble *u2[VOLUME][4])
+	Copies the double linkfields u1 into u2. Also the boundary links 
+	are copied.
+	
+extern void APE_smearing(su3_dble *u1[VOLUME][4], su3_dble *u2[VOLUME][4], smearparm parm)
+	Does the APE smearing on the double linkfields u1 and stores the smeared 
+	links in u2. In the struct smearparm parm all paramaters for the APE smearing
+	are stored.
+	
+extern void HYP_smearing(su3_dble *u1[VOLUME][4], su3_dble *u2[VOLUME][4], smearparm parm)
+	Does the HYP smearing on the double linkfields u1 and stores the smeared 
+	links in u2. In the struct smearparm parm all paramaters for the APE smearing
+	are stored.
+	
+	

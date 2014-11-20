@@ -1,0 +1,125 @@
+The id is the identification number of the readed configurations
+and pid is the identification number of the current run. 
+
+id             2
+pid            1
+
+In the log_dir are the logfiles stored, in the sfld_dir the binary_
+output and the needed configuratiosn are read in from the cnfg_dir.
+
+log_dir        .
+cnfg_dir       ../../DD-HMC-1.2.1/main
+sfld_dir       .
+
+The usual parameters.
+
+beta           5.30
+kappasea       0.1111
+csw            1.23000
+bc             -1
+
+Starting and ending configuration number, where nc_last-nc_first 
+configurations are computed.
+
+nc_first       1
+nc_last        1
+level	       0
+seed	       1237
+bs_sap         2 2 2 2
+nkv_sap        16
+nmr_sap        4
+ncy_sap        5
+nmx            100
+res            1.0e-10
+bs_dfl         2 2 2 2
+Ns             16
+rkappa         0.1111
+rinv           8
+rnmr           4
+rncy           4
+rvnmx          100
+rvres          1.0e-3
+vnkv           16
+vnmx           200
+vres           1.0e-6
+vdnmx          400
+vdres          1.0e-12
+no_hits	       1
+dtsrc	       0
+
+Here can be the source_shifts tuned. The order is t, x, y, z and the
+shifts can be choosen independently. 999 is an random number. The
+first number is the identification number which can be choosen in the propagator.
+
+no_source_sh   2
+source_shift   0  0   0   0   0
+source_shift   1 999 999 999  4
+
+The link-smearing can be choosen in the next steps. It is possible to use
+APE or HYP smearing and the parameters can be set here. 
+
+no_smear_parm  2
+smearing       0 APE 0.60
+smearing       1 HYP 0.75 0.60 0.30
+
+The jacobi-smearing structure starts with the id, then comes the type, 
+J_APE with APE-smearing, J_HYP with HYP_smearing or J_thin without any 
+link-smearing. Then comes the number of iterations folowed by the kappa 
+value. The Last enty is for the link-smearing.
+
+no_jac_parm    3
+jacobi         0 J_APE 200 0.2 0
+jacobi         1 J_HYP 200 0.2 1
+jacobi         2 J_thin  200 0.2 0
+
+The Propagators can be defined here. It starts with the id, then kappa, 
+the source-type, source-position, thetas for tbc, then the jacobismearing 
+number and the last entry is for the source shift.
+
+no_props       1
+prop 	       0 0.1111 J_APE 0 0 0 0 0.0 0.0 0.0 0 1
+
+The first number is the id the second one is the propagator-id, the third 
+is the kappa, then comes t_sink, the momentum and then the gamma structure. 
+The last three numbers are the angles for the tbc.
+
+no_ext_props   1
+ext_prop       0 0 0.1111 4 13 5 0.0 0.0 0.0
+
+Meson two-point functions have cheanged now. The first number is the id, 
+the second and third are for the propagators which shall be contracted. 
+The last one is the desired jacobi smearing for the sink. -1 indicates, 
+that no sink-smearing is done.
+
+no_2pt         1
+2pt            0  0  0 -1
+2pt            1  0  0  0
+2pt            2  0  0  1
+
+Meson three point functions:
+
+no_3pt         1
+3pt            0  0  0 -1
+
+The extended propagators for baryons can be defined here. First comes the id, 
+then the three propagators followed by the sinksmearing (-1 if no sinksmearing
+shall be performed). Then the kappa, t_sink, momentum insertion and the last 
+three numbers are the twistangles.
+
+no_ext_props_b 1
+ext_prop_b     0 0 0 0 -1 0.1111 4 13 0 0 0
+
+Baryon two-point functions can bedefined in the same way as the mesonic ones
+with the difference of three propagators.
+
+no_2pt_b       1
+2pt_b          0 0 0 0 -1
+
+The baryon three-point functions start with the id, then comes the propagator, 
+followed by the id of the ext_prop_b and the sinksmearing, if one would like 
+to do it, else again -1. 
+
+no_3pt_b       1
+3pt_b          0 0 0 -1
+
+

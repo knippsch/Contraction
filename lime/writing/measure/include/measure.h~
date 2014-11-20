@@ -1,0 +1,219 @@
+/*******************************************************************************
+*
+* File measure.h
+*
+* Copyright (C) 2008 Andreas Juettner
+*
+* This software is distributed under the terms of the GNU General Public
+* License (GPL)
+*
+*******************************************************************************/
+#define MAX_INFILE_SIZE 500000
+#define NMOM_MAX 27
+#define NMAX_TWIST 100
+
+su3_dble *pud_sm1[VOLUME][4];
+su3_dble *pud_sm2[VOLUME][4];
+
+typedef struct {
+ int p[3],musrc,musnk;
+ complex_dble corr[NPROC0*L0];
+} twopt_mom;
+
+typedef struct {
+  su3_dble c11,c12,c13,c14,c21,c22,c23,c24,c31,c32,c33,c34,
+	c41,c42,c43,c44;
+} full_spinor_dble;
+
+typedef struct {
+  int smearid;
+  char type[7];
+  double alpha[3];
+} smearparm;
+typedef struct {
+  char type[7];
+  int  pos[4];
+  double  kappa;
+  int  n;
+  smearparm smear;
+} srcdef;
+typedef struct {
+  double kappa;
+  double csw;
+  srcdef src;
+  double beta; 
+  double theta[4]; 
+  int    nmx;
+  double res;
+  int    t_snk;
+  int    *mom_ins;
+  int    gam_ins;
+} propinfo;
+
+#ifndef CHECKS_C
+  extern void rgt(void);
+#endif
+#ifndef PROPAGATORS_C
+  extern void propagator(full_spinor_dble *sv, spinor_dble *rnd, propinfo prop);
+  extern void seq_propagator(full_spinor_dble *sv, full_spinor_dble *src, 
+ 		propinfo prop);
+  extern void seq_propagator_b(full_spinor_dble *sv_out, full_spinor_dble *svk, full_spinor_dble *svl, 
+				full_spinor_dble *svm, spinor_dble **wsd,/* spinor_dble *grand_source,*/ 
+				propinfo prop, int iw0, int iw3);
+  extern void propagator_col(spinor_dble *sv, spinor_dble *rnd, propinfo prop,
+			int idirac, int icolor);
+#endif
+#ifndef CORRELATORS_C
+  extern void C2(full_spinor_dble *k, full_spinor_dble *l, int num_c, int *mu, 
+		int *momenta, complex_dble *sst);
+  extern void C2a2a(int nhits,
+	   spinor_dble **k, spinor_dble **kpsi, 
+ 	   spinor_dble **l, spinor_dble **lpsi, 
+	   int num_c, int *mu, int *momenta, complex_dble *sst);
+  extern void C2_b(full_spinor_dble *svk, full_spinor_dble *svl, full_spinor_dble *svm, 
+			complex_dble **s_pointer, int *momenta);
+  extern void C3_b(full_spinor_dble *sv1, full_spinor_dble *sv3, spinor_dble **wsd, 
+                        complex_dble **s_pointer, int *momenta, int iw1, int iw3);
+  extern void seq_src_test(full_spinor_dble *k, int gamma_insertion, int *pos);
+  extern void gen_momenta(int comp_max,int *momenta);
+#endif
+
+#ifndef ALGEBRA_C
+  extern void copy_sv_fs(int vol,spinor_dble *s,full_spinor_dble *sv,int id,
+	int ic);
+  extern void copy_fs_sv(int vol,full_spinor_dble *sv,spinor_dble *s,int id,
+	int ic);
+  extern void set_fsd2zero(int vol,full_spinor_dble *pk);
+  extern void mul_cmplx_fsv_dble(complex_dble *phase,full_spinor_dble *in,full_spinor_dble *out);
+  extern void full_mat_prod(full_spinor_dble *in1,full_spinor_dble *in2,full_spinor_dble *out);
+  extern su3_vector_dble mul_cplx(complex_dble z,su3_vector_dble s);
+  extern spinor_dble mul_cplx_spinor_dble(complex_dble z,spinor_dble s);
+  extern void mul_cplx_su3_dble(complex_dble *z,su3_dble *in, su3_dble *out);
+  extern void mul_gamma_l(int mu,full_spinor_dble *in, full_spinor_dble *out);
+  extern void mul_gamma_r(int mu,full_spinor_dble *in, full_spinor_dble *out);
+  extern void meson_trace(full_spinor_dble *in1,full_spinor_dble *in2,complex_dble *out);
+  extern void adj_full_spinor(full_spinor_dble *in, full_spinor_dble *out);
+  extern complex_dble spinor_prod_dble_local(spinor_dble *k,spinor_dble *l);
+  extern void mul_s_gamma_l(int mu,spinor_dble *in,spinor_dble *out);
+  extern void mul_s_gamma_r(int mu,spinor_dble *in,spinor_dble *out);
+  extern void accumulate_fs(full_spinor_dble *sk, int nhits, 
+			spinor_dble *k,spinor_dble *l);
+  extern void fsv_trace(full_spinor_dble *in,complex_dble *out);
+#endif
+
+#ifndef SOURCE_C
+  typedef struct {int x; int y; int z; int t;} site;
+
+  site coords[VOLUME];
+
+  void init_coords();
+  extern void random_Z4(int vol,spinor_dble *pk);
+  extern void SourceRadius(srcdef src,spinor_dble *sd);
+  extern void srcfld(spinor_dble *rnd, spinor_dble *sd, srcdef src, int idirac,
+ 		int icolor);
+  extern void src_field_random(int vol, spinor_dble *pk, int t);
+  extern void src_field_dt_random(int vol, spinor_dble *pk, int d, int t);
+  extern void extended_src(int igamma, int *mom, int x0,
+ 		full_spinor_dble *k, full_spinor_dble *l);
+  extern void jacobi(spinor_dble *sd, srcdef src, int idirac, int icolor);
+#endif
+
+#ifndef LINK_SMEARING_C
+  extern void approx_project_to_su3_dble(su3_dble *u, int iter);
+  extern void copy_bnd_ud_reverse(su3_dble *u1[VOLUME][4]);
+  extern void free_ucom_bufs_reverse(void);
+  extern void alloc_pud_sm1(void);
+  extern void alloc_pud_sm2(void);
+  extern void free_pud_sm1(void);
+  extern void free_pud_sm2(void);
+  extern void su3_dble_to_su3(su3_dble *um1, su3 *um2);
+  extern void su3_to_su3_dble(su3_dble *um1, su3 *um2);
+  extern void pud_output(su3_dble *doublelinks[VOLUME][4]);
+  extern void pu_output(su3 *singlelinks[VOLUME][4]);
+  extern void cmp_2pud(su3_dble *doublelinks1[VOLUME][4], 
+		su3_dble *doublelinks2[VOLUME][4]);
+  extern void pud_copy(su3_dble *u1[VOLUME][4], su3_dble *u2[VOLUME][4]);
+  extern void APE_smearing(su3_dble *u1[VOLUME][4], su3_dble *u2[VOLUME][4], 
+		smearparm parm);
+  extern void HYP_smearing(su3_dble *u1[VOLUME][4], su3_dble *u2[VOLUME][4], 
+		smearparm parm);
+#endif
+
+
+#ifndef TWISTBC_C
+  extern void twistbc(double *theta,double sign);
+#endif
+
+#ifndef ARCH_ILDG_C
+  extern void import_cnfg_ildg(char *in);
+#endif
+
+#ifndef IOARCHIVE_C
+  extern long file_size(FILE *fp);
+  extern void export_init(char *out_file, int argc,char *argv[]);
+  extern void meson_IOloop(char *tagname,char *out_file, complex_dble *corr, 
+ 			int *mom, int *mu, int num_c);
+  extern void baryon3pt_IOloop(char *tagname,char *out_file, complex_dble *corr, 
+ 			int *mom, int *mu, int num_c);
+  extern void meson_ASCII_IO(char *filename,int rec_seek, int msg_seek);
+#endif
+
+#ifndef BARYONS_C
+  extern void cc_gamma_row(int mu, spinor_dble  s[3][4], spinor_dble r[3][4]);
+  extern void cc_gamma_column(int mu, spinor_dble s[3][4], spinor_dble r[3][4]);
+  extern void twopt_baryons_dble(int gam, int gamp, int num_c, int *mu, int *momenta, 
+				full_spinor_dble *svk, full_spinor_dble *svl, double pm, 
+				complex_dble *uds, complex_dble *uud, complex_dble *uuu); 
+  extern void twopt_omega_dble(int gam, int gamp, int num_c, int *mu, int *momenta, 
+				full_spinor_dble *svk, double pm, complex_dble *sst);
+  extern void d_source_dble(int t, int gam, int gamp, full_spinor_dble *svk, double pm, 
+				spinor_dble *grand_source);
+  extern void u_source_dble(int t, int gam, int gamp, full_spinor_dble *svk, full_spinor_dble *svl, 
+				double pm, spinor_dble *grand_source);
+  extern void check_closure_dble(spinor_dble *grand_source);
+  extern void threept_baryons_dble(int k, int l, int num_c, int *mu, 
+	int *momenta, complex_dble *sst);
+#endif
+
+
+
+#define _trace_full_spinor_re(s,r)\
+  s=\
+  r.c11.c11.re+r.c11.c22.re+r.c11.c33.re+\
+  r.c12.c11.re+r.c12.c22.re+r.c12.c33.re+\
+  r.c13.c11.re+r.c13.c22.re+r.c13.c33.re+\
+  r.c14.c11.re+r.c14.c22.re+r.c14.c33.re+\
+  r.c21.c11.re+r.c21.c22.re+r.c21.c33.re+\
+  r.c22.c11.re+r.c22.c22.re+r.c22.c33.re+\
+  r.c23.c11.re+r.c23.c22.re+r.c23.c33.re+\
+  r.c24.c11.re+r.c24.c22.re+r.c24.c33.re+\
+  r.c31.c11.re+r.c31.c22.re+r.c31.c33.re+\
+  r.c32.c11.re+r.c32.c22.re+r.c32.c33.re+\
+  r.c33.c11.re+r.c33.c22.re+r.c33.c33.re+\
+  r.c34.c11.re+r.c34.c22.re+r.c34.c33.re+\
+  r.c41.c11.re+r.c41.c22.re+r.c41.c33.re+\
+  r.c42.c11.re+r.c42.c22.re+r.c42.c33.re+\
+  r.c43.c11.re+r.c43.c22.re+r.c43.c33.re+\
+  r.c44.c11.re+r.c44.c22.re+r.c44.c33.re;
+
+#define _trace_full_spinor_im(s,r)\
+  s=\
+  r.c11.c11.im+r.c11.c22.im+r.c11.c33.im+\
+  r.c12.c11.im+r.c12.c22.im+r.c12.c33.im+\
+  r.c13.c11.im+r.c13.c22.im+r.c13.c33.im+\
+  r.c14.c11.im+r.c14.c22.im+r.c14.c33.im+\
+  r.c21.c11.im+r.c21.c22.im+r.c21.c33.im+\
+  r.c22.c11.im+r.c22.c22.im+r.c22.c33.im+\
+  r.c23.c11.im+r.c23.c22.im+r.c23.c33.im+\
+  r.c24.c11.im+r.c24.c22.im+r.c24.c33.im+\
+  r.c31.c11.im+r.c31.c22.im+r.c31.c33.im+\
+  r.c32.c11.im+r.c32.c22.im+r.c32.c33.im+\
+  r.c33.c11.im+r.c33.c22.im+r.c33.c33.im+\
+  r.c34.c11.im+r.c34.c22.im+r.c34.c33.im+\
+  r.c41.c11.im+r.c41.c22.im+r.c41.c33.im+\
+  r.c42.c11.im+r.c42.c22.im+r.c42.c33.im+\
+  r.c43.c11.im+r.c43.c22.im+r.c43.c33.im+\
+  r.c44.c11.im+r.c44.c22.im+r.c44.c33.im;
+
+
+

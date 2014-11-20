@@ -1,0 +1,420 @@
+/*******************************************************************************
+*
+* File correlators.c
+*
+* Copyright (C) 2008 Andreas Juettner
+*
+* This software is distributed under the terms of the GNU General Public
+* License (GPL)
+*
+* 2- and 3-point functions for mesons
+*
+* void C2(full_spinor_dble *k, full_spinor_dble *l, int num_c, int *mu,
+*                int *momenta, complex_dble *sst);
+*    Function that contracts the full spinors k and l for all mutual 
+*    combinatinos of num_c gammas given in mu and for momenta
+*    specified in momenta. The output is handed over to sst.
+*
+* void seq_src_test(full_spinor_dble *k, int gamma_insertion, int *pos)
+*    Funtcion that does tests on the sequential propagator
+* 
+*
+* 2- and 3-point functions for baryons
+*
+* void C2_b(full_spinor_dble *svk, full_spinor_dble *svl, full_spinor_dble *svm, 
+*           complex_dble **s_pointer, int *momenta)
+* 
+* void C3_b(full_spinor_dble *sv1, full_spinor_dble *sv3, spinor_dble **wsd, 
+*           complex_dble **s_pointer, int *momenta, int iw1, int iw3) 
+*
+*******************************************************************************/
+#define CORRELATORS_C
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <math.h>
+#include "start.h"
+#include "global.h"
+#include "measure.h"
+#include "linalg.h"
+#include "mpi.h"
+
+static const complex_dble cplxd0={0};
+static const full_spinor_dble fsd0={{{0}}};
+/* generate momentum 3-vectors for given maximal component comp_max */
+void gen_momenta(int comp_max,int *momenta)
+{
+  int i,ix,iy,iz;
+  i=0;
+  for(ix=-comp_max; ix<=comp_max; ix++)
+  for(iy=-comp_max; iy<=comp_max; iy++)
+  for(iz=-comp_max; iz<=comp_max; iz++){
+   (*(momenta+i))   = ix;
+   (*(momenta+i+1)) = iy;
+   (*(momenta+i+2)) = iz;
+   i=i+3;
+  }
+}
+static void flush_fs_double(full_spinor_dble *fs)
+{
+  int i;
+  double *dum;
+  dum=(double*)fs;
+  for (i=0;i<288;i++) {
+    *(dum+i)=0.0;
+    *(dum+i)=0.0;
+    }
+}
+static void flush_corr(int num_c,int num_mom, complex_dble *s)
+{
+  int i;
+  for (i=0;i<num_c*num_c*num_mom;i++) {
+    *(s+i)=cplxd0;
+    }
+}
+static void add_corr(int num_c, int num_mom, complex_dble *si, complex_dble *so){
+  int i;
+  for (i=0;i<num_c*num_c*num_mom;i++){
+   so[i].re += si[i].re;
+   so[i].im += si[i].im;
+   }
+}
+extern void C2(full_spinor_dble *k, full_spinor_dble *l, int num_c, int *mu, int *momenta, complex_dble *sst)
+{
+  int x0,x1,x2,x3,ix;
+  int i,j,ip,mu1,mu2,imu1,imu2;
+
+  double phase,PIdouble;
+  complex_dble *sx=NULL,*sy=NULL,*sz=NULL,*x=NULL;
+  complex_dble *st=NULL;
+  complex_dble corr;
+  full_spinor_dble sk,sl,shelp;
+  int num_mom=NMOM_MAX;
+  /*PIdouble=(double)(4.0*atan(1.));*/
+  PIdouble=0.5*6.283185307179586476925286;
+  x =amalloc(num_c*num_c*num_mom*sizeof(complex_dble),3);
+  sx=amalloc(num_c*num_c*num_mom*sizeof(complex_dble),3);
+  sy=amalloc(num_c*num_c*num_mom*sizeof(complex_dble),3);
+  sz=amalloc(num_c*num_c*num_mom*sizeof(complex_dble),3);
+  st=amalloc(num_c*num_c*num_mom*NPROC0*L0*sizeof(complex_dble),3);
+  for (i=0;i<NPROC0*L0*num_c*num_c*num_mom;i++)
+        {
+         (*(st+i)).re=0.0;
+         (*(st+i)).im=0.0;
+        }
+  for (x0=0;x0<L0;x0++)
+   {
+   flush_corr(num_c,num_mom,sz);
+   for (x1=0;x1<L1;x1++)
+    {
+    flush_corr(num_c,num_mom,sy);
+    for (x2=0;x2<L2;x2++)
+     {
+     flush_corr(num_c,num_mom,sx);
+     for (x3=0;x3<L3;x3++)
+      {
+      ix=ipt[x3+L3*x2+L2*L3*x1+L1*L2*L3*x0];
+      i=0;
+      for(imu1=0;imu1<num_c;imu1++){
+      for(imu2=0;imu2<num_c;imu2++){
+       mu1 = mu[imu1];
+       mu2 = mu[imu2];
+       /* The following creates S=gamma_0*Gamma*gamma_0*gamma_5*adj(S) */
+       /*sk = (k+ix);*/
+       adj_full_spinor((k+ix), &sk);
+       mul_gamma_l(5,&sk,&shelp);
+       mul_gamma_l(0,&shelp,&sk);
+       mul_gamma_l(mu2,&sk,&shelp);
+       mul_gamma_l(0,&shelp,&sk);
+ 
+       /* The following creates S=gamma_5*Gamma*S */
+       /*sl = (l+ix);*/
+       mul_gamma_l(mu1,(l+ix),&shelp);
+       mul_gamma_l(5,&shelp,&sl);
+
+      meson_trace(&sk,&sl,&corr);
+      for (ip=0;ip<num_mom;ip++){
+      
+      phase=((2.0*PIdouble)*(
+      ((double)((*(momenta+ip*3  ))*(cpr[1]*L1+x1))/(double)(NPROC1*L1)) +
+      ((double)((*(momenta+ip*3+1))*(cpr[2]*L2+x2))/(double)(NPROC2*L2)) +
+      ((double)((*(momenta+ip*3+2))*(cpr[3]*L3+x3))/(double)(NPROC3*L3))));
+       (*(x+i)).re = corr.re*(double)cos(phase) - corr.im*(double)sin(phase);
+       (*(x+i)).im = corr.im*(double)cos(phase) + corr.re*(double)sin(phase);
+      i=i+1;
+      }
+      }
+      }
+      add_corr(num_c,num_mom,x,sx);
+      }
+     add_corr(num_c,num_mom,sx,sy);
+     }
+    add_corr(num_c,num_mom,sy,sz);
+    }
+   for (j=0;j<num_c*num_c*num_mom;j++)
+    {
+    (*(st+cpr[0]*L0 + x0 + j*L0*NPROC0)).re+=(*(sz+j)).re;
+    (*(st+cpr[0]*L0 + x0 + j*L0*NPROC0)).im+=(*(sz+j)).im;
+    }
+   }
+  MPI_Reduce(st,sst,2*num_c*num_c*num_mom*NPROC0*L0,
+		MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
+  MPI_Bcast(sst,    2*num_c*num_c*num_mom*NPROC0*L0,
+		MPI_DOUBLE,0,MPI_COMM_WORLD);
+
+ afree(x );
+ afree(sx);
+ afree(sy);
+ afree(sz);
+ afree(st);
+}
+
+extern void seq_src_test(full_spinor_dble *k, int gamma_insertion, int *pos)
+{
+  int x0,x1,x2,x3,ix;
+  int i,t,my_rank;
+
+  complex_dble st1,sst1,*st2=NULL,*sst2=NULL;
+  complex_dble corr1,corr2,dum;
+  full_spinor_dble sk, shelp;
+  st2  = amalloc(NPROC0*L0*sizeof(complex_dble),3);
+  sst2 = amalloc(NPROC0*L0*sizeof(complex_dble),3);
+  MPI_Comm_rank(MPI_COMM_WORLD,&my_rank);
+  st1.re=0.0;
+  st1.im=0.0;
+  sst1.re=0.0;
+  sst1.im=0.0;
+  for (i=0;i<NPROC0*L0;i++)
+   {
+    (*(st2+i)).re  = 0.0;
+    (*(st2+i)).im  = 0.0;
+    (*(sst2+i)).re = 0.0;
+    (*(sst2+i)).im = 0.0;
+   }
+
+  for (x0=0;x0<L0;x0++)
+   {
+   corr1.re=0.0;
+   corr1.im=0.0;
+   corr2.re=0.0;
+   corr2.im=0.0;
+   for (x1=0;x1<L1;x1++)
+    {
+    for (x2=0;x2<L2;x2++)
+     {
+     for (x3=0;x3<L3;x3++)
+      {
+      ix=ipt[x3+L3*x2+L2*L3*x1+L1*L2*L3*x0];
+      if (((cpr[0]*L0+x0)==pos[0])&&
+          ((cpr[1]*L1+x1)==pos[1])&&
+	  ((cpr[2]*L2+x2)==pos[2])&&
+	  ((cpr[3]*L3+x3)==pos[3])){
+      message("source position %d %d %d %d\n",pos[0],pos[1],pos[2],pos[3]);
+      adj_full_spinor((k+ix), &shelp);
+      mul_gamma_l(gamma_insertion,&shelp,&sk);
+      fsv_trace(&sk,&dum);
+      st1.re += dum.re; 
+      st1.im += dum.im;
+      }
+      adj_full_spinor((k+ix), &sk);
+      meson_trace(&sk,(k+ix),&dum);
+      corr2.re += dum.re; 
+      corr2.im += dum.im;
+      }
+     }
+    }
+    (*(st2+cpr[0]*L0 + x0)).re+=corr2.re;
+    (*(st2+cpr[0]*L0 + x0)).im+=corr2.im;
+   }
+  MPI_Reduce(&st1,&sst1,2,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
+  MPI_Reduce(st2,sst2,2*NPROC0*L0,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
+  if (my_rank==0){ 
+   message("\n");
+   message("Tr(gamma_%d S_%d)|_(%d,%d,%d,%d) = %.6e + i %.6e, where S is\n",
+		gamma_insertion,gamma_insertion,
+		*pos,*(pos+1),*(pos+2),*(pos+3),sst1.re,sst1.im);
+   message("the extended prop with insertion gamma_%d, should agree with\n",
+		gamma_insertion);
+   message(
+	"<j_%d j_%d^+> on t_snk when using a point source for the first leg.\n",
+		gamma_insertion,gamma_insertion);
+   message("\n");
+   message("Further test:\n");
+   message("self-contraction of the extended prop: Tr(tilde S * tilde S^+):\n");
+   for (t=0;t<L0*NPROC0;t++){
+    message("t=%d %.6e + i %.6e \n",t,(*(sst2+t)).re,(*(sst2+t)).im); 
+   }
+  }
+ afree(st2);
+ afree(sst2);
+
+}
+
+
+extern void C2_b(full_spinor_dble *svk, full_spinor_dble *svl, full_spinor_dble *svm, 
+					  complex_dble **s_pointer, int *momenta)
+{
+   int mub[] = {0,1,2,3,4,5};
+   int numb = sizeof(mub)/sizeof(int);
+   int my_rank, i;
+   double wt3,wt4;
+
+   complex_dble *st21=NULL; 
+   complex_dble *st22=NULL; 
+   complex_dble *st23=NULL; 
+   complex_dble *sst21=NULL; 
+   complex_dble *sst22=NULL; 
+   complex_dble *sst23=NULL; 
+   complex_dble *pp_global21=NULL; 
+   complex_dble *pp_global22=NULL; 
+   complex_dble *pp_global23=NULL; 
+
+   MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+
+   wt3=MPI_Wtime();
+
+   st21        = *s_pointer;
+   st22        = *(s_pointer + 1);
+   st23        = *(s_pointer + 2);
+   sst21       = *(s_pointer + 3);
+   sst22       = *(s_pointer + 4);
+   sst23       = *(s_pointer + 5);
+   pp_global21 = *(s_pointer + 6);
+   pp_global22 = *(s_pointer + 7);
+   pp_global23 = *(s_pointer + 8);
+
+   for (i=0;i<NPROC0*L0*numb*numb*NMOM_MAX;i++)
+   {
+    (*(st21+i)).re = 0.0;
+    (*(st21+i)).im = 0.0;
+    (*(st22+i)).re = 0.0;
+    (*(st22+i)).im = 0.0;
+    (*(st23+i)).re = 0.0;
+    (*(st23+i)).im = 0.0;
+    (*(sst21+i)).re = 0.0;
+    (*(sst21+i)).im = 0.0;
+    (*(sst22+i)).re = 0.0;
+    (*(sst22+i)).im = 0.0;
+    (*(sst23+i)).re = 0.0;
+    (*(sst23+i)).im = 0.0;
+    (*(pp_global21+i)).re = 0.0;
+    (*(pp_global21+i)).im = 0.0;
+    (*(pp_global22+i)).re = 0.0;
+    (*(pp_global22+i)).im = 0.0;
+    (*(pp_global23+i)).re = 0.0;
+    (*(pp_global23+i)).im = 0.0;
+   }
+
+   twopt_baryons_dble(0,0,numb,mub,momenta,svk,svl,0.5,st21,st22,st23);
+   twopt_baryons_dble(1,1,numb,mub,momenta,svk,svl,0.5,st21,st22,st23);
+   twopt_baryons_dble(2,2,numb,mub,momenta,svk,svl,0.5,st21,st22,st23);
+   twopt_baryons_dble(3,3,numb,mub,momenta,svk,svl,0.5,st21,st22,st23);
+   twopt_baryons_dble(0,2,numb,mub,momenta,svk,svl,-0.5,st21,st22,st23);
+   twopt_baryons_dble(1,3,numb,mub,momenta,svk,svl,-0.5,st21,st22,st23);
+   twopt_baryons_dble(2,0,numb,mub,momenta,svk,svl,-0.5,st21,st22,st23);
+   twopt_baryons_dble(3,1,numb,mub,momenta,svk,svl,-0.5,st21,st22,st23);
+
+   MPI_Reduce(st21,sst21,2*numb*numb*NMOM_MAX*NPROC0*L0,
+	 	 MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
+   MPI_Reduce(st22,sst22,2*numb*numb*NMOM_MAX*NPROC0*L0,
+		 MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
+   MPI_Reduce(st23,sst23,2*numb*numb*NMOM_MAX*NPROC0*L0,
+		 MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
+   MPI_Bcast(sst21,    2*numb*numb*NMOM_MAX*NPROC0*L0,
+	    MPI_DOUBLE,0,MPI_COMM_WORLD);
+   MPI_Bcast(sst22,    2*numb*numb*NMOM_MAX*NPROC0*L0,
+	    MPI_DOUBLE,0,MPI_COMM_WORLD);
+   MPI_Bcast(sst23,    2*numb*numb*NMOM_MAX*NPROC0*L0,
+	    MPI_DOUBLE,0,MPI_COMM_WORLD);
+
+   wt4=MPI_Wtime();
+   message("\ttime for baryon 2pt contractions %.2e sec\n",wt4-wt3);
+
+   if (my_rank==0){
+    for (i=0;i<NPROC0*L0*numb*numb*NMOM_MAX;i++)
+    {
+     (*(pp_global21+i)).re += (*(sst21+i)).re;
+     (*(pp_global21+i)).im += (*(sst21+i)).im;
+     (*(pp_global22+i)).re += (*(sst22+i)).re;
+     (*(pp_global22+i)).im += (*(sst22+i)).im;
+     (*(pp_global23+i)).re += (*(sst23+i)).re;
+     (*(pp_global23+i)).im += (*(sst23+i)).im;
+    }
+   }
+
+}
+
+extern void C3_b(full_spinor_dble *sv1, full_spinor_dble *sv3, spinor_dble **wsd, complex_dble **s_pointer, 
+				 int *momenta, int iw1, int iw3)
+{
+   int i, idirac, icolour, my_rank;
+   int mub[] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
+   int numb = sizeof(mub)/sizeof(int);
+   int wt1, wt2;
+
+   complex_dble *st3=NULL; 
+   complex_dble *sbt3=NULL; 
+   complex_dble *pp_global3=NULL;
+
+   MPI_Comm_rank(MPI_COMM_WORLD,&my_rank);
+
+   wt1 = MPI_Wtime();
+
+   st3        = *s_pointer;
+   sbt3       = *(s_pointer+1);
+   pp_global3 = *(s_pointer+2);
+
+   for (i=0;i<NPROC0*L0*numb*numb*NMOM_MAX;i++)
+   {
+    (*(st3+i)).re = 0.0;
+    (*(st3+i)).im = 0.0;
+    (*(sbt3+i)).re = 0.0;
+    (*(sbt3+i)).im = 0.0; 
+    (*(pp_global3+i)).re = 0.0;
+    (*(pp_global3+i)).im = 0.0;
+   }
+
+   for (idirac=1;idirac<=4;idirac++){
+    for (icolour=1;icolour<=3;icolour++){
+	 copy_fs_sv(VOLUME,sv3,wsd[3],idirac,icolour);
+	 copy_fs_sv(VOLUME,sv1,wsd[1],idirac,icolour); 
+	 threept_baryons_dble(iw1,iw3,numb,mub,momenta,st3);
+    }
+   }
+
+   /***  check_closure_dble(grand_source);  ***/
+
+   MPI_Reduce(st3,sbt3,2*numb*numb*NMOM_MAX*NPROC0*L0,
+	 	 MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
+   MPI_Bcast(sbt3,    2*numb*numb*NMOM_MAX*NPROC0*L0,
+       	   MPI_DOUBLE,0,MPI_COMM_WORLD);
+
+   if (my_rank==0){
+    for (i=0;i<NPROC0*L0*numb*numb*NMOM_MAX;i++)
+    {
+     (*(pp_global3+i)).re += (*(sbt3+i)).re;
+     (*(pp_global3+i)).im += (*(sbt3+i)).im;
+    }
+   }
+ 
+   wt2 = MPI_Wtime();
+   message("\ttime for baryon 3pt contraction: %.2e sec\n",wt2-wt1);
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

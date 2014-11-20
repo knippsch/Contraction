@@ -27,7 +27,7 @@ typedef boost::multi_array<cmplx, 2> ArrayCDd2;
 ////////////////////////////////////////////////////////////////////////////////
 class VdaggerV {
 
-protected:
+private:
   ArrayXcdd3Eigen vdaggerv;
   ArrayXcdd5Eigen rvdaggervr;
   ArrayCDd2 momentum;

@@ -2,6 +2,23 @@
 
 // Definition of a pointer on global data
 static GlobalData * const global_data = GlobalData::Instance();
+
+/******************************************************************************/
+/******************************************************************************/
+/******************************************************************************/
+namespace {
+
+inline void read_eigenvectors_from_file(LapH::EigenVector& V, 
+                                        const int config_i, const int t) {
+  char name[200];
+  std::string filename = global_data->get_path_eigenvectors() + "/"
+      + global_data->get_name_eigenvectors();
+  sprintf(name, "%s.%04d.%03d", filename.c_str(), config_i, t);
+
+  V.read_eigen_vector(name, 0, 0);
+}
+
+}
 /******************************************************************************/
 /******************************************************************************/
 /******************************************************************************/
@@ -78,18 +95,6 @@ void LapH::VdaggerV::create_momenta () {
       }
     }
   }
-}
-/******************************************************************************/
-/******************************************************************************/
-/******************************************************************************/
-static void read_eigenvectors_from_file (LapH::EigenVector& V,
-                                         const int config_i, const int t) {
-    char name[200];
-    std::string filename = global_data->get_path_eigenvectors() + "/"
-        + global_data->get_name_eigenvectors();
-    sprintf(name, "%s.%04d.%03d", filename.c_str(), config_i, t);
-
-    V.read_eigen_vector(name, 0, 0);
 }
 /******************************************************************************/
 /******************************************************************************/
@@ -171,49 +176,42 @@ void LapH::VdaggerV::build_rvdaggervr(const int config_i,
   #pragma omp parallel for schedule(dynamic)
   for(size_t t = 0; t < Lt; t++){
   for(size_t p = 0; p <= nb_mom/2; p++){
-    for(size_t dis = 0; dis < nb_dis; ++dis) {
-      for(size_t rnd_i = 0; rnd_i < nb_rnd; ++rnd_i) {
-
-        Eigen::MatrixXcd M = Eigen::MatrixXcd::Zero(nb_ev, 4*dilE);
+  for(size_t dis = 0; dis < nb_dis; ++dis) {
+    for(size_t rnd_i = 0; rnd_i < nb_rnd; ++rnd_i) {
+      Eigen::MatrixXcd M = Eigen::MatrixXcd::Zero(nb_ev, 4*dilE);
+      for(size_t dirac = 0; dirac < 4; dirac++){
+      for(size_t vec_i = 0; vec_i < nb_ev; ++vec_i) {
+        size_t blk_i =  dirac + vec_i * 4 + 4 * nb_ev * t;
+        
+        M.block(0, vec_i%dilE + dilE*dirac, nb_ev, 1) += 
+             vdaggerv[p][t][dis].col(vec_i) * 
+             rnd_vec[rnd_i][blk_i];
+      }}
+      for(size_t rnd_j = 0; rnd_j < nb_rnd; ++rnd_j){
+      if(rnd_i != rnd_j){
         for(size_t dirac = 0; dirac < 4; dirac++){
-          for(size_t vec_i = 0; vec_i < nb_ev; ++vec_i) {
-            size_t blk_i =  dirac + vec_i * 4 + 4 * nb_ev * t;
-          
-              M.block(0, vec_i%dilE + dilE*dirac, nb_ev, 1) += 
-                                vdaggerv[p][t][dis].col(vec_i) * 
-                      rnd_vec[rnd_i][blk_i];
-          }
+        for(size_t vec_j = 0; vec_j < nb_ev; ++vec_j) {
+          size_t blk_j =  dirac + vec_j * 4 + 4 * nb_ev * t;
+          rvdaggervr[p][t][dis][rnd_j][rnd_i]
+                        .block(vec_j%dilE, dilE*dirac , 1, dilE) +=
+              M.block(vec_j, dilE*dirac, 1, dilE) * 
+              std::conj(rnd_vec[rnd_j][blk_j]);
+        }}
+      }}
+    }// rnd_i loop ends here
+    if(p != nb_mom/2){// building the other half of momenta
+      for(size_t rnd_i = 0; rnd_i < nb_rnd; ++rnd_i) {
+      for(size_t rnd_j = 0; rnd_j < nb_rnd; ++rnd_j){
+      if(rnd_i != rnd_j){
+        for(size_t blk = 0; blk < 4; blk++){
+          rvdaggervr[nb_mom - p - 1][t][dis][rnd_j][rnd_i]
+                              .block(0, blk*dilE, dilE, dilE) =
+            (rvdaggervr[p][t][dis][rnd_i][rnd_j]
+                              .block(0, blk*dilE, dilE, dilE)).adjoint();
         }
-        for(size_t rnd_j = 0; rnd_j < nb_rnd; ++rnd_j){
-          if(rnd_i != rnd_j){
-            for(size_t dirac = 0; dirac < 4; dirac++){
-              for(size_t vec_j = 0; vec_j < nb_ev; ++vec_j) {
-                size_t blk_j =  dirac + vec_j * 4 + 4 * nb_ev * t;
-
-                rvdaggervr[p][t][dis][rnd_j][rnd_i]
-                              .block(vec_j%dilE, dilE*dirac , 1, dilE) +=
-                                     M.block(vec_j, dilE*dirac, 1, dilE) * 
-                                             std::conj(rnd_vec[rnd_j][blk_j]);
-              }
-            }
-          }
-        }
-      }
-      // building the other half of momenta
-      if(p != nb_mom/2){
-        for(size_t rnd_i = 0; rnd_i < nb_rnd; ++rnd_i) {
-          for(size_t rnd_j = 0; rnd_j < nb_rnd; ++rnd_j){
-            if(rnd_i != rnd_j)
-              for(size_t blk = 0; blk < 4; blk++)
-              rvdaggervr[nb_mom - p - 1][t][dis][rnd_j][rnd_i]
-                                  .block(0, blk*dilE, dilE, dilE) =
-                (rvdaggervr[p][t][dis][rnd_i][rnd_j]
-                                  .block(0, blk*dilE, dilE, dilE)).adjoint();
-          }
-        }
-      }
+      }}}
     }
-  }}// time and momemtum loop ends here
+  }}}// time, momemtum and displacement loop ends here
 
   t2 = clock() - t2;
   std::cout << std::setprecision(1) << "\t\tSUCCESS - " << std::fixed 

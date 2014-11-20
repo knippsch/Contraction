@@ -1,28 +1,8 @@
-/*
- * BasicOperator.h
- *
- *  Created on: Mar 26, 2013
- *      Author: knippsch
- */
-
 #ifndef BASICOPERATOR_H_
 #define BASICOPERATOR_H_
 
-#include <algorithm>
-#include <cmath>
-#include <complex>
-#include <cstdio>
-#include <cstdlib>
-#include <ctime>
-#include <fstream>
-#include <iostream>
-#include <typeinfo>
-#include <vector>
-
 #include "GlobalData.h"
 #include "Perambulator.h"
-#include "propagator_io.h"
-#include "quark.h"
 #include "typedefs.h"
 #include "VdaggerV.h"
 
@@ -50,8 +30,7 @@ public:
   inline const Eigen::MatrixXcd& get_operator(const size_t particle_no, 
                                  const size_t dirac, const size_t p, 
                                  const size_t rnd_i, const size_t rnd_j) const {
-    // TODO: dirac still hardcoded
-    return Q2[particle_no][p][0][rnd_i][rnd_j];
+    return Q2[particle_no][p][dirac][rnd_i][rnd_j];
   }
 
 private:

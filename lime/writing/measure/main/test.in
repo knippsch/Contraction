@@ -1,0 +1,78 @@
+id             1
+pid            5
+start          config
+log_dir        /data/LatticeQCD/measure/test/log
+cnfg_dir       /data/LatticeQCD/measure/test/cnfg
+corr_dir       /data/LatticeQCD/measure/test/corr
+sfld_dir       ./
+prop_dump      0
+
+beta           5.30
+kappasea       0.13550
+csw            1.90952
+bc             -1
+nc_first       100
+nc_delta       1
+nc_last        100
+
+level          0
+seed           23876
+bs_sap         6 6 6 6  
+nkv_sap        20
+nmr_sap        4
+ncy_sap        5
+nmx            1500
+res            1.0e-10
+bs_dfl         6 6 6 6 
+Ns             30
+rkappa         0.13550
+rinv           8
+rnmr           4
+rncy           4
+rvnmx          1500
+rvres          1.0e-3
+vnkv           16
+vnmx           1700
+vres           1.0e-6
+vdnmx          2500
+vdres          1.0e-12
+
+no_hits        1
+dtsrc          0
+
+no_source_sh   4
+source_shift   0  0   0   0   0
+source_shift   1 12  12  12  12
+source_shift   2 24   0   0   0
+source_shift   3 72  24  24  24
+
+no_smear_parm  2
+smearing       0 APE 0.60
+smearing       1 HYP 0.75 0.60 0.30
+no_jac_parm    3
+jacobi         0 J_thin 100 3.5 0
+jacobi         1 J_APE 100 3.5 0
+jacobi         2 J_HYP 100 3.5 1
+
+num2pt         6
+0 1 2 3 5 6
+num3pt         16
+0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15
+numb2pt        6
+0 1 2 3 4 5
+numb3pt        6
+0 1 2 3 4 5
+
+max_mom        1
+
+no_props       1
+prop           0 0.13550 pt 0 0 0 0 0.0 0.0 0.0 0 0
+no_ext_props   0
+no_2pt         1
+2pt            0  0  0  -1
+no_3pt         0
+no_ext_props_b 0
+no_2pt_b       0
+no_3pt_b       0
+
+
