@@ -21,7 +21,8 @@ all: rmxeq mkdep mkxeq
 MAIN = LapHs
 
 GENERAL = GlobalData BasicOperator Perambulator io_utils config_utils RandomVector \
-          ranlxs EigenVector VdaggerV Correlators CrossOperator
+          ranlxs EigenVector VdaggerV Correlators Correlators_small_traces \
+          Correlators_big_traces CrossOperator
 MODULES = $(GENERAL)
 
 # search path for modules

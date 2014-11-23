@@ -37,7 +37,7 @@ int main (int ac, char* av[]) {
   for(size_t config_i = start_config; config_i <= end_config; config_i +=
       delta_config){
     std::cout << "\nprocessing configuration: " << config_i << "\n\n";
-    corr.build_everything(config_i);
+    corr.compute_correlators(config_i);
   }
 }
 

@@ -45,8 +45,12 @@ private:
   }
   void read_rnd_vectors_from_file (const int config_i);
   void compute_meson_small_traces(const int t_source, const int t_sink);
-  void compute_meson_4pt_corss_trace(LapH::CrossOperator& X, 
+  void compute_meson_4pt_cross_trace(LapH::CrossOperator& X, 
                                      const int t_source, const int t_sink);
+  void build_and_write_2pt(const size_t config_i);
+  void write_C4_3(const size_t config_i);
+  void build_and_write_C4_1(const size_t config_i);
+  void build_and_write_C4_2(const size_t config_i);
 
 };
 
