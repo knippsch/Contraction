@@ -262,11 +262,11 @@ void BasicOperator::init_operator(const size_t particle_no, const size_t t_in,
   const size_t Q2_size = 4 * dilE * Lt/dilT;
   const size_t nb_mom = global_data->get_number_of_momenta();
 
-//#pragma omp parallel 
+#pragma omp parallel 
 {
   // TODO: Dirac Structure is still missing
   vec_Xcd_eigen M(2, Eigen::MatrixXcd::Zero(Q2_size, 4 * nb_ev));
-//  #pragma omp for collapse(2) schedule(dynamic)
+  #pragma omp for collapse(2) schedule(dynamic)
   for(size_t p = 0; p < nb_mom; p++){
     for(size_t rnd_i = 0; rnd_i < nb_rnd; ++rnd_i) {
       for(size_t tend = 0; tend < Lt/dilT; tend++){
@@ -305,7 +305,6 @@ void BasicOperator::init_operator(const size_t particle_no, const size_t t_in,
         }// loop over rnd_j ends here 
       }// loop over dirac ends here
     }// loop over rnd_i ends here
-std::cout << (Q2[particle_no][p][0][0][1]-(Q2[particle_no][p][0][0][1]).transpose()).sum() << std::endl;
   }// loop over momenta ends here
 }// pragma omp ends
 }
