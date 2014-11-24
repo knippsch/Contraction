@@ -27,8 +27,8 @@ void LapH::Correlators::compute_meson_4pt_cross_trace(LapH::CrossOperator& X,
 
   if(t_source == t_sink)
     return;
-  X.construct(basic, vdaggerv, 0, t_source, 0);
-  X.construct(basic, vdaggerv, 1, t_source, 1);
+  X.construct(basic, vdaggerv, 0, t_source, t_sink);
+  X.construct(basic, vdaggerv, 1, t_source_1, t_sink);
 
   for(size_t dirac_1 = 0; dirac_1 < nb_dir; ++dirac_1){     
     for(size_t p = 0; p <= max_mom_squared; p++){

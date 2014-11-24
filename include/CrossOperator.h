@@ -23,7 +23,7 @@ public:
   ~CrossOperator() {};
 
   void construct(const BasicOperator& basic, const VdaggerV& vdaggerv, 
-                 const size_t nb, const int t_in, const size_t particle_no);
+                 const size_t nb, const int t_source, const int t_sink);
 
   void swap(const size_t nb1, const size_t nb2);
 

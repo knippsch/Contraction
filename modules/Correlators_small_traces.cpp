@@ -14,7 +14,7 @@ void LapH::Correlators::compute_meson_small_traces(const int t_source,
   const std::vector<quark> quarks = global_data->get_quarks();
   const size_t nb_rnd = quarks[0].number_of_rnd_vec;
   const size_t dilE = quarks[0].number_of_dilution_E;
-  const size_t dilT = quarks[0].number_of_dilution_T;
+  const int dilT = quarks[0].number_of_dilution_T;
   // TODO: must be changed in GlobalData {
   int displ_min = global_data->get_displ_min();
   int displ_max = global_data->get_displ_max();
@@ -40,12 +40,11 @@ void LapH::Correlators::compute_meson_small_traces(const int t_source,
           std::array<double, 4> bla = {{1., 1., -1., -1.}};
           for(size_t block = 0; block < 4; block++){
             // TODO: dilution scheme in time should be choosable
-            const size_t so = (t_source/dilT)*4*dilE + block*dilE;
             Corr[p_u][p_d][dirac_u][dirac_d][displ_u][displ_d]
               [t_source][t_sink][rnd1][rnd2] += bla[block] *
-              ((basic.get_operator(0, dirac_u, p_u, rnd1, rnd2))
-                                   .block(so, so, dilE, dilE) *
-               vdaggerv.return_rvdaggervr(p_d, t_source, dirac_d, rnd2, rnd1)
+              ((basic.get_operator(t_source, t_sink/dilT, 1, dirac_u, 
+                  p_u, rnd1, rnd2)).block(block*dilE, block*dilE, dilE, dilE) *
+               vdaggerv.return_rvdaggervr(p_d, t_sink, dirac_d, rnd2, rnd1)
                                   .block(0, block*dilE, dilE, dilE)).trace();
           }
         }} // Loops over random vectors end here! 

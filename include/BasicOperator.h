@@ -21,20 +21,20 @@ public:
   BasicOperator();
   ~BasicOperator () {};
 
-  void init_operator(const size_t particle_no, const size_t t_in, 
-                     const char dilution, const size_t displ, 
+  void init_operator(const char dilution, const size_t displ, 
                      const LapH::VdaggerV& vdaggerv,
                      const LapH::Perambulator& peram);
-  void swap_operators();
+
   // returns D_u^-1 Gamma D_d^-1
-  inline const Eigen::MatrixXcd& get_operator(const size_t particle_no, 
-                                 const size_t dirac, const size_t p, 
-                                 const size_t rnd_i, const size_t rnd_j) const {
-    return Q2[particle_no][p][dirac][rnd_i][rnd_j];
+  inline const Eigen::MatrixXcd& get_operator(const int t1, const int t2,
+                                 const int t3, const size_t dirac, 
+                                 const size_t p, const size_t rnd_i, 
+                                 const size_t rnd_j) const {
+    return Q2[t1][t2][t3][p][dirac][rnd_i][rnd_j];
   }
 
 private:
-  array_Xcd_d5_eigen Q2;
+  array_Xcd_d7_eigen Q2;
   std::vector<struct lookup>  gamma;
 
 };

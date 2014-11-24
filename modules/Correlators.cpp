@@ -46,26 +46,15 @@ void LapH::Correlators::compute_correlators(const size_t config_i){
   // memory for intermediate matrices when building C4_3 (save multiplications)
   LapH::CrossOperator X(2);
 
+  basic.init_operator('b', 0, vdaggerv, peram);
+
   std::cout << "\n\tcomputing the traces of pi_+/-:\r";
   clock_t time = clock();
-
   for(int t_sink = 0; t_sink < Lt; ++t_sink){
     std::cout << "\tcomputing the traces of pi_+/-: " 
         << std::setprecision(2) << (float) t_sink/Lt*100 << "%\r" 
         << std::flush;
     int t_sink_1 = (t_sink + 1) % Lt;
-    // this is a way to reuse the already computed operators from t_source_1
-    // initialize contraction[rnd_i] = perambulator * basicoperator = D_u^-1
-    // choose 'i' for interlace or 'b' for block time dilution scheme
-    // TODO: get that from input file
-    if(t_sink != 0){
-      basic.swap_operators();
-      basic.init_operator(1, t_sink_1, 'b', 0, vdaggerv, peram);
-    }
-    else {
-      basic.init_operator(0, t_sink,   'b', 0, vdaggerv, peram);
-      basic.init_operator(1, t_sink_1, 'b', 0, vdaggerv, peram);
-    }
     for(int t_source = 0; t_source < Lt; ++t_source){
       // computing the meson correlator which can be used to compute all small
       // trace combinations for 2pt and 4pt functions
@@ -76,7 +65,7 @@ void LapH::Correlators::compute_correlators(const size_t config_i){
     }
   }// Loops over time end here
   time = clock() - time;
-  std::cout << "\t\tSUCCESS - " << ((float) time)/CLOCKS_PER_SEC 
+  std::cout << "\n\t\tSUCCESS - " << ((float) time)/CLOCKS_PER_SEC 
             << " seconds" << std::endl;
 
   write_C4_3(config_i);
