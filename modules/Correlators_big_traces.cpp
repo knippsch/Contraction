@@ -25,10 +25,19 @@ void LapH::Correlators::compute_meson_4pt_cross_trace(LapH::CrossOperator& X,
   const size_t nb_dir = dirac_ind.size();
   // TODO: }
 
+  if(t_source != 0){
+    X.swap(0, 1);
+    if(t_source%2 == 0)
+      X.construct(basic, vdaggerv, 1, t_source_1, t_sink, 1);
+    else
+      X.construct(basic, vdaggerv, 1, t_source_1, t_sink, 0);
+  }
+  else{
+    X.construct(basic, vdaggerv, 0, t_source,   t_sink, 0);
+    X.construct(basic, vdaggerv, 1, t_source_1, t_sink, 1);
+  }
   if(t_source == t_sink)
     return;
-  X.construct(basic, vdaggerv, 0, t_source, t_sink);
-  X.construct(basic, vdaggerv, 1, t_source_1, t_sink);
 
   for(size_t dirac_1 = 0; dirac_1 < nb_dir; ++dirac_1){     
     for(size_t p = 0; p <= max_mom_squared; p++){
@@ -53,9 +62,15 @@ void LapH::Correlators::compute_meson_4pt_cross_trace(LapH::CrossOperator& X,
             if((rnd3 != rnd2) && (rnd3 != rnd1)){
             for(size_t rnd4 = 0; rnd4 < nb_rnd; ++rnd4){
             if((rnd4 != rnd1) && (rnd4 != rnd2) && (rnd4 != rnd3)){
-              priv_C4 += (X(0, p_d, p_u, dirac_1, dirac_2, rnd3, rnd2, rnd4) *
-                          X(1, nb_mom - p_d - 1, nb_mom - p_u - 1,
-                            dirac_1, dirac_2, rnd4, rnd1, rnd3)).trace();
+              if(t_source%2 == 0)
+                priv_C4 += (X(0, p_d, p_u, dirac_1, dirac_2, rnd3, rnd2, rnd4) *
+                            X(1, nb_mom - p_d - 1, nb_mom - p_u - 1,
+                              dirac_1, dirac_2, rnd4, rnd1, rnd3)).trace();
+              else
+                priv_C4 += std::conj(
+                           (X(0, p_d, p_u, dirac_1, dirac_2, rnd3, rnd2, rnd4) *
+                            X(1, nb_mom - p_d - 1, nb_mom - p_u - 1,
+                              dirac_1, dirac_2, rnd4, rnd1, rnd3)).trace());
             }}}}}}}
             #pragma omp critical
             {

@@ -27,7 +27,8 @@ LapH::CrossOperator::CrossOperator(const size_t number) : X(number) {
 /******************************************************************************/
 void LapH::CrossOperator::construct(const BasicOperator& basic, 
                                     const VdaggerV& vdaggerv, const size_t nb,
-                                    const int t_source, const int t_sink){
+                                    const int t_source, const int t_sink,
+                                    const size_t type){
 
   const int Lt = global_data->get_Lt();
   const size_t nb_mom = global_data->get_number_of_momenta();
@@ -42,7 +43,7 @@ void LapH::CrossOperator::construct(const BasicOperator& basic,
 
   const std::array<double, 4> bla = {{1., 1., -1., -1.}};
   size_t tu, td, t2;
-  if(nb == 0){
+  if(type == 0){
     tu = (t_sink/dilT);
     if (tu == (((t_sink+1)%Lt)/dilT))
       td = 1;
