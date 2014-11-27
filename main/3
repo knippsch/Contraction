@@ -1,0 +1,99 @@
+#include "OperatorStructure.h"
+
+// Definition of a pointer on global data
+static GlobalData * const global_data = GlobalData::Instance();
+
+void LapH::init_from_infile(std::vector<pdg>& op, std::vector<pdg_C2>& op_C2) {
+
+  //TODO: think about the numbers of momenta, displacements and gamma
+  const size_t nb_mom = global_data->get_number_of_momenta();
+  std::vector<int> dirac_ind {0, 5};
+  const size_t nb_gam = dirac_ind.size();
+
+
+  //TODO: include displacement into dg (displacementgamma) multiindex
+  const size_t nb_dg = nb_gam;
+  const size_t nb_mom_sq = global_data->get_number_of_max_mom();
+
+  const size_t nb_op = nb_mom * nb_dis * nb_gam;
+  op.resize(nb_op);
+  set_default(op, nb_op);
+
+  const size_t nb_op_C2 = nb_mom_sq * 1 * 1;
+  op_C2.resize(nb_op_C2+1);
+  set_default(op, op_C2, nb_op_C2);
+
+}
+
+/******************************************************************************/
+/******************************************************************************/
+/******************************************************************************/
+
+void LapH::set_default(std::vector<pdg>& op, const size_t nb_op){
+
+  const int max_mom_squared = global_data->get_number_of_max_mom();
+  const int max_mom_in_one_dir = global_data->get_max_mom_in_one_dir();
+
+  size_t i = 0;
+
+  for(int ipx = -max_mom_in_one_dir; ipx <= max_mom_in_one_dir; ++ipx){
+    for(int ipy = -max_mom_in_one_dir; ipy <= max_mom_in_one_dir; ++ipy){
+      for(int ipz = -max_mom_in_one_dir; ipz <= max_mom_in_one_dir; ++ipz){
+        size_t p_sq = ipx * ipx + ipy * ipy + ipz * ipz;
+        if((ipx * ipx + ipy * ipy + ipz * ipz) > max_mom_squared) {
+          continue;
+        }
+        op[i].id = i;
+        op[i].p[0] = ipx;
+        op[i].p[1] = ipy;
+        op[i].p[2] = ipz;
+        op[i].dis[0] = 0;
+        op[i].dis[1] = 0;
+        op[i].dis[2] = 0;
+        op[i].gamma[0] = 5;
+        op[i].gamma[1] = 4;
+        op[i].gamma[2] = 4;
+        op[i].gamma[3] = 4;
+
+        i++;
+      }
+    }
+  }
+
+  if(i != nb_op){
+    std::cout << "Error in LapH::set_default(): nb_op not actual "
+                 "number of operators" << std::endl;
+    exit(0);
+  } 
+
+}
+
+void LapH::set_default(std::vector<pdg>& op,
+                       std::vector<pdg_C2>& op_C2, const size_t nb_op_C2){
+
+  const size_t nb_mom_sq = global_data->get_number_of_max_mom();
+
+  size_t nb_op = 7;
+  size_t dir = 0;
+  size_t gam = 0;
+  for(size_t p = 0; p <= nb_mom_sq; p++){
+//    op_C2[p * nb_dir * nb_gam + gam * nb_dir + dir].p_sq = p;
+//    op_C2[p * nb_dir * nb_gam + gam * nb_dir + dir].dg_so = 0;
+//    op_C2[p * nb_dir * nb_gam + gam * nb_dir + dir].dg_si = 0;
+
+    op_C2[p].p_sq = p;
+    op_C2[p].dg_so = 0;
+    op_C2[p].dg_si = 0;
+    for(auto& i : op)
+      if((i.p[0] * i.p[0] + i.p[1] *  i.p[1] + i.p[2] * i.p[2]) == p){ 
+//        op_C2[p * nb_dir * nb_gam + gam * nb_dir + dir].index.push_back(i.id, nb_op - i.id - 1)}
+        std::array<size_t, 2> tmp = {i.id, nb_op - i.id - 1};
+        op_C2[p].index.push_back(tmp);
+}
+
+  }
+}
+
+
+
+

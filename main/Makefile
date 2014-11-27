@@ -18,11 +18,12 @@ all: rmxeq mkdep mkxeq
 
 # main programs and modules to be compiled
 
-MAIN = LapHs
+MAIN = test_infile
 
 GENERAL = GlobalData BasicOperator Perambulator io_utils config_utils RandomVector \
           ranlxs EigenVector VdaggerV Correlators Correlators_small_traces \
-          Correlators_big_traces CrossOperator
+          Correlators_big_traces CrossOperator OperatorStructure
+
 MODULES = $(GENERAL)
 
 # search path for modules
@@ -32,24 +33,23 @@ VPATH = .:$(MDIR)
 # Logging option (-mpilog or -mpitrace or -mpianim)
 LOGOPTION =
 
-LIMEPATH = /home/knippsch/ExternLibraries/lime-1.3.2
+LIMEPATH = /hiskp2/werner/libraries/lime-1.3.2
 
 # additional include directories
-INCPATH = /home/knippsch/ExternLibraries/eigen-3.2.1 \
-          /home/knippsch/ExternLibraries/boost_1_55_0 \
+INCPATH = /hiskp2/werner/libraries/eigen-eigen-1306d75b4a21 \
+          /hiskp2/werner/libraries/boost_1_55_0 \
           $(LIMEPATH)/include/ ../include 
 
 # additional libraries
 
 LIBS = lime boost_program_options
 
-LIBPATH = $(LIMEPATH)/lib  /usr/local/lib /home/knippsch/ExternLibraries/boost_1_55_0/stage/lib/
+LIBPATH = $(LIMEPATH)/lib  /usr/local/lib /hiskp2/werner/libraries/boost_1_55_0/stage/lib/
 
 
 # scheduling and optimization options
-CFLAGS = -g -Wall -pedantic -std=c++11 -O2 -march=native -Wno-unused-variable \
-         -Wno-unused-local-typedefs -Wno-sign-compare -fopenmp  
-
+CFLAGS = -g -Wall -pedantic -std=c++0x -fopenmp #-O2 -march=native -Wno-unused-variable \
+         -Wno-unused-local-typedefs -Wno-sign-compare 
 ############################## do not change ###################################
 
 SHELL=/bin/bash

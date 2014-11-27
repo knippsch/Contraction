@@ -23,8 +23,8 @@ output_path = /hiskp2/werner/LapH/correlators
 lattice = G4
 
 # momentum handling:
-number_of_max_mom  = 0
-max_mom_in_one_dir = 0
+number_of_max_mom  = 1
+max_mom_in_one_dir = 1
 # dirac structure
 dirac_min = 5
 dirac_max = 5
