@@ -33,6 +33,7 @@ void LapH::init_from_infile(std::vector<pdg>& op, std::vector<pdg_C2>& op_C2) {
 /******************************************************************************/
 /******************************************************************************/
 
+// function to initialize the vector of all necessary operators
 void LapH::set_default(std::vector<pdg>& op){
 
   const int max_mom_squared = global_data->get_number_of_max_mom();
@@ -42,12 +43,14 @@ void LapH::set_default(std::vector<pdg>& op){
 
   size_t i = 0;
 
+  // all three-momenta
   for(int ipx = -max_mom_in_one_dir; ipx <= max_mom_in_one_dir; ++ipx){
     for(int ipy = -max_mom_in_one_dir; ipy <= max_mom_in_one_dir; ++ipy){
       for(int ipz = -max_mom_in_one_dir; ipz <= max_mom_in_one_dir; ++ipz){
         if((ipx * ipx + ipy * ipy + ipz * ipz) > max_mom_squared) {
           continue;
         }
+        // all gamma structures
         for(size_t gam = 0; gam < nb_dg; gam++){
 
           op[i].p[0] = ipx;
@@ -76,6 +79,7 @@ void LapH::set_default(std::vector<pdg>& op){
 
 }
 
+// function to obtain the index combinations in op for the 2pt-fct
 void LapH::set_default(std::vector<pdg>& op, std::vector<pdg_C2>& op_C2){
 
   const size_t nb_mom_sq = global_data->get_number_of_max_mom() + 1;
@@ -85,23 +89,31 @@ void LapH::set_default(std::vector<pdg>& op, std::vector<pdg_C2>& op_C2){
   size_t nb_op = op.size();
   size_t j = 0;
 
+  // run over all momenta squared (back-to-back hardcoded) and gamma 
+  // combinations
   for(size_t p_sq = 0; p_sq < nb_mom_sq; p_sq++){
     for(size_t so = 0; so < nb_dg; so++){
       for(size_t si = 0; si < nb_dg; si++){
 
+        // index for access of element
         size_t i = p_sq * nb_dg*nb_dg + so * nb_dg + si;
 
+        // save p^2 and gamma structure at source and sink
         op_C2[i].p_sq = p_sq;
         op_C2[i].dg_so = dg[so];
         op_C2[i].dg_si = dg[si];
 
+        // loop over op and set index pairs
         for(auto& el : op)
           if((el.p[0]*el.p[0] + el.p[1]*el.p[1] + el.p[2]*el.p[2]) == p_sq){ 
             if(el.gamma[0] == dg[so]){
               size_t id1 = el.id;
+              // thats the generalized version of nb_mom - p - 1 including 
+              // a faster running gamma structure
               size_t id2 = nb_op - nb_dg * (id1/nb_dg + 1) + si;
-              std::array<size_t, 2> tmp = {id1, id2};
-              op_C2[i].index.push_back(tmp);
+              // warning because array has no list-of-arrays constructor but 
+              // works. Can change this to pair structure.
+              op_C2[i].index.emplace_back(std::pair<size_t, size_t>(id1, id2));
             }
           }
 

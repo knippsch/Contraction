@@ -13,6 +13,7 @@
 #include "CrossOperator.h" 
 #include "GlobalData.h"
 #include "BasicOperator.h"
+#include "OperatorStructure.h"
 #include "Perambulator.h"
 #include "typedefs.h"
 

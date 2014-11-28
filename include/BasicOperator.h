@@ -33,9 +33,10 @@ public:
     return Q2[t1][t2][t3][p][dirac][rnd_i][rnd_j];
   }
 
+  std::vector<struct lookup>  gamma;
+
 private:
   array_Xcd_d7_eigen Q2;
-  std::vector<struct lookup>  gamma;
 
 };
 

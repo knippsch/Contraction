@@ -38,7 +38,7 @@ int main (int ac, char* av[]) {
 
   std::cout << "p " << std::endl;
   for(auto& i : op_C2) for(auto& mom : i.index) std::cout << i.p_sq << i.dg_so 
-    << i.dg_si << "  " << mom[0] << "  " << mom[1] << std::endl;
+    << i.dg_si << "  " << mom.first << "  " << mom.second << std::endl;
 
 
 

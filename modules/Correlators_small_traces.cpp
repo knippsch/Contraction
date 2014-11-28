@@ -29,6 +29,10 @@ void LapH::Correlators::compute_meson_small_traces(const int t_source,
     for(int p_u = 0; p_u < nb_mom; ++p_u) {
       for(int dirac_d = 0; dirac_d < nb_dir; ++dirac_d){
       for(int p_d = 0; p_d < nb_mom; ++p_d) {
+
+
+  for(auto& op : op_Corr)
+
         // TODO: A collpase of both random vectors might be better but
         //       must be done by hand because rnd2 starts from rnd1+1
         #pragma omp parallel for schedule(dynamic)
@@ -37,15 +41,14 @@ void LapH::Correlators::compute_meson_small_traces(const int t_source,
           // build all 2pt traces leading to C2_mes
           // Corr = tr(D_d^-1(t_sink) Gamma D_u^-1(t_source) Gamma)
           // TODO: Just a workaround
-          std::array<double, 4> bla = {{1., 1., -1., -1.}};
           for(size_t block = 0; block < 4; block++){
             // TODO: dilution scheme in time should be choosable
             Corr[p_u][p_d][dirac_u][dirac_d][displ_u][displ_d]
-              [t_source][t_sink][rnd1][rnd2] += bla[block] *
+              [t_source][t_sink][rnd1][rnd2] += basic.gamma[5].value[block] *
               ((basic.get_operator(t_source, t_sink/dilT, 1, dirac_u, 
                   p_u, rnd1, rnd2)).block(block*dilE, block*dilE, dilE, dilE) *
                vdaggerv.return_rvdaggervr(p_d, t_sink, dirac_d, rnd2, rnd1)
-                                  .block(0, block*dilE, dilE, dilE)).trace();
+                                  .block(0, basic.gamma[5].row[block]*dilE, dilE, dilE)).trace();
           }
         }} // Loops over random vectors end here! 
       }}// Loops over dirac_d and p_d end here
@@ -155,6 +158,7 @@ void LapH::Correlators::build_and_write_2pt(const size_t config_i){
             "C2_pi+-_conf%04d.dat", 
             outpath.c_str(), dirac_ind.at(dirac), dirac_ind.at(dirac), p, p, 
             displ_min, displ_max, (int)config_i);
+        std::cout << outfile << std::endl;
         if((fp = fopen(outfile, "wb")) == NULL)
           std::cout << "fail to open outputfile: " << outfile << std::endl;
 
@@ -260,6 +264,7 @@ void LapH::Correlators::build_and_write_C4_1(const size_t config_i){
           "C4_1_conf%04d.dat", 
           outpath.c_str(), dirac_ind.at(dirac), dirac_ind.at(dirac), p, p, 
           displ_min, displ_max, (int)config_i);
+      std::cout << outfile << std::endl;
       if((fp = fopen(outfile, "wb")) == NULL)
         std::cout << "fail to open outputfile" << std::endl;
       for(int p_u = p_min; p_u < p_max; ++p_u){
@@ -277,9 +282,11 @@ void LapH::Correlators::build_and_write_C4_1(const size_t config_i){
   // for every dirac structure, momentum, (entry of the GEVP matrix).
   // displacement is not supported at the moment
   for(int dirac_u = 0; dirac_u < nb_dir; ++dirac_u){
-    for(int dirac_d = 0; dirac_d < nb_dir; ++dirac_d){
+//    for(int dirac_d = 0; dirac_d < nb_dir; ++dirac_d){
+    int dirac_d = dirac_u;
       for(int p1 = 0; p1 <= max_mom_squared; p1++){
-        for(int p2 = p1; p2 <= max_mom_squared; p2++){
+//        for(int p2 = p1; p2 <= max_mom_squared; p2++){
+      int p2 = p1;
 
           sprintf(outfile, 
              "%s/dirac_%02d_%02d_p_%01d_%01d_displ_%01d_%01d/"
@@ -303,9 +310,9 @@ void LapH::Correlators::build_and_write_C4_1(const size_t config_i){
 
           fclose(fp);
 
-        }
+//        }
       }
-    }
+//    }
   }
   time = clock() - time;
   printf("\t\tSUCCESS - %.1f seconds\n", ((float) time)/CLOCKS_PER_SEC);
@@ -399,6 +406,7 @@ void LapH::Correlators::build_and_write_C4_2(const size_t config_i){
           "C4_2_conf%04d.dat", 
           outpath.c_str(), dirac_ind.at(dirac), dirac_ind.at(dirac), p, p, 
           displ_min, displ_max, (int)config_i);
+      std::cout << outfile << std::endl;
       if((fp = fopen(outfile, "wb")) == NULL)
         std::cout << "fail to open outputfile" << std::endl;
 
@@ -420,19 +428,22 @@ void LapH::Correlators::build_and_write_C4_2(const size_t config_i){
   // displacement is not supported at the moment
 
   for(int dirac_u = 0; dirac_u < nb_dir; ++dirac_u){
-    for(int dirac_d = 0; dirac_d < nb_dir; ++dirac_d){
+//    for(int dirac_d = 0; dirac_d < nb_dir; ++dirac_d){
+    int dirac_d = dirac_u;
       for(int p1 = 0; p1 <= max_mom_squared; p1++){
-        for(int p2 = p1; p2 <= max_mom_squared; p2++){
+//        for(int p2 = p1; p2 <= max_mom_squared; p2++){
+        int p2 = p1;
 
           sprintf(outfile, 
              "%s/dirac_%02d_%02d_p_%01d_%01d_displ_%01d_%01d/"
              "C4_2_conf%04d.dat", 
              outpath.c_str(), dirac_ind.at(dirac_u), dirac_ind.at(dirac_d), 
              p1, p2, displ_min, displ_max, (int)config_i);
-         if((fp = fopen(outfile, "wb")) == NULL)
-           std::cout << "fail to open outputfile" << std::endl;
+          std::cout << outfile << std::endl;
+          if((fp = fopen(outfile, "wb")) == NULL)
+            std::cout << "fail to open outputfile" << std::endl;
 
-         for(int p_u = p_min; p_u < p_max; ++p_u){
+          for(int p_u = p_min; p_u < p_max; ++p_u){
             if(mom_squared[p_u] == p1){
               for(int p_d = p_min; p_d < p_max; ++p_d){
                 if(mom_squared[p_d] == p2){
@@ -446,9 +457,9 @@ void LapH::Correlators::build_and_write_C4_2(const size_t config_i){
 
           fclose(fp);
 
-        }
+//       }
       }
-    }
+//    }
   }
   time = clock() - time;
   printf("\t\tSUCCESS - %.1f seconds\n", ((float) time)/CLOCKS_PER_SEC);

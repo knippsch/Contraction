@@ -171,6 +171,8 @@ void LapH::VdaggerV::build_rvdaggervr(const int config_i,
             Eigen::MatrixXcd::Zero(dilE, 4*dilE));
 
   // TODO: just a workaround
+  // can be changed to op by running over p = op/nb_dg, but dis currently
+  // not supported.
   const size_t nb_dis = 1;
 
   #pragma omp parallel for schedule(dynamic)

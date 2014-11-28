@@ -22,6 +22,10 @@ LapH::Correlators::Correlators() : basic(), peram(), rnd_vec(), vdaggerv(),
   const size_t nb_dir = dirac_ind.size();
   // TODO: }
 
+  std::vector<LapH::pdg> op_Corr;
+  std::vector<LapH::pdg_C2> op_C2;
+  LapH::init_from_infile(op_Corr, op_C2);
+
   rnd_vec.resize(nb_rnd, LapH::RandomVector(Lt*nb_ev*4));
 
   C4_mes.resize(boost::extents[nb_mom][nb_mom][nb_dir][nb_dir][Lt]);
@@ -70,8 +74,8 @@ void LapH::Correlators::compute_correlators(const size_t config_i){
 
   write_C4_3(config_i);
   build_and_write_2pt(config_i);
-  build_and_write_C4_1(config_i);
-  build_and_write_C4_2(config_i);
+//  build_and_write_C4_1(config_i);
+//  build_and_write_C4_2(config_i);
 
 }
 /******************************************************************************/

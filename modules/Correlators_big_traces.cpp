@@ -115,6 +115,7 @@ void LapH::Correlators::write_C4_3(const size_t config_i){
           "C4_3_conf%04d.dat", 
           outpath.c_str(), dirac_ind.at(dirac_1), dirac_ind.at(dirac_2), 
           (int)p, (int)p, 0, 0, (int)config_i);
+      std::cout << outfile << std::endl;
       if((fp = fopen(outfile, "wb")) == NULL)
         std::cout << "fail to open outputfile" << std::endl;
       fwrite((double*) &(C4_mes[p][p][dirac_1][dirac_2][0]), 

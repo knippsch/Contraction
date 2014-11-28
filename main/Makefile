@@ -18,7 +18,7 @@ all: rmxeq mkdep mkxeq
 
 # main programs and modules to be compiled
 
-MAIN = test_infile
+MAIN = LapHs
 
 GENERAL = GlobalData BasicOperator Perambulator io_utils config_utils RandomVector \
           ranlxs EigenVector VdaggerV Correlators Correlators_small_traces \
@@ -48,7 +48,7 @@ LIBPATH = $(LIMEPATH)/lib  /usr/local/lib /hiskp2/werner/libraries/boost_1_55_0/
 
 
 # scheduling and optimization options
-CFLAGS = -g -Wall -pedantic -std=c++0x -fopenmp #-O2 -march=native -Wno-unused-variable \
+CFLAGS = -Wall -pedantic -std=c++0x -fopenmp -O2 -march=native -Wno-unused-variable \
          -Wno-unused-local-typedefs -Wno-sign-compare 
 ############################## do not change ###################################
 
