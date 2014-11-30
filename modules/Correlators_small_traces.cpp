@@ -11,6 +11,8 @@ void LapH::Correlators::compute_meson_small_traces(const int t_source,
 
   const size_t Lt = global_data->get_Lt();
   const size_t nb_mom = global_data->get_number_of_momenta();
+  const size_t nb_op = nb_mom;
+  const size_t nb_dg = 1;
   const std::vector<quark> quarks = global_data->get_quarks();
   const size_t nb_rnd = quarks[0].number_of_rnd_vec;
   const size_t dilE = quarks[0].number_of_dilution_E;
@@ -23,15 +25,20 @@ void LapH::Correlators::compute_meson_small_traces(const int t_source,
   const size_t nb_dir = dirac_ind.size();
   // TODO: }
 
-  for(int displ_u = 0; displ_u < nb_dis; displ_u++){
-  for(int displ_d = 0; displ_d < nb_dis; displ_d++){ 
-    for(int dirac_u = 0; dirac_u < nb_dir; ++dirac_u){
-    for(int p_u = 0; p_u < nb_mom; ++p_u) {
-      for(int dirac_d = 0; dirac_d < nb_dir; ++dirac_d){
-      for(int p_d = 0; p_d < nb_mom; ++p_d) {
+//  for(int displ_u = 0; displ_u < nb_dis; displ_u++){
+//  for(int displ_d = 0; displ_d < nb_dis; displ_d++){ 
+//    for(int dirac_u = 0; dirac_u < nb_dir; ++dirac_u){
+//    for(int p_u = 0; p_u < nb_mom; ++p_u) {
+//      for(int dirac_d = 0; dirac_d < nb_dir; ++dirac_d){
+//      for(int p_d = 0; p_d < nb_mom; ++p_d) {
 
+      int displ_u = 0;
+      int displ_d = 0;
+      int dirac_u = 0;
+      int dirac_d = 0;
 
-  for(auto& op : op_Corr)
+  for(auto& op : op_C2)
+    for(auto& i : op.index)
 
         // TODO: A collpase of both random vectors might be better but
         //       must be done by hand because rnd2 starts from rnd1+1
@@ -43,40 +50,47 @@ void LapH::Correlators::compute_meson_small_traces(const int t_source,
           // TODO: Just a workaround
           for(size_t block = 0; block < 4; block++){
             // TODO: dilution scheme in time should be choosable
-            Corr[p_u][p_d][dirac_u][dirac_d][displ_u][displ_d]
+            Corr[i.first][i.second][0][0][0][0]
               [t_source][t_sink][rnd1][rnd2] += basic.gamma[5].value[block] *
               ((basic.get_operator(t_source, t_sink/dilT, 1, dirac_u, 
-                  p_u, rnd1, rnd2)).block(block*dilE, block*dilE, dilE, dilE) *
-               vdaggerv.return_rvdaggervr(p_d, t_sink, dirac_d, rnd2, rnd1)
+                  i.first/nb_dg, rnd1, rnd2)).block(block*dilE, block*dilE, dilE, dilE) *
+               vdaggerv.return_rvdaggervr(
+//nb_op - nb_dg*(i.second/nb_dg) + i.second%nb_dg - nb_dg, t_sink, dirac_d, rnd2, rnd1)
+               i.second/nb_dg, t_sink, dirac_d, rnd2, rnd1)
                                   .block(0, basic.gamma[5].row[block]*dilE, dilE, dilE)).trace();
           }
         }} // Loops over random vectors end here! 
-      }}// Loops over dirac_d and p_d end here
-    }}// Loops over dirac_u and p_u end here
-  }}// Loops over displacements end here
+//      }}// Loops over dirac_d and p_d end here
+//    }}// Loops over dirac_u and p_u end here
+//  }}// Loops over displacements end here
 
   // Using the dagger operation to get all possible random vector combinations
   // TODO: Think about imaginary correlations functions - There might be an 
   //       additional minus sign involved
-  for(int displ_u = 0; displ_u < nb_dis; displ_u++){
-  for(int displ_d = 0; displ_d < nb_dis; displ_d++){
-    for(int dirac_u = 0; dirac_u < nb_dir; ++dirac_u){
-    for(int p_u = 0; p_u < nb_mom; ++p_u) {
-      for(int dirac_d = 0; dirac_d < nb_dir; ++dirac_d){
-      for(int p_d = 0; p_d < nb_mom; ++p_d) {
+
+//  for(auto& op : op_C2)
+//    for(auto& i : op.index)
+
+//  for(int displ_u = 0; displ_u < nb_dis; displ_u++){
+//  for(int displ_d = 0; displ_d < nb_dis; displ_d++){
+//    for(int dirac_u = 0; dirac_u < nb_dir; ++dirac_u){
+//    for(int p_u = 0; p_u < nb_mom; ++p_u) {
+//      for(int dirac_d = 0; dirac_d < nb_dir; ++dirac_d){
+//      for(int p_d = 0; p_d < nb_mom; ++p_d) {
+
         // TODO: A collpase of both random vectors might be better but
         //       must be done by hand because rnd2 starts from rnd1+1
-        #pragma omp parallel for schedule(dynamic)
-        for(int rnd1 = 0; rnd1 < nb_rnd; ++rnd1){
-        for(int rnd2 = rnd1+1; rnd2 < nb_rnd; ++rnd2){
-          Corr[p_u][p_d][dirac_d][dirac_u][displ_u]
-              [displ_d][t_source][t_sink][rnd2][rnd1] = 
-                   std::conj(Corr[p_u][p_d][dirac_u][dirac_d][displ_u]
-                                 [displ_d][t_source][t_sink][rnd1][rnd2]); 
-        }} // Loops over random vectors end here! 
-      }}// Loops over dirac_d and p_d end here
-    }}// Loops over dirac_u and p_u end here
-  }}// Loops over displacements end here
+//        #pragma omp parallel for schedule(dynamic)
+//        for(int rnd1 = 0; rnd1 < nb_rnd; ++rnd1){
+//        for(int rnd2 = rnd1+1; rnd2 < nb_rnd; ++rnd2){
+//          Corr[i.first/nb_dg][nb_op - nb_dg*(i.second/nb_dg) + i.second%nb_dg - nb_dg][dirac_d][dirac_u][displ_u]
+//              [displ_d][t_source][t_sink][rnd2][rnd1] = 
+//                   std::conj(Corr[i.first/nb_dg][nb_op - nb_dg*(i.second/nb_dg) + i.second%nb_dg - nb_dg][dirac_u][dirac_d][displ_u]
+//                                 [displ_d][t_source][t_sink][rnd1][rnd2]); 
+//        }} // Loops over random vectors end here! 
+//      }}// Loops over dirac_d and p_d end here
+//    }}// Loops over dirac_u and p_u end here
+//  }}// Loops over displacements end here
 }
 /******************************************************************************/
 /******************************************************************************/
@@ -94,6 +108,8 @@ void LapH::Correlators::build_and_write_2pt(const size_t config_i){
 
   const int max_mom_squared = global_data->get_number_of_max_mom();
   const int nb_mom = global_data->get_number_of_momenta();
+  const int nb_op = nb_mom;
+  const int nb_dg = 1;
   const std::vector<int> mom_squared = global_data->get_momentum_squared();
   const int p_min = 0; 
   const int p_max = nb_mom;
@@ -125,34 +141,45 @@ void LapH::Correlators::build_and_write_2pt(const size_t config_i){
                                                             cmplx(0.0, 0.0));
   for(int t_source = 0; t_source < Lt; ++t_source){
   for(int t_sink = 0; t_sink < Lt; ++t_sink){
-    for(int p2 = 0; p2 <= max_mom_squared; p2++){
-    for(int p = p_min; p < p_max; ++p){
-    if(mom_squared[p] == p2){
-      for(int dirac_u = 0; dirac_u < nb_dir; ++dirac_u){
-      for(int dirac_d = 0; dirac_d < nb_dir; ++dirac_d){
-        for(int displ_u = 0; displ_u < nb_dis; displ_u++){
-        for(int displ_d = 0; displ_d < nb_dis; displ_d++){   
+
+//    for(int p2 = 0; p2 <= max_mom_squared; p2++){
+//    for(int p = p_min; p < p_max; ++p){
+//    if(mom_squared[p] == p2){
+//      for(int dirac_u = 0; dirac_u < nb_dir; ++dirac_u){
+//      for(int dirac_d = 0; dirac_d < nb_dir; ++dirac_d){
+//        for(int displ_u = 0; displ_u < nb_dis; displ_u++){
+//        for(int displ_d = 0; displ_d < nb_dis; displ_d++){   
+
+    for(auto& op : op_C2)
+      for(auto& i : op.index)
+
           for(int rnd1 = 0; rnd1 < nb_rnd; ++rnd1){
           for(int rnd2 = 0; rnd2 < nb_rnd; ++rnd2){
           if(rnd1 != rnd2){
-            C2_mes[p2][dirac_u][dirac_d][displ_u][displ_d]
+//            C2_mes[op.p_sq][op.dg_so][op.dg_si][0][0]
+            C2_mes[op.p_sq][0][0][0][0]
                   [abs((t_sink - t_source - Lt) % Lt)] += 
-               Corr[p][nb_mom - p - 1][dirac_u][dirac_d]
-                   [displ_u][displ_d][t_source][t_sink][rnd1][rnd2];
+               Corr[i.first][i.second][0][0]
+                   [0][0][t_source][t_sink][rnd1][rnd2];
           }}}
-        }}
-      }}
-    }}}
+//        }}
+//      }}
+//    }}}
   }}
+
   // normalization of correlation function
   double norm3 = Lt * nb_rnd * (nb_rnd - 1);
   for(auto i = C2_mes.data(); i < (C2_mes.data()+C2_mes.num_elements()); i++)
     *i /= norm3;
+  for(auto i = C2_mes.data(); i < (C2_mes.data()+C2_mes.num_elements()); i++)
+    *i *= 2;
 
   // output to binary file - only diagaonal and summed momenta
-  for(int dirac = 0; dirac < nb_dir; ++dirac){
-    for(int p = 0; p <= max_mom_squared; p++){
-      for(int displ = 0; displ < nb_dis; ++displ){
+  for(int p = 0; p <= max_mom_squared; p++){
+//    for(int dirac = 0; dirac < nb_dir; ++dirac){
+//      for(int displ = 0; displ < nb_dis; ++displ){
+    int dirac = 0; 
+    int displ = 0;
         sprintf(outfile, 
             "%s/dirac_%02d_%02d_p_%01d_%01d_displ_%01d_%01d/"
             "C2_pi+-_conf%04d.dat", 
@@ -166,8 +193,8 @@ void LapH::Correlators::build_and_write_2pt(const size_t config_i){
                                                 sizeof(double), 2 * Lt, fp);
         fclose(fp);
       }
-    }
-  }
+//    }
+//  }
   time = clock() - time;
   std::cout << "\t\tSUCCESS - " << ((float) time)/CLOCKS_PER_SEC 
             << " seconds" << std::endl;

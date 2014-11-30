@@ -912,4 +912,4 @@ Correlators_big_traces.o: ../modules/Correlators_big_traces.cpp \
  /hiskp2/werner/libraries/boost_1_55_0/boost/type_traits/remove_volatile.hpp \
  /hiskp2/werner/libraries/boost_1_55_0/boost/type_traits/integral_promotion.hpp \
  /hiskp2/werner/libraries/boost_1_55_0/boost/type_traits/promote.hpp \
- ../include/VdaggerV.h
+ ../include/VdaggerV.h ../include/OperatorStructure.h

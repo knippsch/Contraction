@@ -9,7 +9,7 @@ void LapH::init_from_infile(std::vector<pdg>& op, std::vector<pdg_C2>& op_C2) {
   const size_t nb_mom = global_data->get_number_of_momenta();
   const size_t nb_mom_sq = global_data->get_number_of_max_mom() + 1;
   //TODO: include displacement into dg (displacementgamma) multiindex
-  std::vector<size_t> dg {0, 5};
+  std::vector<size_t> dg {5};
   const size_t nb_dg = dg.size();
 
   // nb_op - number of combinations of three-momenta and gamma structures
@@ -38,7 +38,7 @@ void LapH::set_default(std::vector<pdg>& op){
 
   const int max_mom_squared = global_data->get_number_of_max_mom();
   const int max_mom_in_one_dir = global_data->get_max_mom_in_one_dir();
-  std::vector<size_t> dg {0, 5};
+  std::vector<size_t> dg {5};
   const size_t nb_dg = dg.size();
 
   size_t i = 0;
@@ -83,7 +83,7 @@ void LapH::set_default(std::vector<pdg>& op){
 void LapH::set_default(std::vector<pdg>& op, std::vector<pdg_C2>& op_C2){
 
   const size_t nb_mom_sq = global_data->get_number_of_max_mom() + 1;
-  std::vector<size_t> dg {0, 5};
+  std::vector<size_t> dg {5};
   const size_t nb_dg = dg.size();
 
   size_t nb_op = op.size();

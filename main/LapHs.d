@@ -911,4 +911,5 @@ LapHs.o: LapHs.cpp ../include/Correlators.h ../include/CrossOperator.h \
  /hiskp2/werner/libraries/boost_1_55_0/boost/type_traits/remove_volatile.hpp \
  /hiskp2/werner/libraries/boost_1_55_0/boost/type_traits/integral_promotion.hpp \
  /hiskp2/werner/libraries/boost_1_55_0/boost/type_traits/promote.hpp \
- ../include/VdaggerV.h ../include/GlobalData.h
+ ../include/VdaggerV.h ../include/OperatorStructure.h \
+ ../include/GlobalData.h

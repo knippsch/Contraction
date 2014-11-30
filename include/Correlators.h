@@ -38,6 +38,9 @@ private:
   array_cd_d6 C2_mes;
   array_cd_d10 Corr;
 
+  std::vector<LapH::pdg> op_Corr;
+  std::vector<LapH::pdg_C2> op_C2;
+
   void set_corr(const size_t config){
     read_rnd_vectors_from_file(config);
     vdaggerv.build_vdaggerv(config);
