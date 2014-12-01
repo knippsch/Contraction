@@ -140,7 +140,7 @@ void LapH::Correlators::build_and_write_2pt(const size_t config_i){
   for(auto i = C2_mes.data(); i < (C2_mes.data()+C2_mes.num_elements()); i++)
     *i /= norm3;
 
-  // output to binary file - only diagaonal and summed momenta
+  // output to binary file - only diagonal and summed momenta
   for(int p = 0; p <= max_mom_squared; p++){
 //    for(int dirac = 0; dirac < nb_dir; ++dirac){
 //      for(int displ = 0; displ < nb_dis; ++displ){
@@ -151,7 +151,7 @@ void LapH::Correlators::build_and_write_2pt(const size_t config_i){
             "C2_pi+-_conf%04d.dat", 
             outpath.c_str(), dirac_ind.at(dirac), dirac_ind.at(dirac), p, p, 
             displ_min, displ_max, (int)config_i);
-        std::cout << outfile << std::endl;
+//        std::cout << outfile << std::endl;
         if((fp = fopen(outfile, "wb")) == NULL)
           std::cout << "fail to open outputfile: " << outfile << std::endl;
 
@@ -166,7 +166,6 @@ void LapH::Correlators::build_and_write_2pt(const size_t config_i){
             << " seconds" << std::endl;
 }
 
-#if 0
 /******************************************************************************/
 /******************************************************************************/
 /******************************************************************************/
@@ -183,6 +182,7 @@ void LapH::Correlators::build_and_write_C4_1(const size_t config_i){
 
   const int max_mom_squared = global_data->get_number_of_max_mom();
   const int nb_mom = global_data->get_number_of_momenta();
+  const size_t op_dg = 1;
   const std::vector<int> mom_squared = global_data->get_momentum_squared();
   const int p_min = 0; 
   const int p_max = nb_mom;
@@ -216,102 +216,57 @@ void LapH::Correlators::build_and_write_C4_1(const size_t config_i){
   for(int t_sink = 0; t_sink < Lt; ++t_sink){
     int t_source_1 = (t_source + 1) % Lt;
     int t_sink_1 = (t_sink + 1) % Lt;
-    for(int dirac_u = 0; dirac_u < nb_dir; ++dirac_u){     
-    for(int dirac_d = 0; dirac_d < nb_dir; ++dirac_d){
-      for(int p_u = p_min; p_u < p_max; ++p_u) {
-      for(int p_d = p_min; p_d < p_max; ++p_d) {
-      if(mom_squared[p_u] <= mom_squared[p_d]){
-        for(int rnd1 = 0; rnd1 < nb_rnd; ++rnd1){
-        for(int rnd2 = 0; rnd2 < nb_rnd; ++rnd2){      
-        if(rnd2 != rnd1){
-          for(int rnd3 = 0; rnd3 < nb_rnd; ++rnd3){
-          if((rnd3 != rnd2) && (rnd3 != rnd1)){
-            for(int rnd4 = 0; rnd4 < nb_rnd; ++rnd4){
-            if((rnd4 != rnd1) && (rnd4 != rnd2) && (rnd4 != rnd3)){
-              C4_mes[p_u][p_d][dirac_u][dirac_d]
-                    [abs((t_sink - t_source - Lt) % Lt)] +=
-                (Corr[p_u][nb_mom - p_d - 1][dirac_u][dirac_d]
-                     [0][0][t_source_1][t_sink_1][rnd1][rnd3]) *
-                (Corr[nb_mom - p_u - 1][p_d][dirac_u][dirac_d]
-                     [0][0][t_source][t_sink][rnd2][rnd4]);
-            }}// loop rnd4 and if
-          }}// loop rnd3 and if
-        }}}// loops rnd1 and rnd 2 and if
-      }}}// loops momenta and if
-    }}// loops dirac
+
+    for(auto& op : Qns::op_C4)
+    for(auto& i : op.index)
+
+      for(int rnd1 = 0; rnd1 < nb_rnd; ++rnd1){
+      for(int rnd2 = 0; rnd2 < nb_rnd; ++rnd2){      
+      if(rnd2 != rnd1){
+        for(int rnd3 = 0; rnd3 < nb_rnd; ++rnd3){
+        if((rnd3 != rnd2) && (rnd3 != rnd1)){
+          for(int rnd4 = 0; rnd4 < nb_rnd; ++rnd4){
+          if((rnd4 != rnd1) && (rnd4 != rnd2) && (rnd4 != rnd3)){
+
+            C4_mes[op.p_sq_so][op.p_sq_si][i[0]%op_dg][i[2]%op_dg]
+                  [abs((t_sink - t_source - Lt) % Lt)] +=
+              (Corr[i[0]][i[2]][t_source_1][t_sink_1][rnd1][rnd3]) *
+              (Corr[i[1]][i[3]][t_source][t_sink][rnd2][rnd4]);
+          }}// loop rnd4 and if
+        }}// loop rnd3 and if
+      }}}// loops rnd1 and rnd 2 and if
   }}// loops t_sink and t_source
   // Normalization of 4pt-function
   for(auto i = C4_mes.data(); i < (C4_mes.data()+C4_mes.num_elements()); i++)
     *i /= norm1;
 
-  // output to binary file
-  // see output to binary file for C2. 
-  // write into folders with suffix "_unsuppressed". These only include
-  // correlators of the diagonal matrix elements of the GEVP for which
-  // the three-momentum remains unchanged for both quarks. Because the
-  // quarks have to be back-to-back, for the offdiagonal elements this
-  // cannot occur. The suppression can be interpreted as Zweig-suppressed
-  // gluon exchange
-  for(int dirac = 0; dirac < nb_dir; ++dirac){
-    for(int p = 0; p <= max_mom_squared; p++){
-      sprintf(outfile, 
-          "%s/dirac_%02d_%02d_p_%01d_%01d_displ_%01d_%01d_unsuppressed/"
-          "C4_1_conf%04d.dat", 
-          outpath.c_str(), dirac_ind.at(dirac), dirac_ind.at(dirac), p, p, 
-          displ_min, displ_max, (int)config_i);
-      std::cout << outfile << std::endl;
-      if((fp = fopen(outfile, "wb")) == NULL)
-        std::cout << "fail to open outputfile" << std::endl;
-      for(int p_u = p_min; p_u < p_max; ++p_u){
-        if(mom_squared[p_u] == p){
-
-          fwrite((double*) &(C4_mes[p_u][p_u][dirac][dirac][0]), 
-              sizeof(double), 2 * Lt, fp);
-        }
-      }
-      fclose(fp);
-    }
-  }
-
   // to build a GEVP, the correlators are written into a seperate folder
   // for every dirac structure, momentum, (entry of the GEVP matrix).
   // displacement is not supported at the moment
-  for(int dirac_u = 0; dirac_u < nb_dir; ++dirac_u){
-//    for(int dirac_d = 0; dirac_d < nb_dir; ++dirac_d){
-    int dirac_d = dirac_u;
-      for(int p1 = 0; p1 <= max_mom_squared; p1++){
-//        for(int p2 = p1; p2 <= max_mom_squared; p2++){
+    int dirac_u = 0;
+    int dirac_d = 0;
+    for(int p1 = 0; p1 <= max_mom_squared; p1++){
       int p2 = p1;
 
-          sprintf(outfile, 
-             "%s/dirac_%02d_%02d_p_%01d_%01d_displ_%01d_%01d/"
-             "C4_1_conf%04d.dat", 
-             outpath.c_str(), dirac_ind.at(dirac_u), dirac_ind.at(dirac_d), 
-             p1, p2, displ_min, displ_max,(int) config_i);
-         if((fp = fopen(outfile, "wb")) == NULL)
-           std::cout << "fail to open outputfile" << std::endl;
+      sprintf(outfile, 
+          "%s/dirac_%02d_%02d_p_%01d_%01d_displ_%01d_%01d/"
+          "C4_1_conf%04d.dat", 
+          outpath.c_str(), dirac_ind.at(dirac_u), dirac_ind.at(dirac_d), 
+          p1, p2, displ_min, displ_max,(int) config_i);
+//      std::cout << outfile << std::endl;
+      if((fp = fopen(outfile, "wb")) == NULL)
+        std::cout << "fail to open outputfile" << std::endl;
 
-         for(int p_u = p_min; p_u < p_max; ++p_u){
-            if(mom_squared[p_u] == p1){
-              for(int p_d = p_min; p_d < p_max; ++p_d){
-                if(mom_squared[p_d] == p2){
-
-                  fwrite((double*) &(C4_mes[p_u][p_d][dirac_u][dirac_d][0]), 
-                      sizeof(double), 2 * Lt, fp);
-                }
-              }
-            }
-          }
+      fwrite((double*) &(C4_mes[p1][p2][dirac_u][dirac_d][0]), 
+          sizeof(double), 2 * Lt, fp);
 
           fclose(fp);
-
-//        }
-      }
-//    }
   }
+
   time = clock() - time;
   printf("\t\tSUCCESS - %.1f seconds\n", ((float) time)/CLOCKS_PER_SEC);
 }
+
 /******************************************************************************/
 /******************************************************************************/
 /******************************************************************************/
@@ -326,6 +281,7 @@ void LapH::Correlators::build_and_write_C4_2(const size_t config_i){
 
   const int max_mom_squared = global_data->get_number_of_max_mom();
   const int nb_mom = global_data->get_number_of_momenta();
+  const size_t op_dg = 1;
   const std::vector<int> mom_squared = global_data->get_momentum_squared();
   const int p_min = 0; 
   const int p_max = nb_mom;
@@ -358,105 +314,56 @@ void LapH::Correlators::build_and_write_C4_2(const size_t config_i){
   for(int t_sink = 0; t_sink < Lt - 1; ++t_sink){
     int t_source_1 = (t_source + 1) % Lt;
     int t_sink_1 = (t_sink + 1) % Lt;
-    for(int dirac_u = 0; dirac_u < nb_dir; ++dirac_u){     
-    for(int dirac_d = 0; dirac_d < nb_dir; ++dirac_d){
-      for(int p_u = p_min; p_u < p_max; ++p_u) {
-      for(int p_d = p_min; p_d < p_max; ++p_d) {
-      if(mom_squared[p_u] <= mom_squared[p_d]){
-        for(int rnd1 = 0; rnd1 < nb_rnd; ++rnd1){
-        for(int rnd2 = 0; rnd2 < nb_rnd; ++rnd2){      
-        if(rnd2 != rnd1){
-          for(int rnd3 = 0; rnd3 < nb_rnd; ++rnd3){
-          if((rnd3 != rnd2) && (rnd3 != rnd1)){
-            for(int rnd4 = 0; rnd4 < nb_rnd; ++rnd4){
-            if((rnd4 != rnd1) && (rnd4 != rnd2) && (rnd4 != rnd3)){
-              C4_mes[p_u][p_d][dirac_u][dirac_d]
-                    [abs((t_sink - t_source - Lt) % Lt)] +=
-                (Corr[p_u][nb_mom - p_d - 1][dirac_u][dirac_d]
-                     [0][0][t_source_1][t_sink][rnd1][rnd3]) *
-                (Corr[nb_mom - p_u - 1][p_d][dirac_u][dirac_d]
-                     [0][0][t_source][t_sink_1][rnd2][rnd4]);
-            }}// loop rnd4
-          }}// loop rnd3
-        }}}// loops rnd2 and rnd1
-      }}}// loops momenta
-    }}// loops dirac
+
+    for(auto& op : Qns::op_C4)
+    for(auto& i : op.index)
+
+      for(int rnd1 = 0; rnd1 < nb_rnd; ++rnd1){
+      for(int rnd2 = 0; rnd2 < nb_rnd; ++rnd2){      
+      if(rnd2 != rnd1){
+        for(int rnd3 = 0; rnd3 < nb_rnd; ++rnd3){
+        if((rnd3 != rnd2) && (rnd3 != rnd1)){
+          for(int rnd4 = 0; rnd4 < nb_rnd; ++rnd4){
+          if((rnd4 != rnd1) && (rnd4 != rnd2) && (rnd4 != rnd3)){
+
+            C4_mes[op.p_sq_so][op.p_sq_si][i[0]%op_dg][i[2]%op_dg]
+                  [abs((t_sink - t_source - Lt) % Lt)] +=
+              (Corr[i[0]][i[2]][t_source_1][t_sink][rnd1][rnd3]) *
+              (Corr[i[1]][i[3]][t_source][t_sink_1][rnd2][rnd4]);
+          }}// loop rnd4
+        }}// loop rnd3
+      }}}// loops rnd2 and rnd1
   }}// loops t_source and t_sink
+
   // Normalization of 4pt-function. 
   for(auto i = C4_mes.data(); i < (C4_mes.data()+C4_mes.num_elements()); i++)
     *i /= norm1;
-
-  // output to binary file
-  // see output to binary file for C2. 
-  // write into folders with suffix "_unsuppressed". These only include
-  // correlators of the diagonal matrix elements of the GEVP for which
-  // the three-momentum remains unchanged for both quarks. Because the
-  // quarks have to be back-to-back, for the offdiagonal elements this
-  // cannot occur. The suppression can be interpreted as Zweig-suppressed
-  // gluon exchange
-  for(int dirac = 0; dirac < nb_dir; ++dirac){
-    for(int p = 0; p <= max_mom_squared; p++){
-      sprintf(outfile, 
-          "%s/dirac_%02d_%02d_p_%01d_%01d_displ_%01d_%01d_unsuppressed/"
-          "C4_2_conf%04d.dat", 
-          outpath.c_str(), dirac_ind.at(dirac), dirac_ind.at(dirac), p, p, 
-          displ_min, displ_max, (int)config_i);
-      std::cout << outfile << std::endl;
-      if((fp = fopen(outfile, "wb")) == NULL)
-        std::cout << "fail to open outputfile" << std::endl;
-
-      for(int p_u = p_min; p_u < p_max; ++p_u){
-        if(mom_squared[p_u] == p){
-
-          fwrite((double*) &(C4_mes[p_u][p_u][dirac][dirac][0]), 
-              sizeof(double), 2 * Lt, fp);
-        }
-      }
-
-      fclose(fp);
-
-    }
-  }
 
   // to build a GEVP, the correlators are written into a seperate folder
   // for every dirac structure, momentum, (entry of the GEVP matrix).
   // displacement is not supported at the moment
 
-  for(int dirac_u = 0; dirac_u < nb_dir; ++dirac_u){
-//    for(int dirac_d = 0; dirac_d < nb_dir; ++dirac_d){
-    int dirac_d = dirac_u;
-      for(int p1 = 0; p1 <= max_mom_squared; p1++){
-//        for(int p2 = p1; p2 <= max_mom_squared; p2++){
-        int p2 = p1;
+  int dirac_u = 0;
+  int dirac_d = 0;
+  for(int p1 = 0; p1 <= max_mom_squared; p1++){
+    int p2 = p1;
 
-          sprintf(outfile, 
-             "%s/dirac_%02d_%02d_p_%01d_%01d_displ_%01d_%01d/"
-             "C4_2_conf%04d.dat", 
-             outpath.c_str(), dirac_ind.at(dirac_u), dirac_ind.at(dirac_d), 
-             p1, p2, displ_min, displ_max, (int)config_i);
-          std::cout << outfile << std::endl;
-          if((fp = fopen(outfile, "wb")) == NULL)
-            std::cout << "fail to open outputfile" << std::endl;
+    sprintf(outfile, 
+        "%s/dirac_%02d_%02d_p_%01d_%01d_displ_%01d_%01d/"
+        "C4_2_conf%04d.dat", 
+        outpath.c_str(), dirac_ind.at(dirac_u), dirac_ind.at(dirac_d), 
+        p1, p2, displ_min, displ_max, (int)config_i);
+//    std::cout << outfile << std::endl;
+    if((fp = fopen(outfile, "wb")) == NULL)
+      std::cout << "fail to open outputfile" << std::endl;
 
-          for(int p_u = p_min; p_u < p_max; ++p_u){
-            if(mom_squared[p_u] == p1){
-              for(int p_d = p_min; p_d < p_max; ++p_d){
-                if(mom_squared[p_d] == p2){
+    fwrite((double*) &(C4_mes[p1][p2][dirac_u][dirac_d][0]), 
+        sizeof(double), 2 * Lt, fp);
 
-                  fwrite((double*) &(C4_mes[p_u][p_d][dirac_u][dirac_d][0]), 
-                      sizeof(double), 2 * Lt, fp);
-                }
-              }
-            }
-          }
-
-          fclose(fp);
-
-//       }
-      }
-//    }
+    fclose(fp);
   }
+
   time = clock() - time;
   printf("\t\tSUCCESS - %.1f seconds\n", ((float) time)/CLOCKS_PER_SEC);
 }
-#endif
+

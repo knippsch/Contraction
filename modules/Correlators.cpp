@@ -13,6 +13,7 @@ LapH::Correlators::Correlators() : basic(), peram(), rnd_vec(), vdaggerv(),
   const size_t nb_mom = global_data->get_number_of_momenta();
   const size_t nb_mom_sq = global_data->get_number_of_max_mom() + 1;
   const size_t nb_op = nb_mom;                                                          //!!!!!!!
+  const size_t nb_dg = 1;
   const size_t nb_ev = global_data->get_number_of_eigen_vec();
   const std::vector<quark> quarks = global_data->get_quarks();
   const size_t nb_rnd = quarks[0].number_of_rnd_vec;
@@ -26,8 +27,8 @@ LapH::Correlators::Correlators() : basic(), peram(), rnd_vec(), vdaggerv(),
 
   rnd_vec.resize(nb_rnd, LapH::RandomVector(Lt*nb_ev*4));
 
-  C4_mes.resize(boost::extents[nb_mom][nb_mom][nb_dir][nb_dir][Lt]);
-  C2_mes.resize(boost::extents[nb_mom_sq][nb_op][nb_op][Lt]);
+  C4_mes.resize(boost::extents[nb_mom_sq][nb_mom_sq][nb_dg][nb_dg][Lt]);
+  C2_mes.resize(boost::extents[nb_mom_sq][nb_dg][nb_dg][Lt]);
   Corr.resize(boost::extents[nb_op][nb_op][Lt][Lt][nb_rnd][nb_rnd]);
 }
 /******************************************************************************/
@@ -71,8 +72,8 @@ void LapH::Correlators::compute_correlators(const size_t config_i){
 
   write_C4_3(config_i);
   build_and_write_2pt(config_i);
-//  build_and_write_C4_1(config_i);
-//  build_and_write_C4_2(config_i);
+  build_and_write_C4_1(config_i);
+  build_and_write_C4_2(config_i);
 
 }
 /******************************************************************************/
