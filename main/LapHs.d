@@ -783,33 +783,8 @@ LapHs.o: LapHs.cpp ../include/Correlators.h ../include/CrossOperator.h \
  /hiskp2/werner/libraries/boost_1_55_0/boost/program_options/detail/convert.hpp \
  /hiskp2/werner/libraries/boost_1_55_0/boost/program_options/variables_map.hpp \
  /hiskp2/werner/libraries/boost_1_55_0/boost/program_options/version.hpp \
- ../include/quark.h ../include/BasicOperator.h ../include/Perambulator.h \
- ../include/config_utils.h \
- /hiskp2/werner/libraries/eigen-eigen-1306d75b4a21/Eigen/Eigen \
- /hiskp2/werner/libraries/eigen-eigen-1306d75b4a21/Eigen/Dense \
- /hiskp2/werner/libraries/eigen-eigen-1306d75b4a21/unsupported/Eigen/MatrixFunctions \
- /hiskp2/werner/libraries/eigen-eigen-1306d75b4a21/Eigen/LU \
- /hiskp2/werner/libraries/eigen-eigen-1306d75b4a21/Eigen/Eigenvalues \
- /hiskp2/werner/libraries/eigen-eigen-1306d75b4a21/unsupported/Eigen/src/MatrixFunctions/MatrixExponential.h \
- /hiskp2/werner/libraries/eigen-eigen-1306d75b4a21/unsupported/Eigen/src/MatrixFunctions/StemFunction.h \
- /hiskp2/werner/libraries/eigen-eigen-1306d75b4a21/unsupported/Eigen/src/MatrixFunctions/MatrixFunction.h \
- /hiskp2/werner/libraries/eigen-eigen-1306d75b4a21/unsupported/Eigen/src/MatrixFunctions/MatrixFunctionAtomic.h \
- /hiskp2/werner/libraries/eigen-eigen-1306d75b4a21/unsupported/Eigen/src/MatrixFunctions/MatrixSquareRoot.h \
- /hiskp2/werner/libraries/eigen-eigen-1306d75b4a21/unsupported/Eigen/src/MatrixFunctions/MatrixLogarithm.h \
- /hiskp2/werner/libraries/eigen-eigen-1306d75b4a21/unsupported/Eigen/src/MatrixFunctions/MatrixPower.h \
- ../include/EigenVector.h ../include/io_utils.h \
- /hiskp2/werner/libraries/lime-1.3.2/include/lime.h \
- /hiskp2/werner/libraries/lime-1.3.2/include/lime_config.h \
- /hiskp2/werner/libraries/lime-1.3.2/include/lime_config_internal.h \
- /hiskp2/werner/libraries/lime-1.3.2/include/dcap-overload.h \
- /hiskp2/werner/libraries/lime-1.3.2/include/lime_defs.h \
- /hiskp2/werner/libraries/lime-1.3.2/include/lime_header.h \
- /hiskp2/werner/libraries/lime-1.3.2/include/lime_fixed_types.h \
- /hiskp2/werner/libraries/lime-1.3.2/include/lime_config.h \
- /hiskp2/werner/libraries/lime-1.3.2/include/lime_writer.h \
- /hiskp2/werner/libraries/lime-1.3.2/include/lime_reader.h \
- ../include/propagator_io.h ../include/RandomVector.h ../include/ranlxs.h \
- ../include/typedefs.h \
+ ../include/quark.h ../include/BasicOperator.h \
+ ../include/OperatorStructure.h ../include/typedefs.h \
  /hiskp2/werner/libraries/boost_1_55_0/boost/multi_array.hpp \
  /hiskp2/werner/libraries/boost_1_55_0/boost/multi_array/base.hpp \
  /hiskp2/werner/libraries/boost_1_55_0/boost/multi_array/extent_range.hpp \
@@ -911,5 +886,30 @@ LapHs.o: LapHs.cpp ../include/Correlators.h ../include/CrossOperator.h \
  /hiskp2/werner/libraries/boost_1_55_0/boost/type_traits/remove_volatile.hpp \
  /hiskp2/werner/libraries/boost_1_55_0/boost/type_traits/integral_promotion.hpp \
  /hiskp2/werner/libraries/boost_1_55_0/boost/type_traits/promote.hpp \
- ../include/VdaggerV.h ../include/OperatorStructure.h \
- ../include/GlobalData.h
+ ../include/Perambulator.h ../include/config_utils.h \
+ /hiskp2/werner/libraries/eigen-eigen-1306d75b4a21/Eigen/Eigen \
+ /hiskp2/werner/libraries/eigen-eigen-1306d75b4a21/Eigen/Dense \
+ /hiskp2/werner/libraries/eigen-eigen-1306d75b4a21/unsupported/Eigen/MatrixFunctions \
+ /hiskp2/werner/libraries/eigen-eigen-1306d75b4a21/Eigen/LU \
+ /hiskp2/werner/libraries/eigen-eigen-1306d75b4a21/Eigen/Eigenvalues \
+ /hiskp2/werner/libraries/eigen-eigen-1306d75b4a21/unsupported/Eigen/src/MatrixFunctions/MatrixExponential.h \
+ /hiskp2/werner/libraries/eigen-eigen-1306d75b4a21/unsupported/Eigen/src/MatrixFunctions/StemFunction.h \
+ /hiskp2/werner/libraries/eigen-eigen-1306d75b4a21/unsupported/Eigen/src/MatrixFunctions/MatrixFunction.h \
+ /hiskp2/werner/libraries/eigen-eigen-1306d75b4a21/unsupported/Eigen/src/MatrixFunctions/MatrixFunctionAtomic.h \
+ /hiskp2/werner/libraries/eigen-eigen-1306d75b4a21/unsupported/Eigen/src/MatrixFunctions/MatrixSquareRoot.h \
+ /hiskp2/werner/libraries/eigen-eigen-1306d75b4a21/unsupported/Eigen/src/MatrixFunctions/MatrixLogarithm.h \
+ /hiskp2/werner/libraries/eigen-eigen-1306d75b4a21/unsupported/Eigen/src/MatrixFunctions/MatrixPower.h \
+ ../include/EigenVector.h ../include/io_utils.h \
+ /hiskp2/werner/libraries/lime-1.3.2/include/lime.h \
+ /hiskp2/werner/libraries/lime-1.3.2/include/lime_config.h \
+ /hiskp2/werner/libraries/lime-1.3.2/include/lime_config_internal.h \
+ /hiskp2/werner/libraries/lime-1.3.2/include/dcap-overload.h \
+ /hiskp2/werner/libraries/lime-1.3.2/include/lime_defs.h \
+ /hiskp2/werner/libraries/lime-1.3.2/include/lime_header.h \
+ /hiskp2/werner/libraries/lime-1.3.2/include/lime_fixed_types.h \
+ /hiskp2/werner/libraries/lime-1.3.2/include/lime_config.h \
+ /hiskp2/werner/libraries/lime-1.3.2/include/lime_writer.h \
+ /hiskp2/werner/libraries/lime-1.3.2/include/lime_reader.h \
+ ../include/propagator_io.h ../include/RandomVector.h ../include/ranlxs.h \
+ ../include/VdaggerV.h ../include/GlobalData.h \
+ ../include/OperatorStructure.h

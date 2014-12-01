@@ -35,11 +35,8 @@ private:
   std::vector<LapH::RandomVector> rnd_vec;
   LapH::VdaggerV vdaggerv;
   array_cd_d5 C4_mes;
-  array_cd_d6 C2_mes;
-  array_cd_d10 Corr;
-
-  std::vector<LapH::pdg> op_Corr;
-  std::vector<LapH::pdg_C2> op_C2;
+  array_cd_d4 C2_mes;
+  array_cd_d6 Corr;
 
   void set_corr(const size_t config){
     read_rnd_vectors_from_file(config);

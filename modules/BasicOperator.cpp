@@ -230,6 +230,7 @@ BasicOperator::BasicOperator() : Q2(),
 
   const size_t Lt = global_data->get_Lt();
   const size_t nb_mom = global_data->get_number_of_momenta();
+  const size_t nb_op = nb_mom;                                                 //!!!!
   const std::vector<quark> quarks = global_data->get_quarks();
   const size_t nb_rnd = quarks[0].number_of_rnd_vec;
   const size_t dilT = quarks[0].number_of_dilution_T;
@@ -239,7 +240,7 @@ BasicOperator::BasicOperator() : Q2(),
   for(int i = 0; i < 16; ++i)
     create_gamma(gamma, i);
 
-  Q2.resize(boost::extents[Lt][Lt/dilT][3][nb_mom][1][nb_rnd][nb_rnd]);
+  Q2.resize(boost::extents[Lt][Lt/dilT][3][nb_op][nb_rnd][nb_rnd]);
   std::fill(Q2.data(), Q2.data() + Q2.num_elements(), 
                     Eigen::MatrixXcd::Zero(Q2_size, Q2_size));
 
@@ -260,6 +261,7 @@ void BasicOperator::init_operator(const char dilution, const size_t displ,
   const int dilT = quarks[0].number_of_dilution_T;
   const size_t Q2_size = 4 * dilE;
   const size_t nb_mom = global_data->get_number_of_momenta();
+  const size_t nb_dg = 1;                                                      //!!!!!!
 
   std::cout << "\n" << std::endl;
 #pragma omp parallel 
@@ -274,52 +276,60 @@ void BasicOperator::init_operator(const char dilution, const size_t displ,
               << std::setprecision(2) << (float) t_0/Lt*100 << "%\r" 
               << std::flush;
 
-  for(size_t p = 0; p < nb_mom; p++){
+//  for(size_t p = 0; p < nb_mom; p++){
+  for(auto& op : Qns::op_Corr)
     for(size_t rnd_i = 0; rnd_i < nb_rnd; ++rnd_i) {
       for(int t = 0; t < Lt/dilT; t++){
-        for(size_t col = 0; col < 4; ++col) {
-        for(size_t row = 0; row < 4; ++row) {
-          if(p <= nb_mom/2){
-            M[0].block(dilE * col, nb_ev * row, dilE, nb_ev) = 
-              (peram[rnd_i].block(nb_ev * (4 * t_0 + row), 
-                                  dilE * (4 * t + col), 
-                                  nb_ev, dilE)).adjoint() *
-              vdaggerv.return_vdaggerv(p, t_0, displ);
-          }
-          else {
-            M[0].block(dilE * col, nb_ev * row, dilE, nb_ev) = 
-              (peram[rnd_i].block(nb_ev * (4 * t_0 + row), 
-                                  dilE * (4 * t + col), 
-                                  nb_ev, dilE)).adjoint() *
-              (vdaggerv.return_vdaggerv(nb_mom-p-1, t_0, displ)).adjoint();
-          }  
-          // gamma_5 trick. It changes the sign of the two upper right and two
-          // lower left blocks in dirac space
-          if( ((row + col) == 3) || (abs(row - col) > 1) )
-            M[0].block(dilE * col, row * nb_ev, dilE, nb_ev) *= -1.;
-        }}// loops over row and col end here
-        for(size_t dirac = 5; dirac < 6; dirac++){    
-          for(size_t col = 0; col < 4; col++) {
-            M[1].block(0, col*nb_ev, Q2_size, nb_ev) =
-              gamma[dirac].value[col] * 
-              M[0].block(0, gamma[dirac].row[col]*nb_ev, Q2_size, nb_ev);
-          }
+        //new momentum -> recalculate M[0]
+        size_t p = op.id/nb_dg;
+        if(op.id % nb_dg == 0){
+          for(size_t col = 0; col < 4; ++col) {
+          for(size_t row = 0; row < 4; ++row) {
+            if(p <= nb_mom/2){
+              M[0].block(dilE * col, nb_ev * row, dilE, nb_ev) = 
+                (peram[rnd_i].block(nb_ev * (4 * t_0 + row), 
+                                    dilE * (4 * t + col), 
+                                    nb_ev, dilE)).adjoint() *
+                vdaggerv.return_vdaggerv(p, t_0, displ);
+            }
+            else {
+              M[0].block(dilE * col, nb_ev * row, dilE, nb_ev) = 
+                (peram[rnd_i].block(nb_ev * (4 * t_0 + row), 
+                                    dilE * (4 * t + col), 
+                                    nb_ev, dilE)).adjoint() *
+                (vdaggerv.return_vdaggerv(nb_mom-p-1, t_0, displ)).adjoint();
+            }  
+            // gamma_5 trick. It changes the sign of the two upper right and two
+            // lower left blocks in dirac space
+            if( ((row + col) == 3) || (abs(row - col) > 1) )
+              M[0].block(dilE * col, row * nb_ev, dilE, nb_ev) *= -1.;
+          }}// loops over row and col end here
+        }//if over momentum ends here
+
+        mult_dirac(M[0], M[1], op.id);
+//        for(size_t dirac = 5; dirac < 6; dirac++){    
+//          for(size_t col = 0; col < 4; col++) {
+//            M[1].block(0, col*nb_ev, Q2_size, nb_ev) =
+//              gamma[dirac].value[col] * 
+//              M[0].block(0, gamma[dirac].row[col]*nb_ev, Q2_size, nb_ev);
+//          }
 
           for(int ti = 0; ti < 3; ti++){
           // getting the neighbour blocks
           const int tend = (Lt/dilT+t + ti - 1)%(Lt/dilT);  
           for(size_t rnd_j = 0; rnd_j < nb_rnd; ++rnd_j) {
             if(rnd_i != rnd_j)
-              Q2[t_0][t][ti][p][0][rnd_i][rnd_j] = M[1] * 
+              Q2[t_0][t][ti][op.id][rnd_i][rnd_j] = M[1] * 
                   peram[rnd_j].block(4 * nb_ev * t_0, Q2_size * tend, 
                                      4 * nb_ev,       Q2_size);
-          }}// loops over rnd_j and i end here 
-        }// loop over dirac ends here
+          }}// loops over rnd_j and ti end here 
+//        }// loop over dirac ends here
       }// loop over t ends here
     }// loop over rnd_i ends here
-  }}// loops over momenta and t_0 end here
+  }// loops over momenta and t_0 end here
 }// pragma omp ends
-  std::cout << "\n" << std::endl;
+
+  std::cout << "\tcomputing double quarkline: 100.00%\n\n" << std::endl;
 }
 /******************************************************************************/
 /******************************************************************************/
@@ -341,4 +351,28 @@ void BasicOperator::init_operator(const char dilution, const size_t displ,
 //    }
 //  }
 //}
+
+/******************************************************************************/
+/******************************************************************************/
+/******************************************************************************/
+void BasicOperator::mult_dirac(const Eigen::MatrixXcd& matrix, 
+                               Eigen::MatrixXcd& reordered, const size_t index){
+  const size_t rows = matrix.rows();
+  const size_t cols = matrix.cols();
+
+  if( (rows != reordered.rows()) || (cols != reordered.cols()) ){
+    std::cout << "Error! In BasicOperator::mult_dirac: size of matrix and "
+                 "reordered must be equal" << std::endl;
+    exit(0);
+  }
+
+  const size_t col = cols/4;
+
+  for(auto dirac : Qns::op_Corr[index].gamma)
+    if(dirac != 4)
+    for(size_t block = 0; block < 4; block++)
+      reordered.block(0, block * col, rows, col) = gamma[dirac].value[block] *
+          matrix.block(0, gamma[dirac].row[block]*col, rows, col);
+
+}
 

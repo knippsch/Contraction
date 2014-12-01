@@ -10,6 +10,7 @@
 
 #include "Correlators.h"
 #include "GlobalData.h"
+#include "OperatorStructure.h"
 
 #include "omp.h"
 
@@ -27,6 +28,8 @@ int main (int ac, char* av[]) {
 
   LapH::Correlators corr;
 
+  Qns::init_from_infile();
+
   // ***************************************************************************
   // Loop over all configurations **********************************************
   // ***************************************************************************
@@ -39,5 +42,6 @@ int main (int ac, char* av[]) {
     std::cout << "\nprocessing configuration: " << config_i << "\n\n";
     corr.compute_correlators(config_i);
   }
+
 }
 

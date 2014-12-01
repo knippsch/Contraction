@@ -13,6 +13,7 @@ void LapH::Correlators::compute_meson_4pt_cross_trace(LapH::CrossOperator& X,
   const int t_source_1 = (t_source + 1) % Lt;
   const int t_sink_1 = (t_sink + 1) % Lt;
   const size_t nb_mom = global_data->get_number_of_momenta();
+  const size_t nb_dg = 1;                                                        //!!!!!!
   const int max_mom_squared = global_data->get_number_of_max_mom();
   const std::vector<int> mom_squared = global_data->get_momentum_squared();
   const std::vector<quark> quarks = global_data->get_quarks();
@@ -26,11 +27,14 @@ void LapH::Correlators::compute_meson_4pt_cross_trace(LapH::CrossOperator& X,
   // TODO: }
 
   if(t_source != 0){
-    X.swap(0, 1);
-    if(t_source%2 == 0)
+    if(t_source%2 == 0){
+      X.swap(1, 0);
       X.construct(basic, vdaggerv, 1, t_source_1, t_sink, 1);
-    else
+    }
+    else{
+      X.swap(0, 1);
       X.construct(basic, vdaggerv, 1, t_source_1, t_sink, 0);
+    }
   }
   else{
     X.construct(basic, vdaggerv, 0, t_source,   t_sink, 0);
@@ -39,13 +43,16 @@ void LapH::Correlators::compute_meson_4pt_cross_trace(LapH::CrossOperator& X,
   if(t_source == t_sink)
     return;
 
-  for(size_t dirac_1 = 0; dirac_1 < nb_dir; ++dirac_1){     
-    for(size_t p = 0; p <= max_mom_squared; p++){
-    for(size_t p_u = 0; p_u < nb_mom; ++p_u) {
-    if(mom_squared[p_u] == p){
-        for(size_t dirac_2 = 0; dirac_2 < nb_dir; ++dirac_2){
-        for(size_t p_d = 0; p_d < nb_mom; ++p_d) {
-        if(mom_squared[p_d] == p){
+//  for(size_t dirac_1 = 0; dirac_1 < nb_dir; ++dirac_1){     
+//    for(size_t p = 0; p <= max_mom_squared; p++){
+//    for(size_t p_u = 0; p_u < nb_mom; ++p_u) {
+//    if(mom_squared[p_u] == p){
+//        for(size_t dirac_2 = 0; dirac_2 < nb_dir; ++dirac_2){
+//        for(size_t p_d = 0; p_d < nb_mom; ++p_d) {
+//        if(mom_squared[p_d] == p){
+
+  for(auto& op : Qns::op_C4)
+    for(auto& i : op.index){
           // complete diagramm. combine X and Y to four-trace
           // C4_mes = tr(D_u^-1(t_source     | t_sink      ) Gamma 
           //             D_d^-1(t_sink       | t_source + 1) Gamma 
@@ -63,25 +70,24 @@ void LapH::Correlators::compute_meson_4pt_cross_trace(LapH::CrossOperator& X,
             for(size_t rnd4 = 0; rnd4 < nb_rnd; ++rnd4){
             if((rnd4 != rnd1) && (rnd4 != rnd2) && (rnd4 != rnd3)){
               if(t_source%2 == 0)
-                priv_C4 += (X(0, p_d, p_u, dirac_1, dirac_2, rnd3, rnd2, rnd4) *
-                            X(1, nb_mom - p_d - 1, nb_mom - p_u - 1,
-                              dirac_1, dirac_2, rnd4, rnd1, rnd3)).trace();
+                priv_C4 += (X(0, std::get<2>(i), std::get<1>(i), rnd3, rnd2, rnd4) *
+                            X(1, std::get<3>(i), std::get<0>(i), rnd4, rnd1, rnd3)).trace();
               else
                 priv_C4 += std::conj(
-                           (X(0, p_d, p_u, dirac_1, dirac_2, rnd3, rnd2, rnd4) *
-                            X(1, nb_mom - p_d - 1, nb_mom - p_u - 1,
-                              dirac_1, dirac_2, rnd4, rnd1, rnd3)).trace());
+                           (X(0, std::get<2>(i), std::get<1>(i), rnd3, rnd2, rnd4) *
+                            X(1, std::get<3>(i), std::get<0>(i), rnd4, rnd1, rnd3)).trace());
             }}}}}}}
             #pragma omp critical
             {
-              C4_mes[p][p][dirac_1][dirac_2]
+              C4_mes[op.p_sq_so][op.p_sq_si][std::get<0>(i)%nb_dg][std::get<2>(i)%nb_dg]
                   [abs((t_sink - t_source) - Lt) % Lt] += priv_C4;
             }
           }
-        }}// loop and if condition p_d
-      }// loop dirac_2
-    }}}// loop and if conditions p_u
-  }// loop dirac_1
+//        }}// loop and if condition p_d
+//      }// loop dirac_2
+//    }}}// loop and if conditions p_u
+//  }// loop dirac_1
+    }
 }
 /******************************************************************************/
 /******************************************************************************/

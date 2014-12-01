@@ -10,6 +10,7 @@
 
 #include "GlobalData.h"
 #include "BasicOperator.h"
+#include "OperatorStructure.h"
 #include "typedefs.h"
 #include "VdaggerV.h"
 
@@ -22,23 +23,23 @@ public:
   CrossOperator(const size_t number);
   ~CrossOperator() {};
 
-  void construct(const BasicOperator& basic, const VdaggerV& vdaggerv, 
+  void construct(BasicOperator& basic, const VdaggerV& vdaggerv, 
                  const size_t nb, const int t_source, const int t_sink,
                  const size_t type);
 
   void swap(const size_t nb1, const size_t nb2);
 
-  inline const Eigen::MatrixXcd& operator()(const size_t nb, const size_t pd, 
-                                            const size_t pu, const size_t dir1, 
-                                            const size_t dir2, 
+  inline const Eigen::MatrixXcd& operator()(const size_t nb, 
+                                            const size_t id_so,
+                                            const size_t id_si, 
                                             const size_t rnd1, 
                                             const size_t rnd2, 
                                             const size_t rnd3) const {
-    return X[nb][pd][pu][dir1][dir2][rnd1][rnd2][rnd3];
+    return X[nb][id_si][id_so][rnd1][rnd2][rnd3];
   }
 
 private:
-  std::vector<array_Xcd_d7_eigen> X;
+  std::vector<array_Xcd_d5_eigen> X;
 
 };
 

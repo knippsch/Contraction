@@ -11,6 +11,8 @@ LapH::Correlators::Correlators() : basic(), peram(), rnd_vec(), vdaggerv(),
 
   const size_t Lt = global_data->get_Lt();
   const size_t nb_mom = global_data->get_number_of_momenta();
+  const size_t nb_mom_sq = global_data->get_number_of_max_mom() + 1;
+  const size_t nb_op = nb_mom;                                                          //!!!!!!!
   const size_t nb_ev = global_data->get_number_of_eigen_vec();
   const std::vector<quark> quarks = global_data->get_quarks();
   const size_t nb_rnd = quarks[0].number_of_rnd_vec;
@@ -22,14 +24,11 @@ LapH::Correlators::Correlators() : basic(), peram(), rnd_vec(), vdaggerv(),
   const size_t nb_dir = dirac_ind.size();
   // TODO: }
 
-  LapH::init_from_infile(op_Corr, op_C2);
-
   rnd_vec.resize(nb_rnd, LapH::RandomVector(Lt*nb_ev*4));
 
   C4_mes.resize(boost::extents[nb_mom][nb_mom][nb_dir][nb_dir][Lt]);
-  C2_mes.resize(boost::extents[nb_mom][nb_dir][nb_dir][nb_dis][nb_dis][Lt]);
-  Corr.resize(boost::extents[nb_mom][nb_mom][nb_dir][nb_dir][nb_dis]
-                                    [nb_dis][Lt][Lt][nb_rnd][nb_rnd]);
+  C2_mes.resize(boost::extents[nb_mom_sq][nb_op][nb_op][Lt]);
+  Corr.resize(boost::extents[nb_op][nb_op][Lt][Lt][nb_rnd][nb_rnd]);
 }
 /******************************************************************************/
 /******************************************************************************/

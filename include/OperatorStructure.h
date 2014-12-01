@@ -1,24 +1,21 @@
 #ifndef OPERATORSTRUCTURE_H_
 #define OPERATORSTRUCTURE_H_ 
 
-#include <algorithm>
 #include <iostream>
 #include <iomanip>
 #include <complex>
-#include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <list>
 #include <typeinfo>
+#include <vector>
 
-#include "CrossOperator.h" 
 #include "GlobalData.h"
-#include "BasicOperator.h"
-#include "Perambulator.h"
 #include "typedefs.h"
 
 #include "omp.h"
 
-namespace LapH {
+namespace Qns {
 
   struct pdg{
     size_t id;
@@ -34,22 +31,28 @@ namespace LapH {
     std::list<std::pair<size_t, size_t> > index;
   };
 
-//  struct pdg_C4 {
-//    size_t p_sq_so;
-//    size_t p_sq_si;
-//    size_t dg_so;
-//    size_t dg_si;
-//    std::list<std::tuple<size_t, size_t, size_t, size_t> > index;
-//  };
+  struct pdg_C4 {
+    size_t p_sq_so;
+    size_t p_sq_si;
+    //displ-gamma structure at source and at sink are coded as the same
+    size_t dg_so;
+    size_t dg_si;
+    // generates a warning, but tuple get stressful in 
+    // ../modules/CrossOperator.cpp
+    std::list<std::array<size_t, 4> > index;
+  };
 
+  void init_from_infile();
 
-  void init_from_infile(std::vector<pdg>& op_Corr, 
-                        std::vector<pdg_C2>& op_C2);
-
-  void set_default(std::vector<pdg>& op);
-  void set_default(std::vector<pdg>& op, std::vector<pdg_C2>& op_C2);
+  void set_Corr();
+  void set_C2();
+  void set_C4();
  
   void create_momenta();
+
+  extern std::vector<pdg> op_Corr;
+  extern std::vector<pdg_C2> op_C2;
+  extern std::vector<pdg_C4> op_C4;
 
 }// end of namespace
 
