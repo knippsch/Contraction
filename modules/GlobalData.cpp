@@ -73,6 +73,200 @@ quark make_quark (const std::string& quark_string) {
       boost::lexical_cast<int>(tokens[7]));
 }
 
+////////////////////////////////////////////////////////////////////////////////
+//TODO: clean that up ////////////////////////////////////////////////////////// 
+//init operator ////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+void GlobalData::init_from_infile() {
+
+  //TODO: think about the numbers of momenta, displacements and gamma
+  const size_t nb_mom = get_number_of_momenta(); //momentum_squared.size();
+  const size_t nb_mom_sq = number_of_momentum_squared;
+  //TODO: include displacement into dg (displacementgamma) multiindex
+  const size_t nb_dg = number_of_displ_gamma;
+
+  // nb_op - number of combinations of three-momenta and gamma structures
+  // op    - vector of all three-momenta, three-displacements and gamma 
+  //         structure combinations
+  const size_t nb_op = number_of_operators;
+  op_Corr.resize(nb_op);
+  set_Corr();
+
+  // nb_op_C2 - number of combinations of absolute values squared of momenta
+  //            and gamma-displacement combinations for 2pt-fct
+  // op_C2    - vector of all combinations for 2pt-fct and vector of 
+  //            op-index-pairs with all corresponding three-vectors and gammas
+  const size_t nb_op_C2 = nb_mom_sq * nb_dg * nb_dg;
+  op_C2.resize(nb_op_C2);
+  set_C2();
+
+  const size_t nb_op_C4 = nb_mom_sq * nb_dg * nb_dg;
+  op_C4.resize(nb_op_C4);
+  set_C4();
+
+}
+
+/******************************************************************************/
+/******************************************************************************/
+/******************************************************************************/
+
+// function to initialize the vector of all necessary operators
+void GlobalData::set_Corr(){
+
+  const int max_mom_squared = number_of_max_mom;
+  const size_t nb_dg = dg.size();
+
+  size_t i = 0;
+
+  // all three-momenta
+  for(int ipx = -max_mom_in_one_dir; ipx <= max_mom_in_one_dir; ++ipx){
+    for(int ipy = -max_mom_in_one_dir; ipy <= max_mom_in_one_dir; ++ipy){
+      for(int ipz = -max_mom_in_one_dir; ipz <= max_mom_in_one_dir; ++ipz){
+        if((ipx * ipx + ipy * ipy + ipz * ipz) > max_mom_squared) {
+          continue;
+        }
+        // all gamma structures
+        for(size_t gam = 0; gam < nb_dg; gam++){
+
+          op_Corr[i].p[0] = ipx;
+          op_Corr[i].p[1] = ipy;
+          op_Corr[i].p[2] = ipz;
+          op_Corr[i].dis[0] = 0;
+          op_Corr[i].dis[1] = 0;
+          op_Corr[i].dis[2] = 0;
+          op_Corr[i].gamma[0] = dg[gam];
+          op_Corr[i].gamma[1] = 4;
+          op_Corr[i].gamma[2] = 4;
+          op_Corr[i].gamma[3] = 4;
+  
+          op_Corr[i].id = i;
+          i++;
+        }
+      }
+    }
+  }
+
+  if(i != op_Corr.size()){
+    std::cout << "Error in LapH::set_Cor(): nb_op not equal to allocated "
+                 "number of operators" << std::endl;
+    exit(0);
+  } 
+
+}
+
+// function to obtain the index combinations in op for the 2pt-fct
+void GlobalData::set_C2(){
+
+  const size_t nb_mom_sq = number_of_momentum_squared;
+  const size_t nb_dg = dg.size();
+
+  size_t nb_op = op_Corr.size();
+  size_t j = 0;
+
+  // run over all momenta squared (back-to-back hardcoded) and gamma 
+  // combinations
+  for(size_t p_sq = 0; p_sq < nb_mom_sq; p_sq++){
+    for(size_t so = 0; so < nb_dg; so++){
+      for(size_t si = 0; si < nb_dg; si++){
+
+        // index for access of element
+        size_t i = p_sq * nb_dg*nb_dg + so * nb_dg + si;
+
+        // save p^2 and gamma structure at source and sink
+        op_C2[i].p_sq = p_sq;
+        op_C2[i].dg_so = so;
+        op_C2[i].dg_si = si;
+
+        // loop over op and set index pairs
+        for(auto& el : op_Corr)
+          if((el.p[0]*el.p[0] + el.p[1]*el.p[1] + el.p[2]*el.p[2]) == p_sq){ 
+            if(el.gamma[0] == dg[so]){
+              size_t id1 = el.id;
+              // thats the generalized version of nb_mom - p - 1 including 
+              // a faster running gamma structure
+              size_t id2 = nb_op - nb_dg * (id1/nb_dg + 1) + si;
+              // warning because array has no list-of-arrays constructor but 
+              // works. Can change this to pair structure.
+              op_C2[i].index.emplace_back(std::pair<size_t, size_t>(id1, id2));
+            }
+          }
+
+        j++;
+        
+      }
+    }
+  }
+
+  if(j != op_C2.size()){
+    std::cout << "Error in LapH::set_C2(): nb_op not equal to allocated "
+                 "number of operators" << std::endl;
+    exit(0);
+  } 
+
+}
+
+// function to obtain the index combinations in op for the 2pt-fct
+void GlobalData::set_C4(){
+
+  const size_t nb_mom_sq = number_of_momentum_squared;
+  const size_t nb_dg = dg.size();
+
+  size_t nb_op = op_Corr.size();
+  size_t j = 0;
+
+  // run over all momenta squared (back-to-back hardcoded) and gamma 
+  // combinations
+  for(size_t p_sq = 0; p_sq < nb_mom_sq; p_sq++){
+    //only diagonal elements
+    size_t p_sq_so = p_sq;
+    size_t p_sq_si = p_sq;
+    for(size_t so = 0; so < nb_dg; so++){
+    for(size_t si = 0; si < nb_dg; si++){
+
+      // index for access of element
+      size_t i = p_sq*nb_dg*nb_dg + so*nb_dg + si;
+
+      // save p^2 and gamma structure at source and sink
+      op_C4[i].p_sq_so = p_sq_so;
+      op_C4[i].p_sq_si = p_sq_si;
+      op_C4[i].dg_so = so;
+      op_C4[i].dg_si = si;
+
+      // loop over op and set index pairs
+      for(auto& el_so : op_Corr)
+        if((el_so.p[0]*el_so.p[0] + el_so.p[1]*el_so.p[1] + 
+            el_so.p[2]*el_so.p[2]) == p_sq_so){ 
+        if(el_so.gamma[0] == dg[so]){
+          size_t id1 = el_so.id;
+          // thats the generalized version of nb_mom - p - 1 including 
+          // a faster running gamma structure
+          size_t id2 = nb_op - nb_dg * (id1/nb_dg + 1) + so;
+
+          for(auto& el_si : op_Corr)
+            if((el_si.p[0]*el_si.p[0] + el_si.p[1]*el_si.p[1] + 
+                el_si.p[2]*el_si.p[2]) == p_sq_si){ 
+            if(el_si.gamma[0] == dg[si]){
+              size_t id3 = el_si.id;
+              size_t id4 = nb_op - nb_dg * (id3/nb_dg + 1) + si;
+
+              op_C4[i].index.emplace_back(
+                  std::array<size_t, 4>{{id1, id2, id3, id4}});
+            }}//loops over sink
+        }}//loops over source
+
+      j++;
+      
+    }}//loops over displ-gamma
+  }//loop over mom_sq
+
+  if(j != op_C4.size()){
+    std::cout << "Error in LapH::set_C4(): nb_op not equal to allocated "
+                 "number of operators" << std::endl;
+    exit(0);
+  } 
+
+}
 // *****************************************************************************
 // simplifies and cleans read_parameters function
 static void lattice_input_data_handling (const std::string path_output,
@@ -515,6 +709,17 @@ void GlobalData::read_parameters (int ac, char* av[]) {
     //for memory requirement of complex numbers
     V_TS = dim_row * 4 * 3 * 2;
     V_for_lime = V_TS * Lt;
+
+    //dirac structure hard coded
+    dg.push_back(5);
+
+    //displacement not supported yet
+    number_of_displ_gamma = dg.size();
+    number_of_operators = momentum_squared.size() * number_of_displ_gamma;
+    number_of_momentum_squared = number_of_max_mom + 1;
+
+    init_from_infile();
+
   }
   catch(std::exception& e){
     std::cout << e.what() << "\n";

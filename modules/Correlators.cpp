@@ -9,20 +9,14 @@ static GlobalData * const global_data = GlobalData::Instance();
 LapH::Correlators::Correlators() : basic(), peram(), rnd_vec(), vdaggerv(),
                                    C4_mes(), C2_mes(), Corr()  {
 
-  const size_t Lt = global_data->get_Lt();
-  const size_t nb_mom = global_data->get_number_of_momenta();
-  const size_t nb_mom_sq = global_data->get_number_of_max_mom() + 1;
-  const size_t nb_op = nb_mom;                                                          //!!!!!!!
-  const size_t nb_dg = 1;
-  const size_t nb_ev = global_data->get_number_of_eigen_vec();
+  const size_t nb_mom_sq = global_data->get_number_of_momentum_squared();
+  const size_t nb_op = global_data->get_number_of_operators();
+  const size_t nb_dg = global_data->get_number_of_displ_gamma();
   const std::vector<quark> quarks = global_data->get_quarks();
   const size_t nb_rnd = quarks[0].number_of_rnd_vec;
-  // TODO: must be changed in GlobalData {
-  int displ_min = global_data->get_displ_min();
-  int displ_max = global_data->get_displ_max();
-  const size_t nb_dis = displ_max - displ_min + 1;
-  std::vector<int> dirac_ind {5};
-  const size_t nb_dir = dirac_ind.size();
+
+  const size_t Lt = global_data->get_Lt();
+  const size_t nb_ev = global_data->get_number_of_eigen_vec();
   // TODO: }
 
   rnd_vec.resize(nb_rnd, LapH::RandomVector(Lt*nb_ev*4));

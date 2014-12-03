@@ -10,7 +10,6 @@
 
 #include "Correlators.h"
 #include "GlobalData.h"
-#include "OperatorStructure.h"
 
 #include "omp.h"
 
@@ -27,8 +26,6 @@ int main (int ac, char* av[]) {
   global_data->read_parameters(ac, av);
 
   LapH::Correlators corr;
-
-  Qns::init_from_infile();
 
   // ***************************************************************************
   // Loop over all configurations **********************************************

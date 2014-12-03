@@ -12,6 +12,7 @@
 #include <fstream>
 #include <iostream>
 #include <iterator>
+#include <list>
 #include <string>
 #include <vector>
 
@@ -25,8 +26,10 @@
 #include <boost/program_options.hpp>
 
 #include "quark.h"
+#include "typedefs.h"
 
 class GlobalData {
+
 
 private:
   //! A pointer on the class itself
@@ -46,6 +49,9 @@ private:
   int displ_max;
   int start_config, end_config, delta_config;
   int verbose;
+  size_t number_of_operators;
+  size_t number_of_displ_gamma;
+  size_t number_of_momentum_squared;
   std::string path_eigenvectors;
   std::string name_eigenvectors;
   std::string path_perambulators;
@@ -57,8 +63,25 @@ private:
   std::vector<int> momentum_squared;
   void quark_input_data_handling (const std::vector<std::string> quark_configs);
 
+////////////////////////////////////////////////////////////////////////////////
+  //TODO: Clean that up
+
+  //dirac structure hardcoded
+  std::vector<size_t> dg;
+
+  vec_pdg_Corr op_Corr;
+  vec_pdg_C2 op_C2;
+  vec_pdg_C4 op_C4;
+
+  void init_from_infile();
+  void set_Corr();
+  void set_C2();
+  void set_C4();
+////////////////////////////////////////////////////////////////////////////////
+
 
 public:
+
   static GlobalData* Instance ();
 
   void read_parameters(int ac, char* av[]);
@@ -108,6 +131,9 @@ public:
   inline int get_number_of_momenta() {
     return momentum_squared.size();
   }
+  inline const std::vector<size_t>& get_displ_gamma() {
+    return dg;
+  }
   inline int get_dirac_min() {
     return dirac_min;
   }
@@ -135,6 +161,15 @@ public:
   inline int get_verbose() {
     return verbose;
   }
+  inline size_t get_number_of_operators() {
+    return number_of_operators;
+  }
+  inline size_t get_number_of_displ_gamma() {
+    return number_of_displ_gamma;
+  }
+  inline size_t get_number_of_momentum_squared() {
+    return number_of_momentum_squared;
+  }
   inline std::string get_path_eigenvectors() {
     return path_eigenvectors;
   }
@@ -152,6 +187,15 @@ public:
   }
   inline std::vector<int> get_momentum_squared() {
     return momentum_squared;
+  }
+  inline const vec_pdg_Corr& get_op_Corr() {
+    return op_Corr;
+  }
+  inline const vec_pdg_C2& get_op_C2() {
+    return op_C2;
+  }
+  inline const vec_pdg_C4& get_op_C4() {
+    return op_C4;
   }
 
   //! All con/de-structors are protected to assure that only one instance exists

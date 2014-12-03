@@ -25,21 +25,19 @@ LapH::CrossOperator::CrossOperator(const size_t number) : X(number) {
 /******************************************************************************/
 /******************************************************************************/
 /******************************************************************************/
-void LapH::CrossOperator::construct(BasicOperator& basic, 
+void LapH::CrossOperator::construct(const BasicOperator& basic, 
                                     const VdaggerV& vdaggerv, const size_t nb,
                                     const int t_source, const int t_sink,
                                     const size_t type){
 
   const int Lt = global_data->get_Lt();
-  const size_t nb_mom = global_data->get_number_of_momenta();
-  const size_t nb_dg = 1;
+  const size_t nb_dg = global_data->get_number_of_displ_gamma();
   const std::vector<quark> quarks = global_data->get_quarks();
   const size_t nb_rnd = quarks[0].number_of_rnd_vec;
   const size_t dilE = quarks[0].number_of_dilution_E;
   const size_t dilT = quarks[0].number_of_dilution_T;
+  const vec_pdg_C4 op_C4 = global_data->get_op_C4();
   // TODO: must be changed in GlobalData {
-  std::vector<int> dirac_ind {5};
-  const size_t nb_dir = dirac_ind.size();
   // TODO: }
 
   size_t tu, td, t2;
@@ -65,8 +63,8 @@ void LapH::CrossOperator::construct(BasicOperator& basic,
 {     
   Eigen::MatrixXcd rvdaggervr = Eigen::MatrixXcd::Zero(dilE, 4*dilE);
 
-  for(auto& op : Qns::op_C4)
-  for(auto& i : op.index){
+  for(const auto& op : op_C4){
+  for(const auto& i : op.index){
     size_t id_so = i[2+nb];
     size_t id_si = i[1-nb];
 
@@ -77,7 +75,7 @@ void LapH::CrossOperator::construct(BasicOperator& basic,
     for(size_t rnd3 = 0; rnd3 < nb_rnd; ++rnd3){
     if((rnd3 != rnd1) && (rnd3 != rnd2)){
 
-      basic.mult_dirac(vdaggerv.return_rvdaggervr(id_si/nb_dg, t2, id_si%nb_dg, 
+      basic.mult_dirac(vdaggerv.return_rvdaggervr(id_si/nb_dg, t2, op.dg_si, 
           rnd2, rnd3), rvdaggervr, id_si);
       for(size_t block = 0; block < 4; block++){
 
@@ -89,7 +87,7 @@ void LapH::CrossOperator::construct(BasicOperator& basic,
 
       }// loop block ends here
     }}}}}// loops random vectors
-  }
+  }}// loops operators
 }
 
 }
@@ -98,19 +96,15 @@ void LapH::CrossOperator::construct(BasicOperator& basic,
 /******************************************************************************/
 void LapH::CrossOperator::swap(const size_t nb1, const size_t nb2){
   
-  const size_t nb_mom = global_data->get_number_of_momenta();
   const std::vector<quark> quarks = global_data->get_quarks();
   const size_t nb_rnd = quarks[0].number_of_rnd_vec;
-  const size_t dilE = quarks[0].number_of_dilution_E;
-  // TODO: must be changed in GlobalData {
-  std::vector<int> dirac_ind {5};
-  const size_t nb_dir = dirac_ind.size();
+  const vec_pdg_Corr op_Corr = global_data->get_op_Corr();
   // TODO: }
   // TODO: Think about for each loop
 
   // can one collapse autoloops?
-  for(auto& op_so : Qns::op_Corr)
-  for(auto& op_si : Qns::op_Corr)
+  for(auto& op_so : op_Corr){
+  for(auto& op_si : op_Corr){
     #pragma omp parallel for collapse(2) schedule(dynamic)
     for(size_t rnd1 = 0; rnd1 < nb_rnd; ++rnd1){
     for(size_t rnd2 = 0; rnd2 < nb_rnd; ++rnd2){
@@ -122,4 +116,5 @@ void LapH::CrossOperator::swap(const size_t nb1, const size_t nb2){
       X[nb2][op_so.id][op_si.id][rnd1][rnd2][rnd3]);
 
     }}}}}// loops random vectors
+  }}//loops operators
 }

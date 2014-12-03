@@ -12,18 +12,11 @@ void LapH::Correlators::compute_meson_4pt_cross_trace(LapH::CrossOperator& X,
   const int Lt = global_data->get_Lt();
   const int t_source_1 = (t_source + 1) % Lt;
   const int t_sink_1 = (t_sink + 1) % Lt;
-  const size_t nb_mom = global_data->get_number_of_momenta();
-  const size_t nb_dg = 1;                                                        //!!!!!!
-  const int max_mom_squared = global_data->get_number_of_max_mom();
-  const std::vector<int> mom_squared = global_data->get_momentum_squared();
+
+  const vec_pdg_C4 op_C4 = global_data->get_op_C4();
   const std::vector<quark> quarks = global_data->get_quarks();
   const size_t nb_rnd = quarks[0].number_of_rnd_vec;
   // TODO: must be changed in GlobalData {
-  int displ_min = global_data->get_displ_min();
-  int displ_max = global_data->get_displ_max();
-  const size_t nb_dis = displ_max - displ_min + 1;
-  std::vector<int> dirac_ind {5};
-  const size_t nb_dir = dirac_ind.size();
   // TODO: }
 
   if(t_source != 0){
@@ -43,51 +36,39 @@ void LapH::Correlators::compute_meson_4pt_cross_trace(LapH::CrossOperator& X,
   if(t_source == t_sink)
     return;
 
-//  for(size_t dirac_1 = 0; dirac_1 < nb_dir; ++dirac_1){     
-//    for(size_t p = 0; p <= max_mom_squared; p++){
-//    for(size_t p_u = 0; p_u < nb_mom; ++p_u) {
-//    if(mom_squared[p_u] == p){
-//        for(size_t dirac_2 = 0; dirac_2 < nb_dir; ++dirac_2){
-//        for(size_t p_d = 0; p_d < nb_mom; ++p_d) {
-//        if(mom_squared[p_d] == p){
-
-  for(auto& op : Qns::op_C4)
-    for(auto& i : op.index){
-          // complete diagramm. combine X and Y to four-trace
-          // C4_mes = tr(D_u^-1(t_source     | t_sink      ) Gamma 
-          //             D_d^-1(t_sink       | t_source + 1) Gamma 
-          //             D_u^-1(t_source + 1 | t_sink + 1  ) Gamma 
-          //             D_d^-1(t_sink + 1   | t_source    ) Gamma)
-          #pragma omp parallel
-          {
-            cmplx priv_C4(0.0,0.0);
-            #pragma omp for collapse(2) schedule(dynamic)
-            for(size_t rnd1 = 0; rnd1 < nb_rnd; ++rnd1){
-            for(size_t rnd2 = 0; rnd2 < nb_rnd; ++rnd2){      
-            if(rnd2 != rnd1){
-            for(size_t rnd3 = 0; rnd3 < nb_rnd; ++rnd3){
-            if((rnd3 != rnd2) && (rnd3 != rnd1)){
-            for(size_t rnd4 = 0; rnd4 < nb_rnd; ++rnd4){
-            if((rnd4 != rnd1) && (rnd4 != rnd2) && (rnd4 != rnd3)){
-              if(t_source%2 == 0)
-                priv_C4 += (X(0, std::get<2>(i), std::get<1>(i), rnd3, rnd2, rnd4) *
-                            X(1, std::get<3>(i), std::get<0>(i), rnd4, rnd1, rnd3)).trace();
-              else
-                priv_C4 += std::conj(
-                           (X(0, std::get<2>(i), std::get<1>(i), rnd3, rnd2, rnd4) *
-                            X(1, std::get<3>(i), std::get<0>(i), rnd4, rnd1, rnd3)).trace());
-            }}}}}}}
-            #pragma omp critical
-            {
-              C4_mes[op.p_sq_so][op.p_sq_si][std::get<0>(i)%nb_dg][std::get<2>(i)%nb_dg]
-                  [abs((t_sink - t_source) - Lt) % Lt] += priv_C4;
-            }
-          }
-//        }}// loop and if condition p_d
-//      }// loop dirac_2
-//    }}}// loop and if conditions p_u
-//  }// loop dirac_1
+  for(const auto& op : op_C4){
+  for(const auto& i : op.index){
+    // complete diagramm. combine X and Y to four-trace
+    // C4_mes = tr(D_u^-1(t_source     | t_sink      ) Gamma 
+    //             D_d^-1(t_sink       | t_source + 1) Gamma 
+    //             D_u^-1(t_source + 1 | t_sink + 1  ) Gamma 
+    //             D_d^-1(t_sink + 1   | t_source    ) Gamma)
+    #pragma omp parallel
+    {
+      cmplx priv_C4(0.0,0.0);
+      #pragma omp for collapse(2) schedule(dynamic)
+      for(size_t rnd1 = 0; rnd1 < nb_rnd; ++rnd1){
+      for(size_t rnd2 = 0; rnd2 < nb_rnd; ++rnd2){      
+      if(rnd2 != rnd1){
+      for(size_t rnd3 = 0; rnd3 < nb_rnd; ++rnd3){
+      if((rnd3 != rnd2) && (rnd3 != rnd1)){
+      for(size_t rnd4 = 0; rnd4 < nb_rnd; ++rnd4){
+      if((rnd4 != rnd1) && (rnd4 != rnd2) && (rnd4 != rnd3)){
+        if(t_source%2 == 0)
+          priv_C4 += (X(0, i[2], i[1], rnd3, rnd2, rnd4) *
+                      X(1, i[3], i[0], rnd4, rnd1, rnd3)).trace();
+        else
+          priv_C4 += std::conj(
+                     (X(0, i[2], i[1], rnd3, rnd2, rnd4) *
+                      X(1, i[3], i[0], rnd4, rnd1, rnd3)).trace());
+      }}}}}}}
+      #pragma omp critical
+      {
+        C4_mes[op.p_sq_so][op.p_sq_si][op.dg_so][op.dg_si]
+            [abs((t_sink - t_source) - Lt) % Lt] += priv_C4;
+      }
     }
+  }}//loops operators
 }
 /******************************************************************************/
 /******************************************************************************/
@@ -100,7 +81,7 @@ void LapH::Correlators::write_C4_3(const size_t config_i){
       global_data->get_name_lattice();
 
   const int Lt = global_data->get_Lt();
-  const int max_mom_squared = global_data->get_number_of_max_mom();
+  const size_t nb_mom_sq = global_data->get_number_of_momentum_squared();
   const std::vector<int> dirac_ind {5};
   const size_t nb_dir = dirac_ind.size();
 
@@ -115,7 +96,7 @@ void LapH::Correlators::write_C4_3(const size_t config_i){
   // output to binary file
   for(size_t dirac_1 = 0; dirac_1 < nb_dir; ++dirac_1){     
   for(size_t dirac_2 = 0; dirac_2 < nb_dir; ++dirac_2){
-    for(size_t p = 0; p <= max_mom_squared; p++){
+    for(size_t p = 0; p < nb_mom_sq; p++){
       sprintf(outfile, 
           "%s/dirac_%02d_%02d_p_%01d_%01d_displ_%01d_%01d/"
           "C4_3_conf%04d.dat", 

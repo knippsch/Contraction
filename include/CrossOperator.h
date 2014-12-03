@@ -10,7 +10,6 @@
 
 #include "GlobalData.h"
 #include "BasicOperator.h"
-#include "OperatorStructure.h"
 #include "typedefs.h"
 #include "VdaggerV.h"
 
@@ -23,7 +22,7 @@ public:
   CrossOperator(const size_t number);
   ~CrossOperator() {};
 
-  void construct(BasicOperator& basic, const VdaggerV& vdaggerv, 
+  void construct(const BasicOperator& basic, const VdaggerV& vdaggerv, 
                  const size_t nb, const int t_source, const int t_sink,
                  const size_t type);
 

@@ -254,6 +254,7 @@ void BasicOperator::init_operator(const char dilution, const size_t displ,
                                   const LapH::Perambulator& peram){
 
   const int Lt = global_data->get_Lt();
+  const vec_pdg_Corr op_Corr = global_data->get_op_Corr();
   const size_t nb_ev = global_data->get_number_of_eigen_vec();
   const std::vector<quark> quarks = global_data->get_quarks();
   const size_t nb_rnd = quarks[0].number_of_rnd_vec;
@@ -261,7 +262,7 @@ void BasicOperator::init_operator(const char dilution, const size_t displ,
   const int dilT = quarks[0].number_of_dilution_T;
   const size_t Q2_size = 4 * dilE;
   const size_t nb_mom = global_data->get_number_of_momenta();
-  const size_t nb_dg = 1;                                                      //!!!!!!
+  const size_t nb_dg = global_data->get_number_of_displ_gamma();
 
   std::cout << "\n" << std::endl;
 #pragma omp parallel 
@@ -277,12 +278,12 @@ void BasicOperator::init_operator(const char dilution, const size_t displ,
               << std::flush;
 
 //  for(size_t p = 0; p < nb_mom; p++){
-  for(auto& op : Qns::op_Corr)
+  for(const auto& op : op_Corr){
     for(size_t rnd_i = 0; rnd_i < nb_rnd; ++rnd_i) {
       for(int t = 0; t < Lt/dilT; t++){
         //new momentum -> recalculate M[0]
         size_t p = op.id/nb_dg;
-        if(op.id % nb_dg == 0){
+        if(op.id%nb_dg == 0){
           for(size_t col = 0; col < 4; ++col) {
           for(size_t row = 0; row < 4; ++row) {
             if(p <= nb_mom/2){
@@ -323,10 +324,10 @@ void BasicOperator::init_operator(const char dilution, const size_t displ,
                   peram[rnd_j].block(4 * nb_ev * t_0, Q2_size * tend, 
                                      4 * nb_ev,       Q2_size);
           }}// loops over rnd_j and ti end here 
-//        }// loop over dirac ends here
-      }// loop over t ends here
-    }// loop over rnd_i ends here
-  }// loops over momenta and t_0 end here
+        }// loop over t ends here
+      }// loop over rnd_i ends here
+    }// loops over momenta and t_0 end here
+  }//loop operators
 }// pragma omp ends
 
   std::cout << "\tcomputing double quarkline: 100.00%\n\n" << std::endl;
@@ -356,7 +357,9 @@ void BasicOperator::init_operator(const char dilution, const size_t displ,
 /******************************************************************************/
 /******************************************************************************/
 void BasicOperator::mult_dirac(const Eigen::MatrixXcd& matrix, 
-                               Eigen::MatrixXcd& reordered, const size_t index){
+                               Eigen::MatrixXcd& reordered, const size_t index)
+                               const {
+  const vec_pdg_Corr op_Corr = global_data->get_op_Corr();
   const size_t rows = matrix.rows();
   const size_t cols = matrix.cols();
 
@@ -368,7 +371,7 @@ void BasicOperator::mult_dirac(const Eigen::MatrixXcd& matrix,
 
   const size_t col = cols/4;
 
-  for(auto dirac : Qns::op_Corr[index].gamma)
+  for(const auto& dirac : op_Corr[index].gamma)
     if(dirac != 4)
     for(size_t block = 0; block < 4; block++)
       reordered.block(0, block * col, rows, col) = gamma[dirac].value[block] *

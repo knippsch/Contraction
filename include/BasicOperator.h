@@ -2,7 +2,6 @@
 #define BASICOPERATOR_H_
 
 #include "GlobalData.h"
-#include "OperatorStructure.h"
 #include "Perambulator.h"
 #include "typedefs.h"
 #include "VdaggerV.h"
@@ -35,7 +34,7 @@ public:
 
   
   void mult_dirac(const Eigen::MatrixXcd& matrix, Eigen::MatrixXcd& reordered, 
-                  const size_t index);
+                  const size_t index) const;
 
   std::vector<struct lookup>  gamma;
 
