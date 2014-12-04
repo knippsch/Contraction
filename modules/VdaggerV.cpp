@@ -28,22 +28,20 @@ LapH::VdaggerV::VdaggerV() : vdaggerv(), rvdaggervr(), momentum(), nb_mom(1),
   // is needed in the whole class
   nb_mom = global_data->get_number_of_momenta();
 
-  const size_t nb_ev = global_data->get_number_of_eigen_vec();
   const size_t Lt = global_data->get_Lt();
   const size_t Vs = global_data->get_Lx() * global_data->get_Ly() * 
                  global_data->get_Lz();         
   const std::vector<quark> quarks = global_data->get_quarks();
   const size_t nb_rnd = quarks[0].number_of_rnd_vec;
-  const size_t dilE = quarks[0].number_of_dilution_E;
 
-  // TODO: just a workaround, must be read in via infile
-  const size_t nb_dis = 1;
+  const size_t nb_VdaggerV = global_data->get_number_of_VdaggerV();
+  const size_t nb_rVdaggerVr = global_data->get_number_of_rVdaggerVr();
 
   // only half of the array is stored to save memory. But be carefull, it 
   // must be mapped correctly from outside by addressing the memomentum
   // correctly and daggering
-  vdaggerv.resize(boost::extents[nb_mom/2+1][Lt][4]);
-  rvdaggervr.resize(boost::extents[nb_mom][Lt][nb_dis][nb_rnd][nb_rnd]);
+  vdaggerv.resize(boost::extents[nb_VdaggerV][Lt]);
+  rvdaggervr.resize(boost::extents[nb_rVdaggerVr][Lt][nb_rnd][nb_rnd]);
 
   momentum.resize(boost::extents[nb_mom][Vs]);
   create_momenta();
@@ -106,9 +104,11 @@ void LapH::VdaggerV::build_vdaggerv (const int config_i) {
 
   const size_t Lt = global_data->get_Lt();
   const size_t dim_row = global_data->get_dim_row();
-  const size_t displ_min = global_data->get_displ_min();
-  const size_t displ_max = global_data->get_displ_max();
   const size_t nb_ev = global_data->get_number_of_eigen_vec();
+  const size_t nb_VdaggerV = global_data->get_number_of_VdaggerV();
+  const size_t id_unity = global_data->get_index_of_unity();
+
+  const size_t nb_dis = global_data->get_number_of_displ();
 
   std::fill(vdaggerv.origin(), vdaggerv.origin() + vdaggerv.num_elements(), 
             Eigen::MatrixXcd::Zero(nb_ev, nb_ev));
@@ -121,17 +121,24 @@ void LapH::VdaggerV::build_vdaggerv (const int config_i) {
   for(size_t t = 0; t < Lt; ++t){
 
     read_eigenvectors_from_file(V_t, config_i, t);
-    // zero momentum 
-    (vdaggerv[nb_mom/2][t][0]) = Eigen::MatrixXcd::Identity(nb_ev, nb_ev);
 
-    for(size_t p = 0; p < nb_mom/2; p++){
-      // momentum vector contains exp(-i p x). Divisor 3 for colour index. 
-      // All three colours on same lattice site get the same momentum.
-      for(size_t x = 0; x < dim_row; ++x) {
-        mom(x) = momentum[p][x/3];
+    for(size_t op = 0; op < nb_VdaggerV; op++){
+      if(op != id_unity){
+        // momentum vector contains exp(-i p x). Divisor 3 for colour index. 
+        // All three colours on same lattice site get the same momentum.
+        for(size_t x = 0; x < dim_row; ++x) {
+          mom(x) = momentum[op/nb_dis][x/3];
+        }
+        vdaggerv[op][t] = V_t[0].adjoint() * mom.asDiagonal() * V_t[0];
+
       }
-      vdaggerv[p][t][0] = V_t[0].adjoint() * mom.asDiagonal() * V_t[0];
-    } // loop over momentum
+      else{
+        // zero momentum 
+        (vdaggerv[op][t]) = Eigen::MatrixXcd::Identity(nb_ev, nb_ev);
+      }
+    }
+
+//    }} // loop over momentum and displacement
   } // loop over time
 }// pragma omp parallel ends here
 
@@ -158,14 +165,13 @@ void LapH::VdaggerV::build_rvdaggervr(const int config_i,
   std::cout << "\tbuild rvdaggervr:";
 
   const size_t Lt = global_data->get_Lt();
-  const size_t dim_row = global_data->get_dim_row();
-  const size_t displ_min = global_data->get_displ_min();
-  const size_t displ_max = global_data->get_displ_max();
   const size_t nb_ev = global_data->get_number_of_eigen_vec();
-  const size_t nb_mom = global_data->get_number_of_momenta();
   const std::vector<quark> quarks = global_data->get_quarks();
   const size_t dilE = quarks[0].number_of_dilution_E;
   const size_t nb_rnd = quarks[0].number_of_rnd_vec;
+  const size_t nb_VdaggerV = global_data->get_number_of_VdaggerV();
+  const std::list<std::pair<size_t, size_t> > op_rVdaggerVr = 
+    global_data->get_op_rVdaggerVr();
 
   std::fill(rvdaggervr.data(), rvdaggervr.data() + rvdaggervr.num_elements(), 
             Eigen::MatrixXcd::Zero(dilE, 4*dilE));
@@ -173,47 +179,54 @@ void LapH::VdaggerV::build_rvdaggervr(const int config_i,
   // TODO: just a workaround
   // can be changed to op by running over p = op/nb_dg, but dis currently
   // not supported.
-  const size_t nb_dis = 1;
 
   #pragma omp parallel for schedule(dynamic)
   for(size_t t = 0; t < Lt; t++){
-  for(size_t p = 0; p <= nb_mom/2; p++){
-  for(size_t dis = 0; dis < nb_dis; ++dis) {
+
+  for(size_t op = 0; op < nb_VdaggerV; op++){
+
     for(size_t rnd_i = 0; rnd_i < nb_rnd; ++rnd_i) {
       Eigen::MatrixXcd M = Eigen::MatrixXcd::Zero(nb_ev, 4*dilE);
-      for(size_t dirac = 0; dirac < 4; dirac++){
+      // dilution from left
+      for(size_t block= 0; block < 4; block++){
       for(size_t vec_i = 0; vec_i < nb_ev; ++vec_i) {
-        size_t blk_i =  dirac + vec_i * 4 + 4 * nb_ev * t;
+        size_t blk_i =  block + vec_i * 4 + 4 * nb_ev * t;
         
-        M.block(0, vec_i%dilE + dilE*dirac, nb_ev, 1) += 
-             vdaggerv[p][t][dis].col(vec_i) * 
+        M.block(0, vec_i%dilE + dilE*block, nb_ev, 1) += 
+             vdaggerv[op][t].col(vec_i) * 
              rnd_vec[rnd_i][blk_i];
-      }}
+      }}// end of dilution
       for(size_t rnd_j = 0; rnd_j < nb_rnd; ++rnd_j){
       if(rnd_i != rnd_j){
-        for(size_t dirac = 0; dirac < 4; dirac++){
+        // dilution from right
+        for(size_t block = 0; block < 4; block++){
         for(size_t vec_j = 0; vec_j < nb_ev; ++vec_j) {
-          size_t blk_j =  dirac + vec_j * 4 + 4 * nb_ev * t;
-          rvdaggervr[p][t][dis][rnd_j][rnd_i]
-                        .block(vec_j%dilE, dilE*dirac , 1, dilE) +=
-              M.block(vec_j, dilE*dirac, 1, dilE) * 
+          size_t blk_j =  block + vec_j * 4 + 4 * nb_ev * t;
+          rvdaggervr[op][t][rnd_j][rnd_i]
+                        .block(vec_j%dilE, dilE*block , 1, dilE) +=
+              M.block(vec_j, dilE*block, 1, dilE) * 
               std::conj(rnd_vec[rnd_j][blk_j]);
-        }}
-      }}
+        }}// end of dilution
+      }}// rnd_j loop ends here
     }// rnd_i loop ends here
-    if(p != nb_mom/2){// building the other half of momenta
-      for(size_t rnd_i = 0; rnd_i < nb_rnd; ++rnd_i) {
-      for(size_t rnd_j = 0; rnd_j < nb_rnd; ++rnd_j){
-      if(rnd_i != rnd_j){
-        for(size_t blk = 0; blk < 4; blk++){
-          rvdaggervr[nb_mom - p - 1][t][dis][rnd_j][rnd_i]
-                              .block(0, blk*dilE, dilE, dilE) =
-            (rvdaggervr[p][t][dis][rnd_i][rnd_j]
-                              .block(0, blk*dilE, dilE, dilE)).adjoint();
-        }
-      }}}
-    }
-  }}}// time, momemtum and displacement loop ends here
+  }
+
+  // building the other half of momenta
+  for(const auto& op : op_rVdaggerVr){
+    for(size_t rnd_i = 0; rnd_i < nb_rnd; ++rnd_i) {
+    for(size_t rnd_j = 0; rnd_j < nb_rnd; ++rnd_j){
+    if(rnd_i != rnd_j){
+      //is .adjoint().transpose() faster?
+      for(size_t block = 0; block < 4; block++){
+        rvdaggervr[op.second][t][rnd_j][rnd_i]
+                            .block(0, block*dilE, dilE, dilE) =
+          (rvdaggervr[op.first][t][rnd_i][rnd_j]
+                            .block(0, block*dilE, dilE, dilE)).adjoint();
+      }
+    }}}// loops over rnd vecs
+  }
+
+  }// time, momemtum and displacement loop ends here
 
   t2 = clock() - t2;
   std::cout << std::setprecision(1) << "\t\tSUCCESS - " << std::fixed 

@@ -33,7 +33,7 @@ private:
   LapH::Perambulator peram;
   std::vector<LapH::RandomVector> rnd_vec;
   LapH::VdaggerV vdaggerv;
-  array_cd_d5 C4_mes;
+  array_cd_d6 C4_mes;
   array_cd_d4 C2_mes;
   array_cd_d6 Corr;
 
@@ -44,9 +44,13 @@ private:
     peram.read_perambulators_from_file(config);
   }
   void read_rnd_vectors_from_file (const int config_i);
-  void compute_meson_small_traces(const int t_source, const int t_sink);
-  void compute_meson_4pt_cross_trace(LapH::CrossOperator& X, 
-                                     const int t_source, const int t_sink);
+  void compute_meson_small_traces(const size_t id_si, 
+                                  const Eigen::MatrixXcd& Q2,
+                                  const Eigen::MatrixXcd& rVdaggerVr, 
+                                  cmplx& Corr);
+  void compute_meson_4pt_cross_trace(LapH::CrossOperator& X);
+
+  void build_Corr();
   void build_and_write_2pt(const size_t config_i);
   void write_C4_3(const size_t config_i);
   void build_and_write_C4_1(const size_t config_i);

@@ -85,6 +85,7 @@ void GlobalData::init_from_infile() {
   const size_t nb_mom_sq = number_of_momentum_squared;
   //TODO: include displacement into dg (displacementgamma) multiindex
   const size_t nb_dg = number_of_displ_gamma;
+  const size_t nb_dis = number_of_displ;
 
   // nb_op - number of combinations of three-momenta and gamma structures
   // op    - vector of all three-momenta, three-displacements and gamma 
@@ -114,10 +115,14 @@ void GlobalData::init_from_infile() {
 // function to initialize the vector of all necessary operators
 void GlobalData::set_Corr(){
 
+  const size_t nb_mom = get_number_of_momenta(); //momentum_squared.size();
   const int max_mom_squared = number_of_max_mom;
-  const size_t nb_dg = dg.size();
+  const size_t nb_dir = number_of_dirac;
+  const size_t nb_dis = number_of_displ;
 
   size_t i = 0;
+  size_t j = 0;
+  size_t p = 0;
 
   // all three-momenta
   for(int ipx = -max_mom_in_one_dir; ipx <= max_mom_in_one_dir; ++ipx){
@@ -127,22 +132,46 @@ void GlobalData::set_Corr(){
           continue;
         }
         // all gamma structures
-        for(size_t gam = 0; gam < nb_dg; gam++){
+        for(size_t dis = 0; dis < nb_dis; dis++){
+        for(size_t gam = 0; gam < nb_dir; gam++){
 
-          op_Corr[i].p[0] = ipx;
-          op_Corr[i].p[1] = ipy;
-          op_Corr[i].p[2] = ipz;
-          op_Corr[i].dis[0] = 0;
-          op_Corr[i].dis[1] = 0;
-          op_Corr[i].dis[2] = 0;
-          op_Corr[i].gamma[0] = dg[gam];
+          op_Corr[i].p3[0] = ipx;
+          op_Corr[i].p3[1] = ipy;
+          op_Corr[i].p3[2] = ipz;
+          op_Corr[i].dis3[0] = 0;
+          op_Corr[i].dis3[1] = 0;
+          op_Corr[i].dis3[2] = 0;
+          op_Corr[i].gamma[0] = 5;
           op_Corr[i].gamma[1] = 4;
           op_Corr[i].gamma[2] = 4;
           op_Corr[i].gamma[3] = 4;
   
+          op_Corr[i].id_rVdaggerVr = j;
+          if(p <= nb_mom/2)
+            op_Corr[i].id_VdaggerV = j;
+          else
+            op_Corr[i].id_VdaggerV = nb_mom-nb_dis*(j/nb_dis+1)+j%nb_dis;
+
+          if(gam == 0){
+            if(p > nb_mom/2){
+              op_rVdaggerVr.emplace_back(std::pair<size_t, size_t>
+                  (nb_mom-nb_dis*(j/nb_dis+1)+j%nb_dis, j));
+              op_Corr[i].flag_VdaggerV = -1;
+            }
+            else
+              op_Corr[i].flag_VdaggerV = 1;
+
+            if((p == nb_mom/2) & (dis == 0))
+              index_of_unity = j;
+            j++;
+          }
+          else
+            op_Corr[i].flag_VdaggerV = 0;
+
           op_Corr[i].id = i;
           i++;
-        }
+        }}
+      p++;
       }
     }
   }
@@ -180,7 +209,7 @@ void GlobalData::set_C2(){
 
         // loop over op and set index pairs
         for(auto& el : op_Corr)
-          if((el.p[0]*el.p[0] + el.p[1]*el.p[1] + el.p[2]*el.p[2]) == p_sq){ 
+          if((el.p3[0]*el.p3[0] + el.p3[1]*el.p3[1] + el.p3[2]*el.p3[2]) == p_sq){ 
             if(el.gamma[0] == dg[so]){
               size_t id1 = el.id;
               // thats the generalized version of nb_mom - p - 1 including 
@@ -235,8 +264,8 @@ void GlobalData::set_C4(){
 
       // loop over op and set index pairs
       for(auto& el_so : op_Corr)
-        if((el_so.p[0]*el_so.p[0] + el_so.p[1]*el_so.p[1] + 
-            el_so.p[2]*el_so.p[2]) == p_sq_so){ 
+        if((el_so.p3[0]*el_so.p3[0] + el_so.p3[1]*el_so.p3[1] + 
+            el_so.p3[2]*el_so.p3[2]) == p_sq_so){ 
         if(el_so.gamma[0] == dg[so]){
           size_t id1 = el_so.id;
           // thats the generalized version of nb_mom - p - 1 including 
@@ -244,8 +273,8 @@ void GlobalData::set_C4(){
           size_t id2 = nb_op - nb_dg * (id1/nb_dg + 1) + so;
 
           for(auto& el_si : op_Corr)
-            if((el_si.p[0]*el_si.p[0] + el_si.p[1]*el_si.p[1] + 
-                el_si.p[2]*el_si.p[2]) == p_sq_si){ 
+            if((el_si.p3[0]*el_si.p3[0] + el_si.p3[1]*el_si.p3[1] + 
+                el_si.p3[2]*el_si.p3[2]) == p_sq_si){ 
             if(el_si.gamma[0] == dg[si]){
               size_t id3 = el_si.id;
               size_t id4 = nb_op - nb_dg * (id3/nb_dg + 1) + si;
@@ -715,6 +744,10 @@ void GlobalData::read_parameters (int ac, char* av[]) {
 
     //displacement not supported yet
     number_of_displ_gamma = dg.size();
+    number_of_displ = 1;
+    number_of_dirac = dg.size();
+    number_of_VdaggerV = (momentum_squared.size()/2+1)*number_of_displ;
+    number_of_rVdaggerVr = momentum_squared.size()*number_of_displ;
     number_of_operators = momentum_squared.size() * number_of_displ_gamma;
     number_of_momentum_squared = number_of_max_mom + 1;
 

@@ -17,8 +17,8 @@
 
 namespace LapH {
 
-typedef boost::multi_array<Eigen::MatrixXcd, 3> ArrayXcdd3Eigen;
-typedef boost::multi_array<Eigen::MatrixXcd, 5> ArrayXcdd5Eigen;
+typedef boost::multi_array<Eigen::MatrixXcd, 2> ArrayXcdd2Eigen;
+typedef boost::multi_array<Eigen::MatrixXcd, 4> ArrayXcdd4Eigen;
 
 typedef std::complex<double> cmplx;
 typedef boost::multi_array<cmplx, 2> ArrayCDd2;
@@ -28,8 +28,8 @@ typedef boost::multi_array<cmplx, 2> ArrayCDd2;
 class VdaggerV {
 
 private:
-  ArrayXcdd3Eigen vdaggerv;
-  ArrayXcdd5Eigen rvdaggervr;
+  ArrayXcdd2Eigen vdaggerv;
+  ArrayXcdd4Eigen rvdaggervr;
   ArrayCDd2 momentum;
   size_t nb_mom;
   bool is_vdaggerv_set;
@@ -44,18 +44,16 @@ public:
                         const std::vector<LapH::RandomVector>& rnd_vec);
 
   // return reference on vdaggerv
-  inline const Eigen::MatrixXcd& return_vdaggerv(const size_t p, 
-                                                 const size_t t, 
-                                                 const size_t d) const {
-    return vdaggerv[p][t][d];
+  inline const Eigen::MatrixXcd& return_vdaggerv(const size_t index,
+                                                 const size_t t) const {
+    return vdaggerv[index][t];
   }
   // return reference on rvdaggervr
-  inline const Eigen::MatrixXcd& return_rvdaggervr(const size_t p, 
+  inline const Eigen::MatrixXcd& return_rvdaggervr(const size_t index, 
                                                    const size_t t, 
-                                                   const size_t d, 
                                                    const size_t rnd1,
                                                    const size_t rnd2) const {
-    return rvdaggervr[p][t][d][rnd1][rnd2];
+    return rvdaggervr[index][t][rnd1][rnd2];
   }
 
 };

@@ -21,7 +21,7 @@ public:
   BasicOperator();
   ~BasicOperator () {};
 
-  void init_operator(const char dilution, const size_t displ, 
+  void init_operator(const char dilution, 
                      const LapH::VdaggerV& vdaggerv,
                      const LapH::Perambulator& peram);
 
@@ -33,8 +33,13 @@ public:
   }
 
   
-  void mult_dirac(const Eigen::MatrixXcd& matrix, Eigen::MatrixXcd& reordered, 
+
+  void mult_dirac(const Eigen::MatrixXcd& matrix, Eigen::MatrixXcd& reordered,
                   const size_t index) const;
+
+  size_t order_dirac(const size_t index, const size_t block) const;
+  void value_dirac(const size_t index, const size_t block, 
+                   cmplx& value) const;
 
   std::vector<struct lookup>  gamma;
 

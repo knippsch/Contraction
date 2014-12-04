@@ -31,7 +31,6 @@ void LapH::CrossOperator::construct(const BasicOperator& basic,
                                     const size_t type){
 
   const int Lt = global_data->get_Lt();
-  const size_t nb_dg = global_data->get_number_of_displ_gamma();
   const std::vector<quark> quarks = global_data->get_quarks();
   const size_t nb_rnd = quarks[0].number_of_rnd_vec;
   const size_t dilE = quarks[0].number_of_dilution_E;
@@ -61,8 +60,6 @@ void LapH::CrossOperator::construct(const BasicOperator& basic,
 
 #pragma omp parallel
 {     
-  Eigen::MatrixXcd rvdaggervr = Eigen::MatrixXcd::Zero(dilE, 4*dilE);
-
   for(const auto& op : op_C4){
   for(const auto& i : op.index){
     size_t id_so = i[2+nb];
@@ -75,22 +72,45 @@ void LapH::CrossOperator::construct(const BasicOperator& basic,
     for(size_t rnd3 = 0; rnd3 < nb_rnd; ++rnd3){
     if((rnd3 != rnd1) && (rnd3 != rnd2)){
 
-      basic.mult_dirac(vdaggerv.return_rvdaggervr(id_si/nb_dg, t2, op.dg_si, 
-          rnd2, rnd3), rvdaggervr, id_si);
-      for(size_t block = 0; block < 4; block++){
+      compute_X(basic, id_si, 
+                basic.get_operator(t_source, tu, td, id_so, rnd1, rnd2),
+                vdaggerv.return_rvdaggervr(id_si, t2, rnd2, rnd3),
+                X[nb][id_so][id_si][rnd1][rnd2][rnd3]);
 
-        X[nb][id_so][id_si][rnd1][rnd2][rnd3]
-                                .block(0, block*dilE, 4*dilE, dilE) = 
-          basic.get_operator(t_source, tu, td, id_so, rnd1, rnd2)
-                                .block(0, block*dilE, 4*dilE, dilE) * 
-          rvdaggervr.block(0, block*dilE, dilE, dilE);
+//      compute_X(basic, vdaggerv, id_so, id_si, rnd1, rnd2, rnd3, t_source, tu, 
+//          td, t2, X[nb]);
 
-      }// loop block ends here
     }}}}}// loops random vectors
   }}// loops operators
 }
 
 }
+
+/******************************************************************************/
+/******************************************************************************/
+/******************************************************************************/
+void LapH::CrossOperator::compute_X(const BasicOperator& basic, 
+                                    const size_t id_si, 
+                                    const Eigen::MatrixXcd& Q2, 
+                                    const Eigen::MatrixXcd& VdaggerV,
+                                    Eigen::MatrixXcd& X) {
+
+  const std::vector<quark> quarks = global_data->get_quarks();
+  const size_t dilE = quarks[0].number_of_dilution_E;
+
+  for(size_t block = 0; block < 4; block++){
+
+    cmplx value = 1;
+    basic.value_dirac(id_si, block, value);
+
+    X.block(0, block*dilE, 4*dilE, dilE) = 
+      value * Q2.block(0, block*dilE, 4*dilE, dilE) * 
+      VdaggerV.block(0, basic.order_dirac(id_si, block)*dilE, dilE, dilE);
+
+    }// loop block ends here
+
+}
+
 /******************************************************************************/
 /******************************************************************************/
 /******************************************************************************/

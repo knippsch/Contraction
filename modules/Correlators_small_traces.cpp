@@ -6,71 +6,109 @@ static GlobalData * const global_data = GlobalData::Instance();
 /******************************************************************************/
 /******************************************************************************/
 /******************************************************************************/
-void LapH::Correlators::compute_meson_small_traces(const int t_source, 
-                                                   const int t_sink){
+void LapH::Correlators::build_Corr(){
 
+  const size_t Lt = global_data->get_Lt();
   const vec_pdg_C2 op_C2 = global_data->get_op_C2();
-  const size_t nb_dg = global_data->get_number_of_displ_gamma();
   const std::vector<quark> quarks = global_data->get_quarks();
   const size_t nb_rnd = quarks[0].number_of_rnd_vec;
-  const size_t dilE = quarks[0].number_of_dilution_E;
   const int dilT = quarks[0].number_of_dilution_T;
   // TODO: must be changed in GlobalData {
   // TODO: }
 
-#pragma omp parallel
-{
-  Eigen::MatrixXcd rvdaggervr = Eigen::MatrixXcd::Zero(dilE, 4*dilE);
+  std::cout << "\n\tcomputing the traces of pi_+/-:\r";
+  clock_t time = clock();
+  for(int t_sink = 0; t_sink < Lt; ++t_sink){
+    std::cout << "\tcomputing the traces of pi_+/-: " 
+        << std::setprecision(2) << (float) t_sink/Lt*100 << "%\r" 
+        << std::flush;
+    int t_sink_1 = (t_sink + 1) % Lt;
+    for(int t_source = 0; t_source < Lt; ++t_source){
 
-  for(const auto& op : op_C2){
-  for(const auto& i : op.index){
+    #pragma omp parallel
+    {
+      for(const auto& op : op_C2){
+      for(const auto& i : op.index){
+    
+        // TODO: A collpase of both random vectors might be better but
+        //       must be done by hand because rnd2 starts from rnd1+1
+        #pragma omp for schedule(dynamic)
+        for(int rnd1 = 0; rnd1 < nb_rnd; ++rnd1){
+        for(int rnd2 = rnd1+1; rnd2 < nb_rnd; ++rnd2){
+          // build all 2pt traces leading to C2_mes
+          // Corr = tr(D_d^-1(t_sink) Gamma D_u^-1(t_source) Gamma)
+          // TODO: Just a workaround
+    
+          compute_meson_small_traces(i.second, basic.get_operator
+              (t_source, t_sink/dilT, 1, i.first, rnd1, rnd2),
+            vdaggerv.return_rvdaggervr(i.second, t_sink, rnd2, rnd1),
+            Corr[i.first][i.second][t_source][t_sink][rnd1][rnd2]);
 
-    // TODO: A collpase of both random vectors might be better but
-    //       must be done by hand because rnd2 starts from rnd1+1
-    #pragma omp for schedule(dynamic)
-    for(int rnd1 = 0; rnd1 < nb_rnd; ++rnd1){
-    for(int rnd2 = rnd1+1; rnd2 < nb_rnd; ++rnd2){
-      // build all 2pt traces leading to C2_mes
-      // Corr = tr(D_d^-1(t_sink) Gamma D_u^-1(t_source) Gamma)
-      // TODO: Just a workaround
+          }} // Loops over random vectors end here! 
+      }}//Loops over all Quantum numbers 
+    
+      // Using the dagger operation to get all possible random vector combinations
+      // TODO: Think about imaginary correlations functions - There might be an 
+      //       additional minus sign involved
+    }
+    
+      for(const auto& op : op_C2){
+      for(const auto& i : op.index){
+    
+        // TODO: A collpase of both random vectors might be better but
+        //       must be done by hand because rnd2 starts from rnd1+1
+        #pragma omp parallel for schedule(dynamic)
+        for(int rnd1 = 0; rnd1 < nb_rnd; ++rnd1){
+        for(int rnd2 = rnd1+1; rnd2 < nb_rnd; ++rnd2){
 
-      // multiply rvdaggervr with dirac structure
-      basic.mult_dirac(vdaggerv.return_rvdaggervr(i.second/nb_dg, t_sink, 
-          op.dg_si, rnd2, rnd1), rvdaggervr, i.second);
+          Corr[i.first][i.second][t_source][t_sink][rnd2][rnd1] = 
+            std::conj(Corr[i.first][i.second][t_source][t_sink]
+            [rnd1][rnd2]);
 
-      // multiply D_u VdaggerV Gamma D_d rVdaggervr Gamma
-      for(size_t block = 0; block < 4; block++){
-        Corr[i.first][i.second][t_source][t_sink][rnd1][rnd2] += 
-          ((basic.get_operator(t_source, t_sink/dilT, 1, i.first, rnd1, 
-            rnd2)).block(block*dilE, block*dilE, dilE, dilE) *
-          rvdaggervr.block(0, block*dilE, dilE, dilE)).trace();
-        }
-      }} // Loops over random vectors end here! 
-  }}//Loops over all Quantum numbers 
+        }} // Loops over random vectors end here! 
+      }}//Loops over all Quantum numbers 
+    }// Loops over t_source
+  }// Loops over t_sink
 
-  // Using the dagger operation to get all possible random vector combinations
-  // TODO: Think about imaginary correlations functions - There might be an 
-  //       additional minus sign involved
+  std::cout << "\tcomputing the traces of pi_+/-: " << "100.00%" << std::endl;
+  time = clock() - time;
+  std::cout << "\t\tSUCCESS - " << ((float) time)/CLOCKS_PER_SEC 
+            << " seconds" << std::endl;
+
 }
 
-  for(const auto& op : op_C2){
-  for(const auto& i : op.index){
+/******************************************************************************/
+/******************************************************************************/
+/******************************************************************************/
 
-    // TODO: A collpase of both random vectors might be better but
-    //       must be done by hand because rnd2 starts from rnd1+1
-    #pragma omp parallel for schedule(dynamic)
-    for(int rnd1 = 0; rnd1 < nb_rnd; ++rnd1){
-    for(int rnd2 = rnd1+1; rnd2 < nb_rnd; ++rnd2){
-      Corr[i.first][i.second][t_source][t_sink][rnd2][rnd1] = 
-        std::conj(Corr[i.first][i.second][t_source][t_sink]
-        [rnd1][rnd2]);
-    }} // Loops over random vectors end here! 
-  }}//Loops over all Quantum numbers 
+//calculate tr(2pt function). Only diagonal blocks are needed.
+// Corr = tr(D_d^-1(t_sink) Gamma D_u^-1(t_source) Gamma)
+
+void LapH::Correlators::compute_meson_small_traces(const size_t id_si, 
+                                             const Eigen::MatrixXcd& Q2,
+                                             const Eigen::MatrixXcd& rVdaggerVr,
+                                             cmplx& Corr) {
+
+  const std::vector<quark> quarks = global_data->get_quarks();
+  const size_t dilE = quarks[0].number_of_dilution_E;
+
+  for(size_t block = 0; block < 4; block++){
+
+    cmplx value = 1;
+    basic.value_dirac(id_si, block, value);
+
+    Corr += value * (Q2.block(block*dilE, block*dilE, dilE, dilE) *
+            rVdaggerVr.block(0, (basic.order_dirac(id_si, block)*dilE), 
+            dilE, dilE)).trace();
+
+    }
 
 }
+
 /******************************************************************************/
 /******************************************************************************/
 /******************************************************************************/
+
 // build 2pt-function C2_mes for pi^+ from Corr. Equivalent to just summing
 // up traces with same time difference between source and sink (all to all)
 // for every dirac structure, momentum, displacement
@@ -205,7 +243,7 @@ void LapH::Correlators::build_and_write_C4_1(const size_t config_i){
           for(int rnd4 = 0; rnd4 < nb_rnd; ++rnd4){
           if((rnd4 != rnd1) && (rnd4 != rnd2) && (rnd4 != rnd3)){
 
-            C4_mes[op.p_sq_so][op.p_sq_si][op.dg_so][op.dg_si]
+            C4_mes[op.p_sq_cm][op.p_sq_so][op.p_sq_si][op.dg_so][op.dg_si]
                   [abs((t_sink - t_source - Lt) % Lt)] +=
               (Corr[i[0]][i[2]][t_source_1][t_sink_1][rnd1][rnd3]) *
               (Corr[i[1]][i[3]][t_source][t_sink][rnd2][rnd4]);
@@ -235,7 +273,7 @@ void LapH::Correlators::build_and_write_C4_1(const size_t config_i){
     if((fp = fopen(outfile, "wb")) == NULL)
       std::cout << "fail to open outputfile" << std::endl;
 
-    fwrite((double*) &(C4_mes[p1][p2][dirac_u][dirac_d][0]), 
+    fwrite((double*) &(C4_mes[0][p1][p2][dirac_u][dirac_d][0]), 
         sizeof(double), 2 * Lt, fp);
 
         fclose(fp);
@@ -300,7 +338,7 @@ void LapH::Correlators::build_and_write_C4_2(const size_t config_i){
           for(int rnd4 = 0; rnd4 < nb_rnd; ++rnd4){
           if((rnd4 != rnd1) && (rnd4 != rnd2) && (rnd4 != rnd3)){
 
-            C4_mes[op.p_sq_so][op.p_sq_si][op.dg_so][op.dg_si]
+            C4_mes[op.p_sq_cm][op.p_sq_so][op.p_sq_si][op.dg_so][op.dg_si]
                   [abs((t_sink - t_source - Lt) % Lt)] +=
               (Corr[i[0]][i[2]][t_source_1][t_sink][rnd1][rnd3]) *
               (Corr[i[1]][i[3]][t_source][t_sink_1][rnd2][rnd4]);
@@ -332,7 +370,7 @@ void LapH::Correlators::build_and_write_C4_2(const size_t config_i){
     if((fp = fopen(outfile, "wb")) == NULL)
       std::cout << "fail to open outputfile" << std::endl;
 
-    fwrite((double*) &(C4_mes[p1][p2][dirac_u][dirac_d][0]), 
+    fwrite((double*) &(C4_mes[0][p1][p2][dirac_u][dirac_d][0]), 
         sizeof(double), 2 * Lt, fp);
 
     fclose(fp);

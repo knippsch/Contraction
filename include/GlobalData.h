@@ -47,11 +47,16 @@ private:
   int dirac_max;
   int displ_min;
   int displ_max;
+  size_t number_of_displ;
+  size_t number_of_dirac;
   int start_config, end_config, delta_config;
   int verbose;
   size_t number_of_operators;
   size_t number_of_displ_gamma;
   size_t number_of_momentum_squared;
+  size_t index_of_unity;
+  size_t number_of_VdaggerV;
+  size_t number_of_rVdaggerVr;
   std::string path_eigenvectors;
   std::string name_eigenvectors;
   std::string path_perambulators;
@@ -72,6 +77,7 @@ private:
   vec_pdg_Corr op_Corr;
   vec_pdg_C2 op_C2;
   vec_pdg_C4 op_C4;
+  std::list<std::pair<size_t, size_t>> op_rVdaggerVr;
 
   void init_from_infile();
   void set_Corr();
@@ -167,6 +173,12 @@ public:
   inline size_t get_number_of_displ_gamma() {
     return number_of_displ_gamma;
   }
+  inline size_t get_number_of_displ() {
+    return number_of_displ;
+  }
+  inline size_t get_number_of_dirac() {
+    return number_of_dirac;
+  }
   inline size_t get_number_of_momentum_squared() {
     return number_of_momentum_squared;
   }
@@ -196,6 +208,18 @@ public:
   }
   inline const vec_pdg_C4& get_op_C4() {
     return op_C4;
+  }
+  inline const size_t get_number_of_VdaggerV() {
+    return number_of_VdaggerV;
+  }
+  inline const size_t get_number_of_rVdaggerVr() {
+    return number_of_rVdaggerVr;
+  }
+  inline const size_t get_index_of_unity() {
+    return index_of_unity;
+  }
+  inline const std::list<std::pair<size_t, size_t> > get_op_rVdaggerVr() {
+    return op_rVdaggerVr;
   }
 
   //! All con/de-structors are protected to assure that only one instance exists

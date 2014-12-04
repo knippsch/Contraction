@@ -44,9 +44,12 @@ typedef boost::multi_array<Eigen::MatrixXcd, 10> array_Xcd_d10_eigen;
 // Operator typedefs
   struct pdg{
     size_t id;
-    std::array<int,3> p;
-    std::array<int,3> dis;
+    std::array<int,3> p3;
+    std::array<int,3> dis3;
     std::array<size_t,4> gamma;
+    int id_VdaggerV;
+    int flag_VdaggerV;
+    size_t id_rVdaggerVr;
   };
 
   struct pdg_C2 {
@@ -57,6 +60,7 @@ typedef boost::multi_array<Eigen::MatrixXcd, 10> array_Xcd_d10_eigen;
   };
 
   struct pdg_C4 {
+    size_t p_sq_cm;
     size_t p_sq_so;
     size_t p_sq_si;
     //displ-gamma structure at source and at sink are coded as the same
