@@ -243,7 +243,7 @@ void LapH::Correlators::build_and_write_C4_1(const size_t config_i){
           for(int rnd4 = 0; rnd4 < nb_rnd; ++rnd4){
           if((rnd4 != rnd1) && (rnd4 != rnd2) && (rnd4 != rnd3)){
 
-            C4_mes[op.p_sq_cm][op.p_sq_so][op.p_sq_si][op.dg_so][op.dg_si]
+            C4_mes[op.p_sq_cm][op.p_sq_so_1][op.p_sq_si_1][op.dg_so][op.dg_si]
                   [abs((t_sink - t_source - Lt) % Lt)] +=
               (Corr[i[0]][i[2]][t_source_1][t_sink_1][rnd1][rnd3]) *
               (Corr[i[1]][i[3]][t_source][t_sink][rnd2][rnd4]);
@@ -338,7 +338,7 @@ void LapH::Correlators::build_and_write_C4_2(const size_t config_i){
           for(int rnd4 = 0; rnd4 < nb_rnd; ++rnd4){
           if((rnd4 != rnd1) && (rnd4 != rnd2) && (rnd4 != rnd3)){
 
-            C4_mes[op.p_sq_cm][op.p_sq_so][op.p_sq_si][op.dg_so][op.dg_si]
+            C4_mes[op.p_sq_cm][op.p_sq_so_1][op.p_sq_si_1][op.dg_so][op.dg_si]
                   [abs((t_sink - t_source - Lt) % Lt)] +=
               (Corr[i[0]][i[2]][t_source_1][t_sink][rnd1][rnd3]) *
               (Corr[i[1]][i[3]][t_source][t_sink_1][rnd2][rnd4]);

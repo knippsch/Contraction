@@ -61,8 +61,10 @@ typedef boost::multi_array<Eigen::MatrixXcd, 10> array_Xcd_d10_eigen;
 
   struct pdg_C4 {
     size_t p_sq_cm;
-    size_t p_sq_so;
-    size_t p_sq_si;
+    size_t p_sq_so_1;
+    size_t p_sq_so_2;
+    size_t p_sq_si_1;
+    size_t p_sq_si_2;
     //displ-gamma structure at source and at sink are coded as the same
     size_t dg_so;
     size_t dg_si;

@@ -71,7 +71,7 @@ void LapH::Correlators::compute_meson_4pt_cross_trace(LapH::CrossOperator& X) {
           }}}}}}}
           #pragma omp critical
           {
-            C4_mes[op.p_sq_cm][op.p_sq_so][op.p_sq_si][op.dg_so][op.dg_si]
+            C4_mes[op.p_sq_cm][op.p_sq_so_1][op.p_sq_si_1][op.dg_so][op.dg_si]
                 [abs((t_sink - t_source) - Lt) % Lt] += priv_C4;
           }
         }

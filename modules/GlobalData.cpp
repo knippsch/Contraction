@@ -102,7 +102,7 @@ void GlobalData::init_from_infile() {
   op_C2.resize(nb_op_C2);
   set_C2();
 
-  const size_t nb_op_C4 = nb_mom_sq * nb_dg * nb_dg;
+  const size_t nb_op_C4 = nb_mom_sq * nb_mom_sq * nb_dg * nb_dg;
   op_C4.resize(nb_op_C4);
   set_C4();
 
@@ -242,58 +242,113 @@ void GlobalData::set_C4(){
   const size_t nb_dg = dg.size();
 
   size_t nb_op = op_Corr.size();
+  size_t i = 0;
   size_t j = 0;
 
-  // run over all momenta squared (back-to-back hardcoded) and gamma 
-  // combinations
-  for(size_t p_sq = 0; p_sq < nb_mom_sq; p_sq++){
-    //only diagonal elements
-    size_t p_sq_so = p_sq;
-    size_t p_sq_si = p_sq;
-    for(size_t so = 0; so < nb_dg; so++){
-    for(size_t si = 0; si < nb_dg; si++){
+  for(size_t so = 0; so < nb_dg; so++){
+  for(size_t si = 0; si < nb_dg; si++){
+
+    for(size_t p_sq_cm = 0; p_sq_cm < 1; p_sq_cm++){
+    // run over all momenta squared (back-to-back hardcoded) and gamma 
+    // combinations
+    for(size_t p_sq_1 = 0; p_sq_1 < nb_mom_sq; p_sq_1++){
+      size_t p_sq_2 = p_sq_1;
+//    for(size_t p_sq_2 = 0; p_sq_2 < nb_mom_sq; p_sq_2++){
+    for(size_t p_sq_3 = 0; p_sq_3 < nb_mom_sq; p_sq_3++){
+      size_t p_sq_4 = p_sq_3;
+//    for(size_t p_sq_4 = 0; p_sq_4 < nb_mom_sq; p_sq_4++){
 
       // index for access of element
-      size_t i = p_sq*nb_dg*nb_dg + so*nb_dg + si;
+//      size_t i = p_sq*nb_dg*nb_dg + so*nb_dg + si;
 
-      // save p^2 and gamma structure at source and sink
-      op_C4[i].p_sq_so = p_sq_so;
-      op_C4[i].p_sq_si = p_sq_si;
-      op_C4[i].dg_so = so;
-      op_C4[i].dg_si = si;
+//      //only diagonal elements
+//      size_t p_sq_so = p_sq_1;
+//      size_t p_sq_si = p_sq;
+
 
       // loop over op and set index pairs
-      for(auto& el_so : op_Corr)
-        if((el_so.p3[0]*el_so.p3[0] + el_so.p3[1]*el_so.p3[1] + 
-            el_so.p3[2]*el_so.p3[2]) == p_sq_so){ 
-        if(el_so.gamma[0] == dg[so]){
-          size_t id1 = el_so.id;
+      for(auto& el_1 : op_Corr){
+        if(el_1.gamma[0] == dg[so]){
+        if((el_1.p3[0]*el_1.p3[0] + el_1.p3[1]*el_1.p3[1] + 
+            el_1.p3[2]*el_1.p3[2]) == p_sq_1){ 
+
+        for(auto& el_2 : op_Corr){
+          if(el_2.gamma[0] == dg[so]){
+          if((el_2.p3[0]*el_2.p3[0] + el_2.p3[1]*el_2.p3[1] + 
+              el_2.p3[2]*el_2.p3[2]) == p_sq_2){ 
+
+          if((el_1.p3[0]+el_2.p3[0])*(el_1.p3[0]+el_2.p3[0]) + 
+             (el_1.p3[1]+el_2.p3[1])*(el_1.p3[1]+el_2.p3[1]) +
+             (el_1.p3[2]+el_2.p3[2])*(el_1.p3[2]+el_2.p3[2]) == p_sq_cm){
+
+
+          size_t id1 = el_1.id;
           // thats the generalized version of nb_mom - p - 1 including 
           // a faster running gamma structure
-          size_t id2 = nb_op - nb_dg * (id1/nb_dg + 1) + so;
+//          size_t id2 = nb_op - nb_dg * (id1/nb_dg + 1) + so;
+          size_t id2 = el_2.id;
 
-          for(auto& el_si : op_Corr)
-            if((el_si.p3[0]*el_si.p3[0] + el_si.p3[1]*el_si.p3[1] + 
-                el_si.p3[2]*el_si.p3[2]) == p_sq_si){ 
-            if(el_si.gamma[0] == dg[si]){
-              size_t id3 = el_si.id;
-              size_t id4 = nb_op - nb_dg * (id3/nb_dg + 1) + si;
+
+          for(auto& el_3 : op_Corr){
+            if(el_3.gamma[0] == dg[si]){
+            if((el_3.p3[0]*el_3.p3[0] + el_3.p3[1]*el_3.p3[1] + 
+                el_3.p3[2]*el_3.p3[2]) == p_sq_3){ 
+    
+            for(auto& el_4 : op_Corr){
+              if(el_4.gamma[0] == dg[si]){
+              if((el_4.p3[0]*el_4.p3[0] + el_4.p3[1]*el_4.p3[1] + 
+                  el_4.p3[2]*el_4.p3[2]) == p_sq_4){ 
+    
+              if((el_3.p3[0]+el_4.p3[0])*(el_3.p3[0]+el_4.p3[0]) + 
+                 (el_3.p3[1]+el_4.p3[1])*(el_3.p3[1]+el_4.p3[1]) +
+                 (el_3.p3[2]+el_4.p3[2])*(el_3.p3[2]+el_4.p3[2]) == p_sq_cm){
+    
+    
+              size_t id3 = el_3.id;
+              // thats the generalized version of nb_mom - p - 1 including 
+              // a faster running gamma structure
+    //          size_t id2 = nb_op - nb_dg * (id1/nb_dg + 1) + so;
+              size_t id4 = el_4.id;
+
+//          for(auto& el_si : op_Corr)
+//            if((el_si.p3[0]*el_si.p3[0] + el_si.p3[1]*el_si.p3[1] + 
+//                el_si.p3[2]*el_si.p3[2]) == p_sq_si){ 
+//            if(el_si.gamma[0] == dg[si]){
+//              size_t id3 = el_si.id;
+//              size_t id4 = nb_op - nb_dg * (id3/nb_dg + 1) + si;
+
+              // save p^2 and gamma structure at source and sink
+              op_C4[i].p_sq_cm = p_sq_cm;
+              op_C4[i].p_sq_so_1 = p_sq_1;
+              op_C4[i].p_sq_so_2 = p_sq_2;
+              op_C4[i].p_sq_si_1 = p_sq_3;
+              op_C4[i].p_sq_si_2 = p_sq_4;
+              op_C4[i].dg_so = so;
+              op_C4[i].dg_si = si;
 
               op_C4[i].index.emplace_back(
                   std::array<size_t, 4>{{id1, id2, id3, id4}});
-            }}//loops over sink
-        }}//loops over source
 
+            }// if over p_sq_cm
+            }}}//loops over particle 4
+          }}}//loops over particle 3
+        }// if over p_sq_cm
+        }}}//loops over particle 2
+      }}}//loops over particle 1
+
+      //TODO: there are empty op_C4[i] like this
+      i++;
       j++;
       
     }}//loops over displ-gamma
-  }//loop over mom_sq
+//  }}
+  }}}//loop over mom_sq
 
-  if(j != op_C4.size()){
-    std::cout << "Error in LapH::set_C4(): nb_op not equal to allocated "
-                 "number of operators" << std::endl;
-    exit(0);
-  } 
+//  if(j != op_C4.size()){
+//    std::cout << "Error in LapH::set_C4(): nb_op not equal to allocated "
+//                 "number of operators" << std::endl;
+//    exit(0);
+//  } 
 
 }
 // *****************************************************************************
