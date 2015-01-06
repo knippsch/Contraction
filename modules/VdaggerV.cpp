@@ -22,6 +22,8 @@ inline void read_eigenvectors_from_file(LapH::EigenVector& V,
 /******************************************************************************/
 /******************************************************************************/
 /******************************************************************************/
+
+// can I throw nb_mom out?
 LapH::VdaggerV::VdaggerV() : vdaggerv(), rvdaggervr(), momentum(), //nb_mom(1),
                              is_vdaggerv_set(false) {
 
@@ -39,12 +41,14 @@ LapH::VdaggerV::VdaggerV() : vdaggerv(), rvdaggervr(), momentum(), //nb_mom(1),
 
   const vec_pd_VdaggerV op_VdaggerV = global_data->get_op_VdaggerV();
 
-  // only half of the array is stored to save memory. But be carefull, it 
-  // must be mapped correctly from outside by addressing the memomentum
+  // only half of the array is stored to save memory. But be careful, it 
+  // must be mapped correctly from outside by addressing the momentum
   // correctly and daggering
   vdaggerv.resize(boost::extents[nb_VdaggerV][Lt]);
   rvdaggervr.resize(boost::extents[nb_rVdaggerVr][Lt][nb_rnd][nb_rnd]);
 
+  // the momenta only need to be calculated for a subset of quantum numbers
+  // (see VdaggerV::build_vdaggerv)
   momentum.resize(boost::extents[op_VdaggerV.size()][Vs]);
   create_momenta();
 
@@ -62,33 +66,18 @@ void LapH::VdaggerV::create_momenta () {
 
   static const std::complex<double> I(0.0, 1.0);
 
-  //const int number_of_max_mom = global_data->get_number_of_max_mom();
-  //const int max_mom_in_one_dir = global_data->get_max_mom_in_one_dir();
-
-  // helper variables for momenta
-  const double px = 2. * M_PI / (double) Lx;
-  const double py = 2. * M_PI / (double) Ly;
-  const double pz = 2. * M_PI / (double) Lz;
-  int p = 0;
-  //int max_mom_squared = global_data->get_number_of_max_mom();
-
-  // running over all momentum components
-  //for(int ipx = -max_mom_in_one_dir; ipx <= max_mom_in_one_dir; ++ipx){
-  //  for(int ipy = -max_mom_in_one_dir; ipy <= max_mom_in_one_dir; ++ipy){
-  //    for(int ipz = -max_mom_in_one_dir; ipz <= max_mom_in_one_dir; ++ipz){
-  //      if((ipx * ipx + ipy * ipy + ipz * ipz) > max_mom_squared) {
-  //        continue;
-  //      }
-        //TODO: for Lx == Ly == Lz ipxH and ipxHipyH may be integers and px, 
-        //py get multiplied in the exponential
-        // running over all lattice points
-
+  // To calculate Vdagger exp(i*p*x) V only the momenta corresponding to the
+  // quantum number id in op_VdaggerV will be used. The rest can be obtained
+  // by adjoining
   for(const auto& op : op_VdaggerV){
 
-    const double ipx = op_Corr[op.index].p3[0] * px; 
-    const double ipy = op_Corr[op.index].p3[1] * py;
-    const double ipz = op_Corr[op.index].p3[2] * pz;
+    // op_VdaggerV contains the index of one (redundancy) op_Corr which
+    // allows to deduce the quantum numbers (momentum)
+    const double ipx = op_Corr[op.index].p3[0] * 2. * M_PI / (double) Lx; 
+    const double ipy = op_Corr[op.index].p3[1] * 2. * M_PI / (double) Ly;
+    const double ipz = op_Corr[op.index].p3[2] * 2. * M_PI / (double) Lz;
 
+    // calculate \vec{p} \cdot \vec{x} for all \vec{x} on the lattice
     for(int x = 0; x < Lx; ++x){
       const int xH = x * Ly * Lz; // helper variable
       const double ipxH = ipx * x; // helper variable
@@ -96,16 +85,14 @@ void LapH::VdaggerV::create_momenta () {
         const int xHyH = xH + y * Lz; // helper variable
         const double ipxHipyH = ipxH + ipy * y; // helper variable
         for(int z = 0; z < Lz; ++z){
+          // multiply \vec{p} \cdot \vec{x} with complex unit and exponentiate
           momentum[op.id][xHyH + z] = exp(-I * (ipxHipyH + ipz * z));
         }
       }
     }
   }
-//        ++p;
-//      }
-//    }
-//  }
 }
+
 /******************************************************************************/
 /******************************************************************************/
 /******************************************************************************/
@@ -135,8 +122,14 @@ void LapH::VdaggerV::build_vdaggerv (const int config_i) {
 
     read_eigenvectors_from_file(V_t, config_i, t);
 
-//    for(size_t op = 0; op < nb_VdaggerV; op++){
+    // VdaggerV is independent of the gamma structure and momenta connected by
+    // sign flip are related by adjoining VdaggerV. Thus the expensive 
+    // calculation must only be performed for a subset of quantum numbers given
+    // in op_VdaggerV.
     for(const auto& op : op_VdaggerV){
+
+      // For zero momentum and displacement VdaggerV is the unit matrix, thus
+      // the calculation is not performed
       if(op.index != id_unity){
         // momentum vector contains exp(-i p x). Divisor 3 for colour index. 
         // All three colours on same lattice site get the same momentum.
@@ -197,10 +190,11 @@ void LapH::VdaggerV::build_rvdaggervr(const int config_i,
   #pragma omp parallel for schedule(dynamic)
   for(size_t t = 0; t < Lt; t++){
 
-//  for(size_t op = 0; op < nb_VdaggerV; op++){
-
+  // rvdaggervr is calculated by multiplying the vdaggerv with the same quantum
+  // numbers with random vectors from right and left. rvdaggervr for momenta 
+  // with opposing sign are related by adjoining. Thus it suffices to calculate
+  // it for half of the indices for which the flag op.adjoint < 0.
   for(const auto& op : op_rVdaggerVr){
-
     if(op.adjoint < 0){
 
       size_t id_VdaggerV = op_Corr[op.index].id_VdaggerV;
@@ -230,13 +224,28 @@ void LapH::VdaggerV::build_rvdaggervr(const int config_i,
         }}// rnd_j loop ends here
       }// rnd_i loop ends here
     }
-    // building the other half of momenta
-    else{
+  }
+
+  // rvdaggervr for momenta with opposing sign are related by adjoining. Thus
+  // for half of the indices, the calculation reduces to adjoining the
+  // corresponding rvdaggervr and swapping the random vectors (as the order
+  // of multiplication is reversed). The index of corresponding quantum numbers
+  // is op.adjoint. It serves as flag for adjoining simultaneously, as it is
+  // positive if and only if it shall be adjoined.
+  // Need to loop twice as the corresponding rvdaggervr must all be calculated
+  // already.
+  for(const auto& op : op_rVdaggerVr){
+    if(op.adjoint >= 0){
 
       for(size_t rnd_i = 0; rnd_i < nb_rnd; ++rnd_i) {
       for(size_t rnd_j = 0; rnd_j < nb_rnd; ++rnd_j){
       if(rnd_i != rnd_j){
-        //is .adjoint().transpose() faster?
+
+        // rvdaggervr is a blockdiagonal 4*dilE x 4*dilE matrix. To save memory,
+        // only the diagonal blocks are saved and it is written as a column 
+        // vector of blocks. To reproduce the correct behavior under adjoining, 
+        // the blocks have to be adjoined seperately.
+        // is .adjoint().transpose() faster?
         for(size_t block = 0; block < 4; block++){
           rvdaggervr[op.id][t][rnd_j][rnd_i]
                               .block(0, block*dilE, dilE, dilE) =

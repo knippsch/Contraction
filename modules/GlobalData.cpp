@@ -177,7 +177,6 @@ void GlobalData::set_Corr(){
             }
 
             op_rVdaggerVr[k].id = k;
-//            op_rVdaggerVr.index = i;
             op_rVdaggerVr[k].index = i;
 
             j++;
