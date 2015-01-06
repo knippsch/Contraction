@@ -92,6 +92,10 @@ void GlobalData::init_from_infile() {
   //         structure combinations
   const size_t nb_op = number_of_operators;
   op_Corr.resize(nb_op);
+  const size_t nb_VdaggerV = nb_dis*(nb_mom/2+1);
+  op_VdaggerV.resize(nb_VdaggerV);
+  const size_t nb_rVdaggerVr = nb_dis*nb_mom;
+  op_rVdaggerVr.resize(nb_rVdaggerVr);
   set_Corr();
 
   // nb_op_C2 - number of combinations of absolute values squared of momenta
@@ -119,9 +123,12 @@ void GlobalData::set_Corr(){
   const int max_mom_squared = number_of_max_mom;
   const size_t nb_dir = number_of_dirac;
   const size_t nb_dis = number_of_displ;
+  const size_t nb_dg = dg.size();
+  size_t nb_op = op_Corr.size();
 
   size_t i = 0;
   size_t j = 0;
+  size_t k = 0;
   size_t p = 0;
 
   // all three-momenta
@@ -146,27 +153,75 @@ void GlobalData::set_Corr(){
           op_Corr[i].gamma[2] = 4;
           op_Corr[i].gamma[3] = 4;
   
-          op_Corr[i].id_rVdaggerVr = j;
           if(p <= nb_mom/2)
             op_Corr[i].id_VdaggerV = j;
           else
             op_Corr[i].id_VdaggerV = nb_mom-nb_dis*(j/nb_dis+1)+j%nb_dis;
 
+          op_Corr[i].id_rVdaggerVr = k;
+
           if(gam == 0){
-            if(p > nb_mom/2){
-              op_rVdaggerVr.emplace_back(std::pair<size_t, size_t>
-                  (nb_mom-nb_dis*(j/nb_dis+1)+j%nb_dis, j));
-              op_Corr[i].flag_VdaggerV = -1;
-            }
-            else
+
+            if(p <= nb_mom/2){
+              op_VdaggerV[j].id = j;
+              op_VdaggerV[j].index = i;
+
               op_Corr[i].flag_VdaggerV = 1;
 
-            if((p == nb_mom/2) & (dis == 0))
-              index_of_unity = j;
+              op_rVdaggerVr[k].adjoint = -1;
+            }
+            else{
+              op_Corr[i].flag_VdaggerV = -1;
+
+              op_rVdaggerVr[k].adjoint = nb_mom-nb_dis*(k/nb_dis+1)+k%nb_dis;
+            }
+
+            op_rVdaggerVr[k].id = k;
+//            op_rVdaggerVr.index = i;
+            op_rVdaggerVr[k].index = i;
+
             j++;
+            k++;
           }
-          else
+          else{
+            // NECESSARY that op_Corr blocks all indices with same VdaggerV
             op_Corr[i].flag_VdaggerV = 0;
+          }
+
+          if((p == nb_mom/2) && (dis == 0) && (gam == 0))
+            index_of_unity = i;
+
+//          if(gam == 0){
+//            if(p <= nb_mom/2){
+//              op_VdaggerV.id = j;
+//              op_VdaggerV.index.emplace_back(std::pair<size_t, size_t>
+//                  (i, nb_op - nb_dg * (i/nb_dg + 1) + i%nb_dg));
+////                  (j, nb_mom-nb_dis*(j/nb_dis+1)+j%nb_dis));
+//              op_Corr[i].flag_VdaggerV = 1; 
+//            }
+//            if((p == nb_mom/2) & (dis == 0))
+//              index_of_unity = j;
+//
+//            j++;
+//          }
+//          else
+//            op_Corr[i].flag_VdaggerV = 0;
+
+//          if(gam == 0){
+//            if(p > nb_mom/2){
+//              op_rVdaggerVr.emplace_back(std::pair<size_t, size_t>
+//                  (nb_mom-nb_dis*(j/nb_dis+1)+j%nb_dis, j));
+//              op_Corr[i].flag_VdaggerV = -1;
+//            }
+//            else
+//              op_Corr[i].flag_VdaggerV = 1;
+//
+//            if((p == nb_mom/2) & (dis == 0))
+//              index_of_unity = j;
+//            j++;
+//          }
+//          else
+//            op_Corr[i].flag_VdaggerV = 0;
 
           op_Corr[i].id = i;
           i++;

@@ -31,7 +31,7 @@ private:
   ArrayXcdd2Eigen vdaggerv;
   ArrayXcdd4Eigen rvdaggervr;
   ArrayCDd2 momentum;
-  size_t nb_mom;
+//  size_t nb_mom;
   bool is_vdaggerv_set;
   void create_momenta();
 

@@ -75,9 +75,10 @@ private:
   std::vector<size_t> dg;
 
   vec_pdg_Corr op_Corr;
+  vec_pd_VdaggerV op_VdaggerV;
+  vec_pd_rVdaggerVr op_rVdaggerVr;
   vec_pdg_C2 op_C2;
   vec_pdg_C4 op_C4;
-  std::list<std::pair<size_t, size_t>> op_rVdaggerVr;
 
   void init_from_infile();
   void set_Corr();
@@ -218,7 +219,10 @@ public:
   inline const size_t get_index_of_unity() {
     return index_of_unity;
   }
-  inline const std::list<std::pair<size_t, size_t> > get_op_rVdaggerVr() {
+  inline const vec_pd_VdaggerV get_op_VdaggerV() {
+    return op_VdaggerV;
+  }
+  inline const vec_pd_rVdaggerVr get_op_rVdaggerVr() {
     return op_rVdaggerVr;
   }
 

@@ -283,10 +283,15 @@ void BasicOperator::init_operator(const char dilution,
 
       for(size_t rnd_i = 0; rnd_i < nb_rnd; ++rnd_i) {
         for(int t = 0; t < Lt/dilT; t++){
-          //new momentum -> recalculate M[0]
-          //TODO: change that if statement. only for first dirac.
+          // new momentum -> recalculate M[0]
+          // M only depends on momentum and displacement. flag_VdaggerV 
+          // prevents repeated calculation for different gamma structures
           if(op.flag_VdaggerV != 0){
 
+            //TODO: somehow change return_vdaggerv to return a reference
+            // to the adjoint if flag_VdaggerV < 0 and delete if condition
+            // here. Not easily possible because Eigen doesnt allow to 
+            // Eigen doesn't allow to return temporary objects.
             for(size_t col = 0; col < 4; ++col) {
             for(size_t row = 0; row < 4; ++row) {
               if(op.flag_VdaggerV > 0){
@@ -303,6 +308,7 @@ void BasicOperator::init_operator(const char dilution,
                                       nb_ev, dilE)).adjoint() *
                   (vdaggerv.return_vdaggerv(op.id_VdaggerV, t_0)).adjoint();
               }  
+
               // gamma_5 trick. It changes the sign of the two upper right and two
               // lower left blocks in dirac space
               if( ((row + col) == 3) || (abs(row - col) > 1) )
@@ -328,8 +334,8 @@ void BasicOperator::init_operator(const char dilution,
                         .block(row*dilE, col*dilE, dilE, dilE) += value * 
                       M.block(row*dilE, block_dil* nb_ev, dilE, nb_ev) * 
                       peram[rnd_j]
-                        .block(4*nb_ev*t_0 + order_dirac(op.id, block_dil)*nb_ev, Q2_size*tend + col*dilE, 
-                               nb_ev, dilE);
+                        .block(4*nb_ev*t_0 + order_dirac(op.id, block_dil)*nb_ev, 
+                          Q2_size*tend + col*dilE, nb_ev, dilE);
 
               }}}//dilution ends here
 
