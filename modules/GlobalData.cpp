@@ -106,6 +106,13 @@ void GlobalData::init_from_infile() {
   op_C4.resize(nb_op_C4);
   set_C4();
 
+  // nb_rnd_vec_C2 - number of combinations of randomvectors for two quarks,
+  //                 check whether the same perambulators are used for the
+  //                 both quarks
+  // rnd_vec_C2    - list of all combinations of randomvectors being calculated
+  set_rnd_vec_C2();
+
+  set_rnd_vec_C4();
 }
 
 /******************************************************************************/
@@ -351,6 +358,77 @@ void GlobalData::set_C4(){
 //  } 
 
 }
+
+
+// function to obtain the index combinations of the randomvectors for two quarks
+void GlobalData::set_rnd_vec_C2() {
+  // ATM hardcoded, check which quarks are being used
+  const int q1 = 0, q2 = 0;
+  const int rndq1 = quarks[q1].number_of_rnd_vec;
+  const int rndq2 = quarks[q2].number_of_rnd_vec;
+
+  if(q1==q2) { // same quarks, so use only combinations that are not equal
+    for(size_t i = 0; i < rndq1; ++i) {
+      for(size_t j = 0; j < rndq1; ++j) {
+        if(i != j) {
+          rnd_vec_C2.emplace_back(i, j);
+        }
+      }
+    }
+    const int nb = rndq1 * (rndq1 - 1);
+    if(nb != rnd_vec_C2.size()) {
+      std::cerr << "check q1" << std::endl;
+      exit(-1);
+    }
+  } else { // different quarks, use all combinations
+    for(size_t i = 0; i < rndq1; ++i) {
+      for(size_t j = 0; j < rndq2; ++j) {
+        rnd_vec_C2.emplace_back(i, j);
+      }
+    }
+    const int nb = rndq1 * rndq2;
+    if(nb != rnd_vec_C2.size()) {
+      std::cerr << "check q1 and q2" << std::endl;
+      exit(-1);
+    }
+  }
+
+//  std::cout << "rnd_vec test: " << rnd_vec_C2.size() << std::endl;
+//  for(auto& r : rnd_vec_C2) {
+//    std::cout << r.first << " " << r.second << std::endl;
+//  }
+}
+
+// function to obtain index combinations of the randomvectors for four quarks
+void GlobalData::set_rnd_vec_C4() {
+  // ATM hardcoded, check which quarks are being used
+  const int q1 = 0, q2 = 0, q3 = 0, q4 = 0;
+  const int rndq1 = quarks[q1].number_of_rnd_vec;
+  const int rndq2 = quarks[q2].number_of_rnd_vec;
+  const int rndq3 = quarks[q3].number_of_rnd_vec;
+  const int rndq4 = quarks[q4].number_of_rnd_vec;
+
+  if(q1==q2) {
+    if(q1==q3) {
+      if(q1==q4) {
+       for(size_t rnd1 = 0; rnd1 < rndq1; ++rnd1) {
+         for(size_t rnd2 = 0; rnd2 < rndq1; ++rnd2) {
+           if(rnd2 != rnd1) {
+             for(size_t rnd3 = 0; rnd3 < rndq1; ++rnd3) {
+               if( (rnd3 != rnd1) && (rnd3 != rnd2) ) {
+                 for(size_t rnd4 = 0; rnd4 < rndq1; ++rnd4) {
+                   rnd_vec_C4.emplace_back(std::array<size_t, 4> {{rnd1, rnd2, rnd3, rnd4}});
+                 }
+               }
+             }
+           }
+         }
+       }
+      }
+    }
+  }
+}
+
 // *****************************************************************************
 // simplifies and cleans read_parameters function
 static void lattice_input_data_handling (const std::string path_output,

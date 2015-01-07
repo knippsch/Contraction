@@ -41,6 +41,11 @@ typedef boost::multi_array<Eigen::MatrixXcd, 8> array_Xcd_d8_eigen;
 typedef boost::multi_array<Eigen::MatrixXcd, 9> array_Xcd_d9_eigen;
 typedef boost::multi_array<Eigen::MatrixXcd, 10> array_Xcd_d10_eigen;
 
+// index typedefs
+typedef std::list<std::pair<size_t, size_t> > indexlist_2;
+typedef std::list<std::array<size_t, 4> > indexlist_4;
+typedef std::vector<std::array<size_t, 4> > indexlist_4v;
+
 // Operator typedefs
   struct pdg{
     size_t id;
@@ -56,7 +61,7 @@ typedef boost::multi_array<Eigen::MatrixXcd, 10> array_Xcd_d10_eigen;
     size_t p_sq;
     size_t dg_so;
     size_t dg_si;
-    std::list<std::pair<size_t, size_t> > index;
+    indexlist_2 index;
   };
 
   struct pdg_C4 {
@@ -68,7 +73,7 @@ typedef boost::multi_array<Eigen::MatrixXcd, 10> array_Xcd_d10_eigen;
     //displ-gamma structure at source and at sink are coded as the same
     size_t dg_so;
     size_t dg_si;
-    std::list<std::array<size_t, 4> > index;
+    indexlist_4 index;
   };
 
 

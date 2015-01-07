@@ -11,8 +11,9 @@ void LapH::Correlators::build_Corr(){
   const size_t Lt = global_data->get_Lt();
   const vec_pdg_C2 op_C2 = global_data->get_op_C2();
   const std::vector<quark> quarks = global_data->get_quarks();
-  const size_t nb_rnd = quarks[0].number_of_rnd_vec;
+//  const size_t nb_rnd = quarks[0].number_of_rnd_vec;
   const int dilT = quarks[0].number_of_dilution_T;
+  const indexlist_2 rnd_vec = global_data->get_rnd_vec_C2();
   // TODO: must be changed in GlobalData {
   // TODO: }
 
@@ -32,19 +33,22 @@ void LapH::Correlators::build_Corr(){
     
         // TODO: A collpase of both random vectors might be better but
         //       must be done by hand because rnd2 starts from rnd1+1
-        #pragma omp for schedule(dynamic)
-        for(int rnd1 = 0; rnd1 < nb_rnd; ++rnd1){
-        for(int rnd2 = rnd1+1; rnd2 < nb_rnd; ++rnd2){
+        // CJ: OMP cannot do the parallelization over an auto loop,
+        //     implementing a workaround by hand
+        #pragma omp single
+        for(auto rnd_it = rnd_vec.begin(); rnd_it != rnd_vec.end(); ++rnd_it) {
           // build all 2pt traces leading to C2_mes
           // Corr = tr(D_d^-1(t_sink) Gamma D_u^-1(t_source) Gamma)
           // TODO: Just a workaround
     
+          #pragma omp task firstprivate(rnd_it) shared(i)
           compute_meson_small_traces(i.second, basic.get_operator
-              (t_source, t_sink/dilT, 1, i.first, rnd1, rnd2),
-            vdaggerv.return_rvdaggervr(i.second, t_sink, rnd2, rnd1),
-            Corr[i.first][i.second][t_source][t_sink][rnd1][rnd2]);
+              (t_source, t_sink/dilT, 1, i.first, rnd_it->first, rnd_it->second),
+            vdaggerv.return_rvdaggervr(i.second, t_sink, rnd_it->second, rnd_it->first),
+            Corr[i.first][i.second][t_source][t_sink][rnd_it->first][rnd_it->second]);
 
-          }} // Loops over random vectors end here! 
+          #pragma omp taskwait
+        } // Loop over random vectors ends here! 
       }}//Loops over all Quantum numbers 
     
       // Using the dagger operation to get all possible random vector combinations
@@ -57,15 +61,17 @@ void LapH::Correlators::build_Corr(){
     
         // TODO: A collpase of both random vectors might be better but
         //       must be done by hand because rnd2 starts from rnd1+1
-        #pragma omp parallel for schedule(dynamic)
-        for(int rnd1 = 0; rnd1 < nb_rnd; ++rnd1){
-        for(int rnd2 = rnd1+1; rnd2 < nb_rnd; ++rnd2){
+        // CJ: OMP cannot do the parallelization over an auto loop,
+        //     implementing a workaround by hand
+        #pragma omp single
+        for(auto rnd_it = rnd_vec.begin(); rnd_it != rnd_vec.end(); ++rnd_it) {
 
-          Corr[i.first][i.second][t_source][t_sink][rnd2][rnd1] = 
+          #pragma omp task firstprivate(rnd_it) shared(i)
+          Corr[i.first][i.second][t_source][t_sink][rnd_it->second][rnd_it->first] = 
             std::conj(Corr[i.first][i.second][t_source][t_sink]
-            [rnd1][rnd2]);
+            [rnd_it->first][rnd_it->second]);
 
-        }} // Loops over random vectors end here! 
+        } // Loop over random vectors ends here! 
       }}//Loops over all Quantum numbers 
     }// Loops over t_source
   }// Loops over t_sink
