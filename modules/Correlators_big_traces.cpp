@@ -11,8 +11,6 @@ void LapH::Correlators::compute_meson_4pt_cross_trace(LapH::CrossOperator& X) {
 
   const int Lt = global_data->get_Lt();
   const vec_pdg_C4 op_C4 = global_data->get_op_C4();
-  const std::vector<quark> quarks = global_data->get_quarks();
-  //const size_t nb_rnd = quarks[0].number_of_rnd_vec;
   const indexlist_4 rnd_vec_index = global_data->get_rnd_vec_C4();
   // TODO: must be changed in GlobalData {
   // TODO: }
@@ -51,12 +49,12 @@ void LapH::Correlators::compute_meson_4pt_cross_trace(LapH::CrossOperator& X) {
         //             D_d^-1(t_sink       | t_source + 1) Gamma 
         //             D_u^-1(t_source + 1 | t_sink + 1  ) Gamma 
         //             D_d^-1(t_sink + 1   | t_source    ) Gamma)
-        #pragma omp parallel
+//        #pragma omp parallel
         {
           cmplx priv_C4(0.0,0.0);
-          #pragma omp single
+//          #pragma omp single
           for(const auto& rnd_it : rnd_vec_index) {
-            #pragma omp task shared(rnd_it, i)
+//            #pragma omp task shared(rnd_it, i)
             if(t_source%2 == 0)
               priv_C4 += (X(0, i[2], i[1], rnd_it[2], rnd_it[1], rnd_it[3]) *
                           X(1, i[3], i[0], rnd_it[3], rnd_it[0], rnd_it[2])).trace();
@@ -65,7 +63,7 @@ void LapH::Correlators::compute_meson_4pt_cross_trace(LapH::CrossOperator& X) {
                          (X(0, i[2], i[1], rnd_it[2], rnd_it[1], rnd_it[3]) *
                           X(1, i[3], i[0], rnd_it[3], rnd_it[0], rnd_it[2])).trace());
             }
-          #pragma omp critical
+//          #pragma omp critical
           {
             C4_mes[op.p_sq_cm][op.p_sq_so_1][op.p_sq_si_1][op.dg_so][op.dg_si]
                 [abs((t_sink - t_source) - Lt) % Lt] += priv_C4;
@@ -96,9 +94,8 @@ void LapH::Correlators::write_C4_3(const size_t config_i){
   const std::vector<int> dirac_ind {5};
   const size_t nb_dir = dirac_ind.size();
 
-  const std::vector<quark> quarks = global_data->get_quarks();
-  const size_t nb_rnd = quarks[0].number_of_rnd_vec;
-  const size_t norm1 = Lt*nb_rnd*(nb_rnd-1)*(nb_rnd-2);
+  const indexlist_4 rnd_vec_index = global_data->get_rnd_vec_C4();
+  const size_t norm1 = Lt*rnd_vec_index.size();
 
   // normalisation
   for(auto i = C4_mes.data(); i < (C4_mes.data()+C4_mes.num_elements()); i++)
@@ -123,6 +120,4 @@ void LapH::Correlators::write_C4_3(const size_t config_i){
   }}// loops dirac_1 dirac_2
 
 }
-
-
 

@@ -11,7 +11,6 @@ void LapH::Correlators::build_Corr(){
   const size_t Lt = global_data->get_Lt();
   const vec_pdg_C2 op_C2 = global_data->get_op_C2();
   const std::vector<quark> quarks = global_data->get_quarks();
-//  const size_t nb_rnd = quarks[0].number_of_rnd_vec;
   const int dilT = quarks[0].number_of_dilution_T;
   const indexlist_2 rnd_vec_index = global_data->get_rnd_vec_C2();
   // TODO: must be changed in GlobalData {
@@ -58,23 +57,6 @@ void LapH::Correlators::build_Corr(){
       //       additional minus sign involved
     }
     
-//      for(const auto& op : op_C2){
-//      for(const auto& i : op.index){
-//    
-//        // TODO: A collpase of both random vectors might be better but
-//        //       must be done by hand because rnd2 starts from rnd1+1
-//        // CJ: OMP cannot do the parallelization over an auto loop,
-//        //     implementing a workaround by hand
-//        #pragma omp single
-//        for(auto rnd_it = rnd_vec_index.begin(); rnd_it != rnd_vec_index.end(); ++rnd_it) {
-//
-//          #pragma omp task firstprivate(rnd_it) shared(i)
-//          Corr[i.first][i.second][t_source][t_sink][rnd_it->second][rnd_it->first] = 
-//            std::conj(Corr[i.first][i.second][t_source][t_sink]
-//            [rnd_it->first][rnd_it->second]);
-//
-//        } // Loop over random vectors ends here! 
-//      }}//Loops over all Quantum numbers 
     }// Loops over t_source
   }// Loops over t_sink
 
@@ -131,10 +113,6 @@ void LapH::Correlators::build_and_write_2pt(const size_t config_i){
   const size_t nb_mom_sq = global_data->get_number_of_momentum_squared();
   const vec_pdg_C2 op_C2 = global_data->get_op_C2();
   const size_t nb_op = global_data->get_number_of_operators();
-
-  //const std::vector<quark> quarks = global_data->get_quarks();
-  //const size_t nb_rnd = quarks[0].number_of_rnd_vec;
-  //const size_t dilE = quarks[0].number_of_dilution_E;
   const indexlist_2 rnd_vec_index = global_data->get_rnd_vec_C2();
 
   // compute the norm for 2pt functions
@@ -158,7 +136,6 @@ void LapH::Correlators::build_and_write_2pt(const size_t config_i){
 
     for(const auto& op : op_C2) {
     for(const auto& i : op.index) {
-
       for(const auto& rnd : rnd_vec_index) {
         C2_mes[op.p_sq][op.dg_so][op.dg_si]
               [abs((t_sink - t_source - Lt) % Lt)] += 
@@ -168,7 +145,6 @@ void LapH::Correlators::build_and_write_2pt(const size_t config_i){
   }}//Loops over time
 
   // normalization of correlation function
-  //double norm3 = Lt * rnd_vec.size();
   for(auto i = C2_mes.data(); i < (C2_mes.data()+C2_mes.num_elements()); i++)
     *i /= norm1;
 
@@ -214,13 +190,9 @@ void LapH::Correlators::build_and_write_C4_1(const size_t config_i){
   const size_t nb_mom_sq = global_data->get_number_of_momentum_squared();
   const vec_pdg_C4 op_C4 = global_data->get_op_C4();
   const int nb_mom = global_data->get_number_of_momenta();
-
-  const std::vector<quark> quarks = global_data->get_quarks();
-  //const size_t nb_rnd = quarks[0].number_of_rnd_vec;
   const indexlist_4 rnd_vec_index = global_data->get_rnd_vec_C4();
 
   // compute the norm for 4pt functions
-  //int norm = nb_rnd*(nb_rnd-1)*(nb_rnd-2);
   int norm = rnd_vec_index.size();
   std::cout << "\n\tNumber of contraction combinations: " << norm << std::endl;
   const double norm1 = Lt * norm;
@@ -243,7 +215,6 @@ void LapH::Correlators::build_and_write_C4_1(const size_t config_i){
 
     for(const auto& op : op_C4){
     for(const auto& i : op.index){
-
       for(const auto& rnd : rnd_vec_index) {
         C4_mes[op.p_sq_cm][op.p_sq_so_1][op.p_sq_si_1][op.dg_so][op.dg_si]
               [abs((t_sink - t_source - Lt) % Lt)] +=
@@ -297,13 +268,9 @@ void LapH::Correlators::build_and_write_C4_2(const size_t config_i){
   const size_t nb_mom_sq = global_data->get_number_of_momentum_squared();
   const vec_pdg_C4 op_C4 = global_data->get_op_C4();
   const int nb_mom = global_data->get_number_of_momenta();
-
-  const std::vector<quark> quarks = global_data->get_quarks();
-  const size_t nb_rnd = quarks[0].number_of_rnd_vec;
   const indexlist_4 rnd_vec_index = global_data->get_rnd_vec_C4();
 
  // compute the norm for 4pt functions
-  //int norm = nb_rnd*(nb_rnd-1)*(nb_rnd-2);
   int norm = rnd_vec_index.size();
   std::cout << "\n\tNumber of contraction combinations: " << norm << std::endl;
   const double norm1 = Lt * norm;
@@ -331,7 +298,6 @@ void LapH::Correlators::build_and_write_C4_2(const size_t config_i){
 
     for(const auto& op : op_C4){
     for(const auto& i : op.index){
-
       for(const auto& rnd : rnd_vec_index) {
         C4_mes[op.p_sq_cm][op.p_sq_so_1][op.p_sq_si_1][op.dg_so][op.dg_si]
               [abs((t_sink - t_source - Lt) % Lt)] +=
@@ -348,7 +314,6 @@ void LapH::Correlators::build_and_write_C4_2(const size_t config_i){
   // to build a GEVP, the correlators are written into a seperate folder
   // for every dirac structure, momentum, (entry of the GEVP matrix).
   // displacement is not supported at the moment
-
   int dirac_u = 0;
   int dirac_d = 0;
   for(int p1 = 0; p1 < nb_mom_sq; p1++){
