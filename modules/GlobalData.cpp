@@ -106,7 +106,8 @@ void GlobalData::init_from_infile() {
   op_C2.resize(nb_op_C2);
   set_C2();
 
-  const size_t nb_op_C4 = nb_mom_sq * nb_mom_sq * nb_dg * nb_dg;
+//  const size_t nb_op_C4 = nb_mom_sq * nb_mom_sq * nb_dg * nb_dg;
+  const size_t nb_op_C4 = 2;
   op_C4.resize(nb_op_C4);
   set_C4();
 
@@ -280,7 +281,8 @@ void GlobalData::set_C4(){
     for(size_t p_sq_1 = 0; p_sq_1 < nb_mom_sq; p_sq_1++){
       size_t p_sq_2 = p_sq_1;
 //    for(size_t p_sq_2 = 0; p_sq_2 < nb_mom_sq; p_sq_2++){
-    for(size_t p_sq_3 = 0; p_sq_3 < nb_mom_sq; p_sq_3++){
+//    for(size_t p_sq_3 = 0; p_sq_3 < nb_mom_sq; p_sq_3++){
+      size_t p_sq_3 = p_sq_2;
       size_t p_sq_4 = p_sq_3;
 //    for(size_t p_sq_4 = 0; p_sq_4 < nb_mom_sq; p_sq_4++){
 
@@ -291,6 +293,7 @@ void GlobalData::set_C4(){
 //      size_t p_sq_so = p_sq_1;
 //      size_t p_sq_si = p_sq;
 
+      op_C4[i].id = j;
 
       // loop over op and set index pairs
       for(auto& el_1 : op_Corr){
@@ -344,13 +347,13 @@ void GlobalData::set_C4(){
 //              size_t id4 = nb_op - nb_dg * (id3/nb_dg + 1) + si;
 
               // save p^2 and gamma structure at source and sink
-              op_C4[i].p_sq_cm = p_sq_cm;
-              op_C4[i].p_sq_so_1 = p_sq_1;
-              op_C4[i].p_sq_so_2 = p_sq_2;
-              op_C4[i].p_sq_si_1 = p_sq_3;
-              op_C4[i].p_sq_si_2 = p_sq_4;
-              op_C4[i].dg_so = so;
-              op_C4[i].dg_si = si;
+//              op_C4[i].p_sq_cm = p_sq_cm;
+//              op_C4[i].p_sq_so_1 = p_sq_1;
+//              op_C4[i].p_sq_so_2 = p_sq_2;
+//              op_C4[i].p_sq_si_1 = p_sq_3;
+//              op_C4[i].p_sq_si_2 = p_sq_4;
+//              op_C4[i].dg_so = so;
+//              op_C4[i].dg_si = si;
 
               op_C4[i].index.emplace_back(
                   std::array<size_t, 4>{{id1, id2, id3, id4}});
@@ -368,7 +371,7 @@ void GlobalData::set_C4(){
       
     }}//loops over displ-gamma
 //  }}
-  }}}//loop over mom_sq
+  }}//loop over mom_sq
 
 //  if(j != op_C4.size()){
 //    std::cout << "Error in LapH::set_C4(): nb_op not equal to allocated "

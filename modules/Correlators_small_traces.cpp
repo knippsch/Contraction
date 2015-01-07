@@ -197,6 +197,7 @@ void LapH::Correlators::build_and_write_C4_1(const size_t config_i){
   const int Lt = global_data->get_Lt();
 
   const size_t nb_mom_sq = global_data->get_number_of_momentum_squared();
+  const vec_pdg_Corr op_Corr = global_data->get_op_Corr();
   const vec_pdg_C4 op_C4 = global_data->get_op_C4();
   const int nb_mom = global_data->get_number_of_momenta();
 
@@ -235,8 +236,7 @@ void LapH::Correlators::build_and_write_C4_1(const size_t config_i){
           for(int rnd4 = 0; rnd4 < nb_rnd; ++rnd4){
           if((rnd4 != rnd1) && (rnd4 != rnd2) && (rnd4 != rnd3)){
 
-            C4_mes[op.p_sq_cm][op.p_sq_so_1][op.p_sq_si_1][op.dg_so][op.dg_si]
-                  [abs((t_sink - t_source - Lt) % Lt)] +=
+            C4_mes[op.id][abs((t_sink - t_source - Lt) % Lt)] +=
               (Corr[i[0]][i[2]][t_source_1][t_sink_1][rnd1][rnd3]) *
               (Corr[i[1]][i[3]][t_source][t_sink][rnd2][rnd4]);
           }}// loop rnd4 and if
@@ -251,24 +251,36 @@ void LapH::Correlators::build_and_write_C4_1(const size_t config_i){
   // to build a GEVP, the correlators are written into a seperate folder
   // for every dirac structure, momentum, (entry of the GEVP matrix).
   // displacement is not supported at the moment
-  int dirac_u = 0;
-  int dirac_d = 0;
-  for(int p1 = 0; p1 < nb_mom_sq; p1++){
-    int p2 = p1;
+  for(const auto& op : op_C4){
+    size_t gam_so = op_Corr[op.index.front()[0]].gamma[0];
+    size_t gam_si = op_Corr[op.index.front()[2]].gamma[0];
+    size_t mom_so = op_Corr[op.index.front()[0]].p3[0] * op_Corr[op.index.front()[0]].p3[0] + 
+                  op_Corr[op.index.front()[0]].p3[1] * op_Corr[op.index.front()[0]].p3[1] + 
+                  op_Corr[op.index.front()[0]].p3[2] * op_Corr[op.index.front()[0]].p3[2];
+    size_t mom_si = op_Corr[op.index.front()[2]].p3[0] * op_Corr[op.index.front()[2]].p3[0] + 
+                  op_Corr[op.index.front()[2]].p3[1] * op_Corr[op.index.front()[2]].p3[1] + 
+                  op_Corr[op.index.front()[2]].p3[2] * op_Corr[op.index.front()[2]].p3[2];
+    size_t dis_so = op_Corr[op.index.front()[0]].dis3[0] * op_Corr[op.index.front()[0]].dis3[0] + 
+                  op_Corr[op.index.front()[0]].dis3[1] * op_Corr[op.index.front()[0]].dis3[1] + 
+                  op_Corr[op.index.front()[0]].dis3[2] * op_Corr[op.index.front()[0]].dis3[2];
+    size_t dis_si = op_Corr[op.index.front()[2]].dis3[0] * op_Corr[op.index.front()[2]].dis3[0] + 
+                  op_Corr[op.index.front()[2]].dis3[1] * op_Corr[op.index.front()[2]].dis3[1] + 
+                  op_Corr[op.index.front()[2]].dis3[2] * op_Corr[op.index.front()[2]].dis3[2];
 
     sprintf(outfile, 
-        "%s/dirac_%02d_%02d_p_%01d_%01d_displ_%01d_%01d/"
+        "%s/dirac_%02ld_%02ld_p_%01ld_%01ld_displ_%01ld_%01ld/"
         "C4_1_conf%04d.dat", 
-        outpath.c_str(), dirac_ind.at(dirac_u), dirac_ind.at(dirac_d), 
-        p1, p2, 0, 0,(int) config_i);
-//    std::cout << outfile << std::endl;
+        outpath.c_str(), gam_so, gam_si, mom_so, mom_si, 
+        dis_so, dis_si, (int)config_i);
+    std::cout << outfile << std::endl;
     if((fp = fopen(outfile, "wb")) == NULL)
-      std::cout << "fail to open outputfile" << std::endl;
+      std::cout << "fail to open outputfile: " << outfile << std::endl;
 
-    fwrite((double*) &(C4_mes[0][p1][p2][dirac_u][dirac_d][0]), 
-        sizeof(double), 2 * Lt, fp);
+    fwrite((double*) &(C4_mes[op.id][0]), 
+                                            sizeof(double), 2 * Lt, fp);
+    fclose(fp);
 
-        fclose(fp);
+
   }
 
   time = clock() - time;
@@ -278,6 +290,7 @@ void LapH::Correlators::build_and_write_C4_1(const size_t config_i){
 /******************************************************************************/
 /******************************************************************************/
 /******************************************************************************/
+
 void LapH::Correlators::build_and_write_C4_2(const size_t config_i){
 
   std::cout << "\n\tcomputing the connected contribution of C4_2:\n";
@@ -287,6 +300,7 @@ void LapH::Correlators::build_and_write_C4_2(const size_t config_i){
   const int Lt = global_data->get_Lt();
 
   const size_t nb_mom_sq = global_data->get_number_of_momentum_squared();
+  const vec_pdg_Corr op_Corr = global_data->get_op_Corr();
   const vec_pdg_C4 op_C4 = global_data->get_op_C4();
   const int nb_mom = global_data->get_number_of_momenta();
 
@@ -330,8 +344,7 @@ void LapH::Correlators::build_and_write_C4_2(const size_t config_i){
           for(int rnd4 = 0; rnd4 < nb_rnd; ++rnd4){
           if((rnd4 != rnd1) && (rnd4 != rnd2) && (rnd4 != rnd3)){
 
-            C4_mes[op.p_sq_cm][op.p_sq_so_1][op.p_sq_si_1][op.dg_so][op.dg_si]
-                  [abs((t_sink - t_source - Lt) % Lt)] +=
+            C4_mes[op.id][abs((t_sink - t_source - Lt) % Lt)] +=
               (Corr[i[0]][i[2]][t_source_1][t_sink][rnd1][rnd3]) *
               (Corr[i[1]][i[3]][t_source][t_sink_1][rnd2][rnd4]);
           }}// loop rnd4
@@ -347,25 +360,36 @@ void LapH::Correlators::build_and_write_C4_2(const size_t config_i){
   // to build a GEVP, the correlators are written into a seperate folder
   // for every dirac structure, momentum, (entry of the GEVP matrix).
   // displacement is not supported at the moment
-
-  int dirac_u = 0;
-  int dirac_d = 0;
-  for(int p1 = 0; p1 < nb_mom_sq; p1++){
-    int p2 = p1;
+  for(const auto& op : op_C4){
+    size_t gam_so = op_Corr[op.index.front()[0]].gamma[0];
+    size_t gam_si = op_Corr[op.index.front()[2]].gamma[0];
+    size_t mom_so = op_Corr[op.index.front()[0]].p3[0] * op_Corr[op.index.front()[0]].p3[0] + 
+                  op_Corr[op.index.front()[0]].p3[1] * op_Corr[op.index.front()[0]].p3[1] + 
+                  op_Corr[op.index.front()[0]].p3[2] * op_Corr[op.index.front()[0]].p3[2];
+    size_t mom_si = op_Corr[op.index.front()[2]].p3[0] * op_Corr[op.index.front()[2]].p3[0] + 
+                  op_Corr[op.index.front()[2]].p3[1] * op_Corr[op.index.front()[2]].p3[1] + 
+                  op_Corr[op.index.front()[2]].p3[2] * op_Corr[op.index.front()[2]].p3[2];
+    size_t dis_so = op_Corr[op.index.front()[0]].dis3[0] * op_Corr[op.index.front()[0]].dis3[0] + 
+                  op_Corr[op.index.front()[0]].dis3[1] * op_Corr[op.index.front()[0]].dis3[1] + 
+                  op_Corr[op.index.front()[0]].dis3[2] * op_Corr[op.index.front()[0]].dis3[2];
+    size_t dis_si = op_Corr[op.index.front()[2]].dis3[0] * op_Corr[op.index.front()[2]].dis3[0] + 
+                  op_Corr[op.index.front()[2]].dis3[1] * op_Corr[op.index.front()[2]].dis3[1] + 
+                  op_Corr[op.index.front()[2]].dis3[2] * op_Corr[op.index.front()[2]].dis3[2];
 
     sprintf(outfile, 
-        "%s/dirac_%02d_%02d_p_%01d_%01d_displ_%01d_%01d/"
+        "%s/dirac_%02ld_%02ld_p_%01ld_%01ld_displ_%01ld_%01ld/"
         "C4_2_conf%04d.dat", 
-        outpath.c_str(), dirac_ind.at(dirac_u), dirac_ind.at(dirac_d), 
-        p1, p2, displ_min, displ_max, (int)config_i);
-//    std::cout << outfile << std::endl;
+        outpath.c_str(), gam_so, gam_si, mom_so, mom_si, 
+        dis_so, dis_si, (int)config_i);
+    std::cout << outfile << std::endl;
     if((fp = fopen(outfile, "wb")) == NULL)
-      std::cout << "fail to open outputfile" << std::endl;
+      std::cout << "fail to open outputfile: " << outfile << std::endl;
 
-    fwrite((double*) &(C4_mes[0][p1][p2][dirac_u][dirac_d][0]), 
-        sizeof(double), 2 * Lt, fp);
-
+    fwrite((double*) &(C4_mes[op.id][0]), 
+                                            sizeof(double), 2 * Lt, fp);
     fclose(fp);
+
+
   }
 
   time = clock() - time;
