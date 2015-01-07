@@ -110,6 +110,10 @@ void GlobalData::init_from_infile() {
   op_C4.resize(nb_op_C4);
   set_C4();
 
+  // rnd_vec_C2    - list of all combinations of randomvectors being calculated
+  set_rnd_vec_C2();
+
+  set_rnd_vec_C4();
 }
 
 /******************************************************************************/
@@ -377,6 +381,324 @@ void GlobalData::set_C4(){
 //  } 
 
 }
+
+
+// function to obtain the index combinations of the randomvectors for two quarks
+void GlobalData::set_rnd_vec_C2() {
+  // ATM hardcoded, check which quarks are being used
+  const int q1 = 0, q2 = 0;
+  const int rndq1 = quarks[q1].number_of_rnd_vec;
+  const int rndq2 = quarks[q2].number_of_rnd_vec;
+
+  if(q1==q2) { // same quarks, so use only combinations that are not equal
+    if(rndq1 < 2) {
+      std::cerr << "not enough randomvectors for 4point functions" << std::endl;
+      exit(-1);
+    }
+    for(size_t i = 0; i < rndq1; ++i) {
+      for(size_t j = 0; j < rndq1; ++j) {
+        if(i != j) {
+          rnd_vec_C2.emplace_back(i, j);
+        }
+      }
+    }
+  } else { // different quarks, use all combinations
+    for(size_t i = 0; i < rndq1; ++i) {
+      for(size_t j = 0; j < rndq2; ++j) {
+        rnd_vec_C2.emplace_back(i, j);
+      }
+    }
+  }
+
+//  std::cout << "rnd_vec test: " << rnd_vec_C2.size() << std::endl;
+//  for(auto& r : rnd_vec_C2) {
+//    std::cout << r.first << " " << r.second << std::endl;
+//  }
+}
+
+// function to obtain index combinations of the randomvectors for four quarks
+void GlobalData::set_rnd_vec_C4() {
+  // ATM hardcoded, check which quarks are being used
+  const int q1 = 0, q2 = 0, q3 = 0, q4 = 0;
+  const int rndq1 = quarks[q1].number_of_rnd_vec;
+  const int rndq2 = quarks[q2].number_of_rnd_vec;
+  const int rndq3 = quarks[q3].number_of_rnd_vec;
+  const int rndq4 = quarks[q4].number_of_rnd_vec;
+
+  if(q1==q2) { // q1-2 same
+    if(q1==q3) { // q1-3 same
+      if(q1==q4) { // q1-4 same
+        if(rndq1 < 4) {
+          std::cerr << "not enough randomvectors for 4point functions" << std::endl;
+          exit(-1);
+        }
+        for(size_t rnd1 = 0; rnd1 < rndq1; ++rnd1) {
+          for(size_t rnd2 = 0; rnd2 < rndq1; ++rnd2) {
+            if(rnd2 != rnd1) {
+              for(size_t rnd3 = 0; rnd3 < rndq1; ++rnd3) {
+                if( (rnd3 != rnd1) && (rnd3 != rnd2) ) {
+                  for(size_t rnd4 = 0; rnd4 < rndq1; ++rnd4) {
+                    if( (rnd4 != rnd1) && (rnd4 != rnd2) && (rnd4 != rnd3) ) {
+                      rnd_vec_C4.emplace_back(std::array<size_t, 4> {{rnd1, rnd2, rnd3, rnd4}});
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      } else { // q1-3 same; q4 different
+        if(rndq1 < 3) {
+          std::cerr << "not enough randomvectors for 4point functions" << std::endl;
+          exit(-1);
+        }
+        for(size_t rnd1 = 0; rnd1 < rndq1; ++rnd1) {
+          for(size_t rnd2 = 0; rnd2 < rndq1; ++rnd2) {
+            if(rnd2 != rnd1) {
+              for(size_t rnd3 = 0; rnd3 < rndq1; ++rnd3) {
+                if( (rnd3 != rnd1) && (rnd3 != rnd2) ) {
+                  for(size_t rnd4 = 0; rnd4 < rndq4; ++rnd4) {
+                    rnd_vec_C4.emplace_back(std::array<size_t, 4> {{rnd1, rnd2, rnd3, rnd4}});
+                  }
+                }
+              }
+            }
+          }
+        }
+      } // check q4
+    } else { //q1-2 same; q3 different
+      if(q1==q4) { //q1-2,4 same; q3 different
+        if(rndq1 < 3) {
+          std::cerr << "not enough randomvectors for 4point functions" << std::endl;
+          exit(-1);
+        }
+        for(size_t rnd1 = 0; rnd1 < rndq1; ++rnd1) {
+          for(size_t rnd2 = 0; rnd2 < rndq1; ++rnd2) {
+            if(rnd2 != rnd1) {
+              for(size_t rnd3 = 0; rnd3 < rndq3; ++rnd3) {
+                for(size_t rnd4 = 0; rnd4 < rndq1; ++rnd4) {
+                  if( (rnd4 != rnd1) && (rnd4 != rnd2) ) {
+                    rnd_vec_C4.emplace_back(std::array<size_t, 4> {{rnd1, rnd2, rnd3, rnd4}});
+                  }
+                }
+              }
+            }
+          }
+        }
+      } else if (q3==q4) { //q1-2 same; q3-4 same
+        if( (rndq1 < 2) || (rndq3 < 2) ) {
+          std::cerr << "not enough randomvectors for 4point functions" << std::endl;
+          exit(-1);
+        }
+        for(size_t rnd1 = 0; rnd1 < rndq1; ++rnd1) {
+          for(size_t rnd2 = 0; rnd2 < rndq1; ++rnd2) {
+            if(rnd2 != rnd1) {
+              for(size_t rnd3 = 0; rnd3 < rndq3; ++rnd3) {
+                for(size_t rnd4 = 0; rnd4 < rndq3; ++rnd4) {
+                  if(rnd4 != rnd3) {
+                    rnd_vec_C4.emplace_back(std::array<size_t, 4> {{rnd1, rnd2, rnd3, rnd4}});
+                  }
+                }
+              }
+            }
+          }
+        }
+      } else { //q1-2 same; q3 different; q4 different
+        if(rndq1 < 2) {
+          std::cerr << "not enough randomvectors for 4point functions" << std::endl;
+          exit(-1);
+        }
+        for(size_t rnd1 = 0; rnd1 < rndq1; ++rnd1) {
+          for(size_t rnd2 = 0; rnd2 < rndq1; ++rnd2) {
+            if(rnd2 != rnd1) {
+              for(size_t rnd3 = 0; rnd3 < rndq3; ++rnd3) {
+                for(size_t rnd4 = 0; rnd4 < rndq4; ++rnd4) {
+                  rnd_vec_C4.emplace_back(std::array<size_t, 4> {{rnd1, rnd2, rnd3, rnd4}});
+                }
+              }
+            }
+          }
+        }
+      } // check q4
+    } // check q3
+  } else { // q1 different; q2 different
+    if(q1==q3) { //q1,3 same; q2 different
+      if(q1==q4) { //q1,3-4 same; q2 different
+        if(rndq1 < 3) {
+          std::cerr << "not enough randomvectors for 4point functions" << std::endl;
+          exit(-1);
+        }
+        for(size_t rnd1 = 0; rnd1 < rndq1; ++rnd1) {
+          for(size_t rnd2 = 0; rnd2 < rndq2; ++rnd2) {
+            for(size_t rnd3 = 0; rnd3 < rndq1; ++rnd3) {
+              if(rnd3 != rnd1) {
+                for(size_t rnd4 = 0; rnd4 < rndq1; ++rnd4) {
+                  if( (rnd4 != rnd1) && (rnd4 != rnd3) ) {
+                    rnd_vec_C4.emplace_back(std::array<size_t, 4> {{rnd1, rnd2, rnd3, rnd4}});
+                  }
+                }
+              }
+            }
+          }
+        }
+      } else if(q2==q4) { //q1,3 same; q2,4 same
+        if( (rndq1 < 2) || (rndq2 < 2) ) {
+          std::cerr << "not enough randomvectors for 4point functions" << std::endl;
+          exit(-1);
+        }
+        for(size_t rnd1 = 0; rnd1 < rndq1; ++rnd1) {
+          for(size_t rnd2 = 0; rnd2 < rndq2; ++rnd2) {
+            for(size_t rnd3 = 0; rnd3 < rndq1; ++rnd3) {
+              if(rnd3 != rnd1) {
+                for(size_t rnd4 = 0; rnd4 < rndq2; ++rnd4) {
+                  if(rnd4 != rnd2) {
+                    rnd_vec_C4.emplace_back(std::array<size_t, 4> {{rnd1, rnd2, rnd3, rnd4}});
+                  }
+                }
+              }
+            }
+          }
+        }
+      } else { //q1,3 same; q2 different; q4 different
+        if(rndq1 < 2) {
+          std::cerr << "not enough randomvectors for 4point functions" << std::endl;
+          exit(-1);
+        }
+        for(size_t rnd1 = 0; rnd1 < rndq1; ++rnd1) {
+          for(size_t rnd2 = 0; rnd2 < rndq2; ++rnd2) {
+            for(size_t rnd3 = 0; rnd3 < rndq1; ++rnd3) {
+              if(rnd3 != rnd1) {
+                for(size_t rnd4 = 0; rnd4 < rndq4; ++rnd4) {
+                  rnd_vec_C4.emplace_back(std::array<size_t, 4> {{rnd1, rnd2, rnd3, rnd4}});
+                }
+              }
+            }
+          }
+        }
+      } // check q4
+    } else if(q2==q3) { //q1 different; q2-3 same
+      if(q1==q4) { //q1,4 same; q2-3 same
+        if( (rndq1 < 2)  || (rndq2 < 2) ) {
+          std::cerr << "not enough randomvectors for 4point functions" << std::endl;
+          exit(-1);
+        }
+        for(size_t rnd1 = 0; rnd1 < rndq1; ++rnd1) {
+          for(size_t rnd2 = 0; rnd2 < rndq2; ++rnd2) {
+            for(size_t rnd3 = 0; rnd3 < rndq2; ++rnd3) {
+              if(rnd3 != rnd2) {
+                for(size_t rnd4 = 0; rnd4 < rndq1; ++rnd4) {
+                  if(rnd4 != rnd1) {
+                    rnd_vec_C4.emplace_back(std::array<size_t, 4> {{rnd1, rnd2, rnd3, rnd4}});
+                  }
+                }
+              }
+            }
+          }
+        }
+      } else if(q2==q4) { //q1 different; q2-4 same
+        if(rndq2 < 3) {
+          std::cerr << "not enough randomvectors for 4point functions" << std::endl;
+          exit(-1);
+        }
+        for(size_t rnd1 = 0; rnd1 < rndq1; ++rnd1) {
+          for(size_t rnd2 = 0; rnd2 < rndq2; ++rnd2) {
+            for(size_t rnd3 = 0; rnd3 < rndq2; ++rnd3) {
+              if(rnd3 != rnd2) {
+                for(size_t rnd4 = 0; rnd4 < rndq2; ++rnd4) {
+                  if( (rnd4 != rnd2) && (rnd4 != rnd3) ) {
+                    rnd_vec_C4.emplace_back(std::array<size_t, 4> {{rnd1, rnd2, rnd3, rnd4}});
+                  }
+                }
+              }
+            }
+          }
+        }
+      } else { //q1 different; q2-3 same; q4 different
+        if(rndq2 < 2) {
+          std::cerr << "not enough randomvectors for 4point functions" << std::endl;
+          exit(-1);
+        }
+        for(size_t rnd1 = 0; rnd1 < rndq1; ++rnd1) {
+          for(size_t rnd2 = 0; rnd2 < rndq2; ++rnd2) {
+            for(size_t rnd3 = 0; rnd3 < rndq2; ++rnd3) {
+              if(rnd3 != rnd2) {
+                for(size_t rnd4 = 0; rnd4 < rndq4; ++rnd4) {
+                  rnd_vec_C4.emplace_back(std::array<size_t, 4> {{rnd1, rnd2, rnd3, rnd4}});
+                }
+              }
+            }
+          }
+        }
+      } // check q4
+    } else { //q1 different; q2 different; q3 different
+      if(q1==q4) { //q1,4 same; q2 different; q3 different
+        if(rndq1 < 2) {
+          std::cerr << "not enough randomvectors for 4point functions" << std::endl;
+          exit(-1);
+        }
+        for(size_t rnd1 = 0; rnd1 < rndq1; ++rnd1) {
+          for(size_t rnd2 = 0; rnd2 < rndq2; ++rnd2) {
+            for(size_t rnd3 = 0; rnd3 < rndq3; ++rnd3) {
+              for(size_t rnd4 = 0; rnd4 < rndq1; ++rnd4) {
+                if(rnd4 != rnd1) {
+                  rnd_vec_C4.emplace_back(std::array<size_t, 4> {{rnd1, rnd2, rnd3, rnd4}});
+                }
+              }
+            }
+          }
+        }
+      } else if(q2==q4) { //q1 different; q2,4 same; q3 different
+        if(rndq2 < 2) {
+          std::cerr << "not enough randomvectors for 4point functions" << std::endl;
+          exit(-1);
+        }
+        for(size_t rnd1 = 0; rnd1 < rndq1; ++rnd1) {
+          for(size_t rnd2 = 0; rnd2 < rndq2; ++rnd2) {
+            for(size_t rnd3 = 0; rnd3 < rndq3; ++rnd3) {
+              for(size_t rnd4 = 0; rnd4 < rndq2; ++rnd4) {
+                if(rnd4 != rnd2) {
+                  rnd_vec_C4.emplace_back(std::array<size_t, 4> {{rnd1, rnd2, rnd3, rnd4}});
+                }
+              }
+            }
+          }
+        }
+      } else if(q3==q4) { //q1 different; q2 different; q3-4 same
+        if(rndq3 < 2) {
+          std::cerr << "not enough randomvectors for 4point functions" << std::endl;
+          exit(-1);
+        }
+        for(size_t rnd1 = 0; rnd1 < rndq1; ++rnd1) {
+          for(size_t rnd2 = 0; rnd2 < rndq2; ++rnd2) {
+            for(size_t rnd3 = 0; rnd3 < rndq3; ++rnd3) {
+              for(size_t rnd4 = 0; rnd4 < rndq3; ++rnd4) {
+                if(rnd4 != rnd3) {
+                  rnd_vec_C4.emplace_back(std::array<size_t, 4> {{rnd1, rnd2, rnd3, rnd4}});
+                }
+              }
+            }
+          }
+        }
+      } else { //q1 different; q2 different; q3 different; q4 different
+        for(size_t rnd1 = 0; rnd1 < rndq1; ++rnd1) {
+          for(size_t rnd2 = 0; rnd2 < rndq2; ++rnd2) {
+            for(size_t rnd3 = 0; rnd3 < rndq3; ++rnd3) {
+              for(size_t rnd4 = 0; rnd4 < rndq4; ++rnd4) {
+                rnd_vec_C4.emplace_back(std::array<size_t, 4> {{rnd1, rnd2, rnd3, rnd4}});
+              }
+            }
+          }
+        }
+      } // check q4
+    } // check q3
+  } // check q2
+
+//  std::cout << "rnd_vec test: " << rnd_vec_C4.size() << std::endl;
+//  for(auto& r : rnd_vec_C4) {
+//    std::cout << r[0] << " " << r[1] << " " << r[2] << " " << r[3] << std::endl;
+//  }
+}
+
 // *****************************************************************************
 // simplifies and cleans read_parameters function
 static void lattice_input_data_handling (const std::string path_output,
