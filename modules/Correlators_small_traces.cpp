@@ -176,7 +176,7 @@ void LapH::Correlators::build_and_write_2pt(const size_t config_i){
 
   sprintf(outfile, 
       "%s/C2_pi+-_conf%04d.dat", outpath.c_str(), (int)config_i);
-  export_corr_2pt(outfile, C2_mes); //attributes, correlators);
+  export_corr_2pt(outfile, C2_mes);
 
   time = clock() - time;
   std::cout << "\t\tSUCCESS - " << ((float) time)/CLOCKS_PER_SEC 
