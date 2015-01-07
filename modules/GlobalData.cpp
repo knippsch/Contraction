@@ -106,9 +106,6 @@ void GlobalData::init_from_infile() {
   op_C4.resize(nb_op_C4);
   set_C4();
 
-  // nb_rnd_vec_C2 - number of combinations of randomvectors for two quarks,
-  //                 check whether the same perambulators are used for the
-  //                 both quarks
   // rnd_vec_C2    - list of all combinations of randomvectors being calculated
   set_rnd_vec_C2();
 
@@ -410,23 +407,34 @@ void GlobalData::set_rnd_vec_C4() {
 
   if(q1==q2) {
     if(q1==q3) {
-      if(q1==q4) {
-       for(size_t rnd1 = 0; rnd1 < rndq1; ++rnd1) {
-         for(size_t rnd2 = 0; rnd2 < rndq1; ++rnd2) {
-           if(rnd2 != rnd1) {
-             for(size_t rnd3 = 0; rnd3 < rndq1; ++rnd3) {
-               if( (rnd3 != rnd1) && (rnd3 != rnd2) ) {
-                 for(size_t rnd4 = 0; rnd4 < rndq1; ++rnd4) {
-                   rnd_vec_C4.emplace_back(std::array<size_t, 4> {{rnd1, rnd2, rnd3, rnd4}});
-                 }
-               }
-             }
-           }
-         }
-       }
+      if(q1==q4) { // same perambulators for all quarks
+        if(rndq1 < 4) {
+          std::cerr << "not enough randomvectors for 4point functions" << std::endl;
+          exit(-1);
+        }
+        for(size_t rnd1 = 0; rnd1 < rndq1; ++rnd1) {
+          for(size_t rnd2 = 0; rnd2 < rndq1; ++rnd2) {
+            if(rnd2 != rnd1) {
+              for(size_t rnd3 = 0; rnd3 < rndq1; ++rnd3) {
+                if( (rnd3 != rnd1) && (rnd3 != rnd2) ) {
+                  for(size_t rnd4 = 0; rnd4 < rndq1; ++rnd4) {
+                    if( (rnd4 != rnd1) && (rnd4 != rnd2) && (rnd4 != rnd3) ) {
+                      rnd_vec_C4.emplace_back(std::array<size_t, 4> {{rnd1, rnd2, rnd3, rnd4}});
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     }
   }
+
+//  std::cout << "rnd_vec test: " << rnd_vec_C4.size() << std::endl;
+//  for(auto& r : rnd_vec_C4) {
+//    std::cout << r[0] << " " << r[1] << " " << r[2] << " " << r[3] << std::endl;
+//  }
 }
 
 // *****************************************************************************

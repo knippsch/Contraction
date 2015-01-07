@@ -267,6 +267,7 @@ void BasicOperator::init_operator(const char dilution,
   const size_t nb_dir = global_data->get_number_of_dirac();
 
   std::cout << "\n" << std::endl;
+  clock_t time = clock();
 #pragma omp parallel 
 {
   // TODO: Dirac Structure is still missing
@@ -340,7 +341,9 @@ void BasicOperator::init_operator(const char dilution,
   }// loops over t_0 ends here
 }// pragma omp ends
 
-  std::cout << "\tcomputing double quarkline: 100.00%\n\n" << std::endl;
+  std::cout << "\tcomputing double quarkline: 100.00%" << std::endl;
+  time = clock() - time;
+  std::cout << "\t\tSUCCESS - " << ((float) time) / CLOCKS_PER_SEC << " seconds\n\n" << std::endl;
 }
 /******************************************************************************/
 /******************************************************************************/
