@@ -118,7 +118,8 @@ void read_2pt_lime(const char* filename, std::vector<Tag>& tags,
         // read correlator data
         else if(MB_flag == 0 && ME_flag == 1){
           vec corr;
-          corr.resize(96);
+          //TODO adapt to global data
+          corr.resize(48);
           //std::cout << "initialized tmeporal correlator" << std::endl;
           act_status = limeReaderReadData(corr.data(), &data_bytes, r);
           //std::cout << "read_in tmeporal correlator" << std::endl;
@@ -173,19 +174,34 @@ void get_2pt_lime(const char* filename, const size_t num_corrs,
 // Dump to ASCII //////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-//void ASCII_dump_2pt(const char* filename, size_t g_so, size_t g_si, size_t p_so,
-//                  size_t p_si, size_t dis_so, size_t dis_si){
-//
-//  Tag tag = id(g_so, g_si, p_so, p_si, dis_so, dis_si);
-//  vec cor;
-//  // needs to be taken from input file
-//  size_t corr_length = 96;
-//  size_t num_corrs = 100;
-//  get_2pt_lime(filename, num_corrs, corr_length, tag, cor );
-//  for(size_t t = 0; t < cor.size(); ++t){
-//    std::cout << g_so << " " << g_si << " " << p_so << " " << p_si << " " << dis_so << " " << dis_si << " " << t <<
-//              " " << cor[t] << std::endl;
-//  }
-//
-//}
+void ASCII_dump_2pt(const char* filename, size_t g_so, size_t g_si, size_t p_so,
+                  size_t p_si, size_t dis_so, size_t dis_si){
+
+  Tag tag;
+  tag.mom[0] = p_so;
+  tag.mom[1] = p_si;
+  tag.gam[0] = g_so;
+  tag.gam[1] = g_si;
+  if (dis_so == 0){
+    tag.dis[0][0] = 0;
+    tag.dis[0][1] = 0;
+    tag.dis[0][2] = 0;
+  }
+  if (dis_si == 0){
+    tag.dis[1][0] = 0;
+    tag.dis[1][1] = 0;
+    tag.dis[1][2] = 0;
+  }
+
+  vec cor;
+  // needs to be taken from input file
+  size_t corr_length = 48;
+  size_t num_corrs = 2;
+  get_2pt_lime(filename, num_corrs, corr_length, tag, cor );
+  for(size_t t = 0; t < cor.size(); ++t){
+    std::cout << g_so << " " << g_si << " " << p_so << " " << p_si << " " << dis_so << " " << dis_si << " " << t <<
+              " " << cor[t] << std::endl;
+  }
+
+}
 
