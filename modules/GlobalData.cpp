@@ -365,6 +365,10 @@ void GlobalData::set_rnd_vec_C2() {
   const int rndq2 = quarks[q2].number_of_rnd_vec;
 
   if(q1==q2) { // same quarks, so use only combinations that are not equal
+    if(rndq1 < 2) {
+      std::cerr << "not enough randomvectors for 4point functions" << std::endl;
+      exit(-1);
+    }
     for(size_t i = 0; i < rndq1; ++i) {
       for(size_t j = 0; j < rndq1; ++j) {
         if(i != j) {
@@ -372,21 +376,11 @@ void GlobalData::set_rnd_vec_C2() {
         }
       }
     }
-    const int nb = rndq1 * (rndq1 - 1);
-    if(nb != rnd_vec_C2.size()) {
-      std::cerr << "check q1" << std::endl;
-      exit(-1);
-    }
   } else { // different quarks, use all combinations
     for(size_t i = 0; i < rndq1; ++i) {
       for(size_t j = 0; j < rndq2; ++j) {
         rnd_vec_C2.emplace_back(i, j);
       }
-    }
-    const int nb = rndq1 * rndq2;
-    if(nb != rnd_vec_C2.size()) {
-      std::cerr << "check q1 and q2" << std::endl;
-      exit(-1);
     }
   }
 
@@ -466,7 +460,7 @@ void GlobalData::set_rnd_vec_C4() {
           }
         }
       } else if (q3==q4) { //q1-2 same; q3-4 same
-        if( (rndq1 < 2) || (rnd3 < 2) ) {
+        if( (rndq1 < 2) || (rndq3 < 2) ) {
           std::cerr << "not enough randomvectors for 4point functions" << std::endl;
           exit(-1);
         }

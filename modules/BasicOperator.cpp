@@ -225,8 +225,8 @@ static void create_gamma (std::vector<struct lookup>& gamma, const int i) {
 /******************************************************************************/
 // constructor ****************************************************************/
 /******************************************************************************/
-BasicOperator::BasicOperator() : Q2(), 
-                                 gamma() {
+BasicOperator::BasicOperator() : gamma(), 
+                                 Q2() {
 
   const size_t Lt = global_data->get_Lt();
   const size_t nb_mom = global_data->get_number_of_momenta();
