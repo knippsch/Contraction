@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <complex>
 #include <vector>
+#include <list>
 
 #include "Eigen/Core"
 #include "Eigen/Dense"
@@ -89,8 +90,9 @@ typedef boost::multi_array<Eigen::MatrixXcd, 10> array_Xcd_d10_eigen;
 // index - id of pdg and id for the adjoint pdg
   struct pd_r{
     size_t id;
+    size_t id_adjoint;
     size_t index;
-    int adjoint;
+    bool adjoint;
   };
 
 // struct which contains all id's from pdg which shall be used in the
@@ -105,10 +107,11 @@ typedef boost::multi_array<Eigen::MatrixXcd, 10> array_Xcd_d10_eigen;
 // dg_si - combined dirac/gamma structure for the sink
 
   struct pdg_C2 {
+    size_t id;
     std::list<std::pair<size_t, size_t> > index;
-    size_t p_sq;
-    size_t dg_so;
-    size_t dg_si;
+//    size_t p_sq;
+//    size_t dg_so;
+//    size_t dg_si;
   };
 
 // struct which contains all id's from pdg which shall be used in the

@@ -123,6 +123,7 @@ void LapH::Correlators::build_and_write_2pt(const size_t config_i){
 
   const size_t nb_mom_sq = global_data->get_number_of_momentum_squared();
   const vec_pdg_C2 op_C2 = global_data->get_op_C2();
+  const vec_pdg_Corr op_Corr = global_data->get_op_Corr();
   const size_t nb_op = global_data->get_number_of_operators();
 
   const std::vector<quark> quarks = global_data->get_quarks();
@@ -154,8 +155,8 @@ void LapH::Correlators::build_and_write_2pt(const size_t config_i){
       for(int rnd1 = 0; rnd1 < nb_rnd; ++rnd1){
       for(int rnd2 = 0; rnd2 < nb_rnd; ++rnd2){
       if(rnd1 != rnd2){
-        C2_mes[op.p_sq][op.dg_so][op.dg_si]
-              [abs((t_sink - t_source - Lt) % Lt)] += 
+//        C2_mes[op.p_sq][op.dg_so][op.dg_si]
+        C2_mes[op.id][abs((t_sink - t_source - Lt) % Lt)] += 
            Corr[i.first][i.second][t_source][t_sink][rnd1][rnd2];
       }}}//Loops over random vectors
     }}//Loops over all Quantum numbers
@@ -166,27 +167,17 @@ void LapH::Correlators::build_and_write_2pt(const size_t config_i){
   for(auto i = C2_mes.data(); i < (C2_mes.data()+C2_mes.num_elements()); i++)
     *i /= norm3;
 
-  // output to binary file - only diagonal and summed momenta
-  for(int p = 0; p < nb_mom_sq; p++){
-//    for(int dirac = 0; dirac < nb_dir; ++dirac){
-//      for(int displ = 0; displ < nb_dis; ++displ){
-    int dirac = 0; 
-    int displ = 0;
-        sprintf(outfile, 
-            "%s/dirac_%02d_%02d_p_%01d_%01d_displ_%01d_%01d/"
-            "C2_pi+-_conf%04d.dat", 
-            outpath.c_str(), dirac_ind.at(dirac), dirac_ind.at(dirac), p, p, 
-            0, 0, (int)config_i);
-//        std::cout << outfile << std::endl;
-        if((fp = fopen(outfile, "wb")) == NULL)
-          std::cout << "fail to open outputfile: " << outfile << std::endl;
+  // output to lime file
+  // outfile     - filename
+  // run_id      - first message with runinfo specific for each run of the 
+  //               program
+  // attributes  - vector of tags containing quantum numbers for each correlator
+  // correlators - vector of correlators
 
-        fwrite((double*) &(C2_mes[p][dirac][dirac][0]), 
-                                                sizeof(double), 2 * Lt, fp);
-        fclose(fp);
-      }
-//    }
-//  }
+  sprintf(outfile, 
+      "%s/C2_pi+-_conf%04d.dat", outpath.c_str(), (int)config_i);
+  export_corr_2pt(outfile, C2_mes); //attributes, correlators);
+
   time = clock() - time;
   std::cout << "\t\tSUCCESS - " << ((float) time)/CLOCKS_PER_SEC 
             << " seconds" << std::endl;

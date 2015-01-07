@@ -195,7 +195,7 @@ void LapH::VdaggerV::build_rvdaggervr(const int config_i,
   // with opposing sign are related by adjoining. Thus it suffices to calculate
   // it for half of the indices for which the flag op.adjoint < 0.
   for(const auto& op : op_rVdaggerVr){
-    if(op.adjoint < 0){
+    if(op.adjoint == false){
 
       size_t id_VdaggerV = op_Corr[op.index].id_VdaggerV;
 
@@ -235,7 +235,7 @@ void LapH::VdaggerV::build_rvdaggervr(const int config_i,
   // Need to loop twice as the corresponding rvdaggervr must all be calculated
   // already.
   for(const auto& op : op_rVdaggerVr){
-    if(op.adjoint >= 0){
+    if(op.adjoint == true){
 
       for(size_t rnd_i = 0; rnd_i < nb_rnd; ++rnd_i) {
       for(size_t rnd_j = 0; rnd_j < nb_rnd; ++rnd_j){
@@ -249,7 +249,7 @@ void LapH::VdaggerV::build_rvdaggervr(const int config_i,
         for(size_t block = 0; block < 4; block++){
           rvdaggervr[op.id][t][rnd_j][rnd_i]
                               .block(0, block*dilE, dilE, dilE) =
-            (rvdaggervr[op.adjoint][t][rnd_i][rnd_j]
+            (rvdaggervr[op.id_adjoint][t][rnd_i][rnd_j]
                               .block(0, block*dilE, dilE, dilE)).adjoint();
         }
       }}}// loops over rnd vecs

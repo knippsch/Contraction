@@ -22,7 +22,7 @@ MAIN = LapHs
 
 GENERAL = GlobalData BasicOperator Perambulator io_utils config_utils RandomVector \
           ranlxs EigenVector VdaggerV Correlators Correlators_small_traces \
-          Correlators_big_traces CrossOperator 
+          Correlators_big_traces CrossOperator IoHelpers CorrelatorIo2pt 
 
 MODULES = $(GENERAL)
 
@@ -33,7 +33,7 @@ VPATH = .:$(MDIR)
 # Logging option (-mpilog or -mpitrace or -mpianim)
 LOGOPTION =
 
-LIMEPATH = /hiskp2/werner/libraries/lime-1.3.2
+LIMEPATH = /hiskp2/jost/code/lime #/hiskp2/werner/libraries/lime-1.3.2
 
 # additional include directories
 INCPATH = /hiskp2/werner/libraries/eigen-eigen-1306d75b4a21 \
@@ -42,9 +42,9 @@ INCPATH = /hiskp2/werner/libraries/eigen-eigen-1306d75b4a21 \
 
 # additional libraries
 
-LIBS = lime boost_program_options
+LIBS = boost_program_options lime 
 
-LIBPATH = $(LIMEPATH)/lib  /usr/local/lib /hiskp2/werner/libraries/boost_1_55_0/stage/lib/
+LIBPATH = /usr/local/lib /hiskp2/werner/libraries/boost_1_55_0/stage/lib/ $(LIMEPATH)/lib 
 
 
 # scheduling and optimization options

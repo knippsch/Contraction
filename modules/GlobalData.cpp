@@ -168,12 +168,13 @@ void GlobalData::set_Corr(){
 
               op_Corr[i].flag_VdaggerV = 1;
 
-              op_rVdaggerVr[k].adjoint = -1;
+              op_rVdaggerVr[k].adjoint = false;
             }
             else{
               op_Corr[i].flag_VdaggerV = -1;
 
-              op_rVdaggerVr[k].adjoint = nb_mom-nb_dis*(k/nb_dis+1)+k%nb_dis;
+              op_rVdaggerVr[k].adjoint = true;
+              op_rVdaggerVr[k].id_adjoint = nb_mom-nb_dis*(k/nb_dis+1)+k%nb_dis;
             }
 
             op_rVdaggerVr[k].id = k;
@@ -189,38 +190,6 @@ void GlobalData::set_Corr(){
 
           if((p == nb_mom/2) && (dis == 0) && (gam == 0))
             index_of_unity = i;
-
-//          if(gam == 0){
-//            if(p <= nb_mom/2){
-//              op_VdaggerV.id = j;
-//              op_VdaggerV.index.emplace_back(std::pair<size_t, size_t>
-//                  (i, nb_op - nb_dg * (i/nb_dg + 1) + i%nb_dg));
-////                  (j, nb_mom-nb_dis*(j/nb_dis+1)+j%nb_dis));
-//              op_Corr[i].flag_VdaggerV = 1; 
-//            }
-//            if((p == nb_mom/2) & (dis == 0))
-//              index_of_unity = j;
-//
-//            j++;
-//          }
-//          else
-//            op_Corr[i].flag_VdaggerV = 0;
-
-//          if(gam == 0){
-//            if(p > nb_mom/2){
-//              op_rVdaggerVr.emplace_back(std::pair<size_t, size_t>
-//                  (nb_mom-nb_dis*(j/nb_dis+1)+j%nb_dis, j));
-//              op_Corr[i].flag_VdaggerV = -1;
-//            }
-//            else
-//              op_Corr[i].flag_VdaggerV = 1;
-//
-//            if((p == nb_mom/2) & (dis == 0))
-//              index_of_unity = j;
-//            j++;
-//          }
-//          else
-//            op_Corr[i].flag_VdaggerV = 0;
 
           op_Corr[i].id = i;
           i++;
@@ -257,12 +226,14 @@ void GlobalData::set_C2(){
         size_t i = p_sq * nb_dg*nb_dg + so * nb_dg + si;
 
         // save p^2 and gamma structure at source and sink
-        op_C2[i].p_sq = p_sq;
-        op_C2[i].dg_so = so;
-        op_C2[i].dg_si = si;
+//        op_C2[i].p_sq = p_sq;
+//        op_C2[i].dg_so = so;
+//        op_C2[i].dg_si = si;
+
+        op_C2[i].id = j;
 
         // loop over op and set index pairs
-        for(auto& el : op_Corr)
+        for(auto& el : op_Corr){
           if((el.p3[0]*el.p3[0] + el.p3[1]*el.p3[1] + el.p3[2]*el.p3[2]) == p_sq){ 
             if(el.gamma[0] == dg[so]){
               size_t id1 = el.id;
@@ -274,6 +245,7 @@ void GlobalData::set_C2(){
               op_C2[i].index.emplace_back(std::pair<size_t, size_t>(id1, id2));
             }
           }
+        }
 
         j++;
         

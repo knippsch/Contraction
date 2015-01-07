@@ -10,8 +10,10 @@
 #include <cstdlib>
 #include <typeinfo>
 
+#include "CorrelatorIo2pt.h"
 #include "CrossOperator.h" 
 #include "GlobalData.h"
+#include "IoHelpers.h"
 #include "BasicOperator.h"
 #include "Perambulator.h"
 #include "typedefs.h"
@@ -34,7 +36,7 @@ private:
   std::vector<LapH::RandomVector> rnd_vec;
   LapH::VdaggerV vdaggerv;
   array_cd_d6 C4_mes;
-  array_cd_d4 C2_mes;
+  array_cd_d2 C2_mes;
   array_cd_d6 Corr;
 
   void set_corr(const size_t config){
