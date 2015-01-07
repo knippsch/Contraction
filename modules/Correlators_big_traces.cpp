@@ -42,6 +42,9 @@ void LapH::Correlators::compute_meson_4pt_cross_trace(LapH::CrossOperator& X) {
       if(t_source == t_sink)
         continue;
     
+      #pragma omp parallel
+      #pragma omp single
+      {
       for(const auto& op : op_C4){
       for(const auto& i : op.index){
         // complete diagramm. combine X and Y to four-trace
@@ -49,12 +52,9 @@ void LapH::Correlators::compute_meson_4pt_cross_trace(LapH::CrossOperator& X) {
         //             D_d^-1(t_sink       | t_source + 1) Gamma 
         //             D_u^-1(t_source + 1 | t_sink + 1  ) Gamma 
         //             D_d^-1(t_sink + 1   | t_source    ) Gamma)
-//        #pragma omp parallel
-        {
           cmplx priv_C4(0.0,0.0);
-//          #pragma omp single
           for(const auto& rnd_it : rnd_vec_index) {
-//            #pragma omp task shared(rnd_it, i)
+            #pragma omp task shared(rnd_it, i)
             if(t_source%2 == 0)
               priv_C4 += (X(0, i[2], i[1], rnd_it[2], rnd_it[1], rnd_it[3]) *
                           X(1, i[3], i[0], rnd_it[3], rnd_it[0], rnd_it[2])).trace();
@@ -63,13 +63,13 @@ void LapH::Correlators::compute_meson_4pt_cross_trace(LapH::CrossOperator& X) {
                          (X(0, i[2], i[1], rnd_it[2], rnd_it[1], rnd_it[3]) *
                           X(1, i[3], i[0], rnd_it[3], rnd_it[0], rnd_it[2])).trace());
             }
-//          #pragma omp critical
+          #pragma omp critical
           {
             C4_mes[op.p_sq_cm][op.p_sq_so_1][op.p_sq_si_1][op.dg_so][op.dg_si]
                 [abs((t_sink - t_source) - Lt) % Lt] += priv_C4;
           }
-        }
       }}//loops operators
+      } // end parallel region
     }// loop t_source
   }// loop t_sink
 

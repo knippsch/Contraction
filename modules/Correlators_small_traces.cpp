@@ -25,18 +25,17 @@ void LapH::Correlators::build_Corr(){
     int t_sink_1 = (t_sink + 1) % Lt;
     for(int t_source = 0; t_source < Lt; ++t_source){
 
+    // CJ: OMP cannot do the parallelization over an auto loop,
+    //     implementing a workaround by hand
+    //     not used at the moment, increases runtime by a factor of 2
     //#pragma omp parallel
-    {
+    //#pragma omp single
+    //{
       for(const auto& op : op_C2){
       for(const auto& i : op.index){
     
         // TODO: A collpase of both random vectors might be better but
         //       must be done by hand because rnd2 starts from rnd1+1
-        // CJ: OMP cannot do the parallelization over an auto loop,
-        //     implementing a workaround by hand
-        //#pragma omp single
-        //for(auto rnd_it = rnd_vec_index.begin(); rnd_it != rnd_vec_index.end(); ++rnd_it) {
-        //#pragma omp single
         for(const auto& rnd_it : rnd_vec_index) {
           // build all 2pt traces leading to C2_mes
           // Corr = tr(D_d^-1(t_sink) Gamma D_u^-1(t_source) Gamma)
@@ -48,14 +47,13 @@ void LapH::Correlators::build_Corr(){
             vdaggerv.return_rvdaggervr(i.second, t_sink, rnd_it.second, rnd_it.first),
             Corr[i.first][i.second][t_source][t_sink][rnd_it.first][rnd_it.second]);
 
-          //#pragma omp taskwait
         } // Loop over random vectors ends here! 
       }}//Loops over all Quantum numbers 
     
       // Using the dagger operation to get all possible random vector combinations
       // TODO: Think about imaginary correlations functions - There might be an 
       //       additional minus sign involved
-    }
+    //} // end parallel region
     
     }// Loops over t_source
   }// Loops over t_sink
