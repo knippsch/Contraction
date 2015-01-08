@@ -43,7 +43,7 @@ void LapH::Correlators::build_Corr(){
     
           //#pragma omp task shared(rnd_it, i)
           compute_meson_small_traces(i.second, basic.get_operator
-              (t_source, t_sink/dilT, 1, i.first, rnd_it.first, rnd_it.second),
+            (t_source, t_sink/dilT, 1, i.first, rnd_it.first, rnd_it.second),
             //TODO: shouldn't that be op_Corr[i.second].id_rVdaggerVr?
             vdaggerv.return_rvdaggervr(i.second, t_sink, rnd_it.second, rnd_it.first),
             Corr[i.first][i.second][t_source][t_sink][rnd_it.first][rnd_it.second]);
@@ -137,7 +137,6 @@ void LapH::Correlators::build_and_write_2pt(const size_t config_i){
     for(const auto& op : op_C2) {
     for(const auto& i : op.index) {
       for(const auto& rnd : rnd_vec_index) {
-//        C2_mes[op.p_sq][op.dg_so][op.dg_si]
         C2_mes[op.id][abs((t_sink - t_source - Lt) % Lt)] += 
            Corr[i.first][i.second][t_source][t_sink][rnd.first][rnd.second];
       } //Loop over random vectors

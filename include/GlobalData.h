@@ -75,10 +75,13 @@ private:
   std::vector<size_t> dg;
 
   vec_pdg_Corr op_Corr;
+  
   vec_pd_VdaggerV op_VdaggerV;
   vec_pd_rVdaggerVr op_rVdaggerVr;
+
   vec_pdg_C2 op_C2;
   vec_pdg_C4 op_C4;
+
   indexlist_2 rnd_vec_C2;
   indexlist_4 rnd_vec_C4;
 
