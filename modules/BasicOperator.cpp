@@ -349,7 +349,8 @@ void BasicOperator::init_operator(const char dilution,
 
   std::cout << "\tcomputing double quarkline: 100.00%" << std::endl;
   time = clock() - time;
-  std::cout << "\t\tSUCCESS - " << ((float) time) / CLOCKS_PER_SEC << " seconds\n\n" << std::endl;
+  std::cout << "\t\tSUCCESS - " << ((float) time) / CLOCKS_PER_SEC 
+            << " seconds" << std::endl;
 }
 /******************************************************************************/
 /******************************************************************************/
