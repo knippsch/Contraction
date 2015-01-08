@@ -42,6 +42,10 @@ typedef boost::multi_array<Eigen::MatrixXcd, 8> array_Xcd_d8_eigen;
 typedef boost::multi_array<Eigen::MatrixXcd, 9> array_Xcd_d9_eigen;
 typedef boost::multi_array<Eigen::MatrixXcd, 10> array_Xcd_d10_eigen;
 
+// index typedefs
+typedef std::list<std::pair<size_t, size_t> > indexlist_2;
+typedef std::list<std::array<size_t, 4> > indexlist_4;
+
 // Operator typedefs
 
 // struct which contains all desired combinations of quantum numbers. pdg means
@@ -108,10 +112,7 @@ typedef boost::multi_array<Eigen::MatrixXcd, 10> array_Xcd_d10_eigen;
 
   struct pdg_C2 {
     size_t id;
-    std::list<std::pair<size_t, size_t> > index;
-//    size_t p_sq;
-//    size_t dg_so;
-//    size_t dg_si;
+    indexlist_2 index;
   };
 
 // struct which contains all id's from pdg which shall be used in the
@@ -130,16 +131,7 @@ typedef boost::multi_array<Eigen::MatrixXcd, 10> array_Xcd_d10_eigen;
 
   struct pdg_C4 {
     size_t id;
-    std::list<std::array<size_t, 4> > index;
-//    size_t p_sq_cm;
-//    size_t p_sq_so_1;
-//    size_t p_sq_so_2;
-//    size_t p_sq_si_1;
-//    size_t p_sq_si_2;
-//    // displ-gamma structure at source and at sink are coded as the same
-//    //TODO: change that
-//    size_t dg_so;
-//    size_t dg_si;
+    indexlist_4 index;
   };
 
 typedef std::vector<pdg> vec_pdg_Corr;  

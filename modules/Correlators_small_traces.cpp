@@ -11,8 +11,8 @@ void LapH::Correlators::build_Corr(){
   const size_t Lt = global_data->get_Lt();
   const vec_pdg_C2 op_C2 = global_data->get_op_C2();
   const std::vector<quark> quarks = global_data->get_quarks();
-  const size_t nb_rnd = quarks[0].number_of_rnd_vec;
   const int dilT = quarks[0].number_of_dilution_T;
+  const indexlist_2 rnd_vec_index = global_data->get_rnd_vec_C2();
   // TODO: must be changed in GlobalData {
   // TODO: }
 
@@ -25,49 +25,37 @@ void LapH::Correlators::build_Corr(){
     int t_sink_1 = (t_sink + 1) % Lt;
     for(int t_source = 0; t_source < Lt; ++t_source){
 
-    #pragma omp parallel
-    {
+    // CJ: OMP cannot do the parallelization over an auto loop,
+    //     implementing a workaround by hand
+    //     not used at the moment, increases runtime by a factor of 2
+    //#pragma omp parallel
+    //#pragma omp single
+    //{
       for(const auto& op : op_C2){
       for(const auto& i : op.index){
     
         // TODO: A collpase of both random vectors might be better but
         //       must be done by hand because rnd2 starts from rnd1+1
-        #pragma omp for schedule(dynamic)
-        for(int rnd1 = 0; rnd1 < nb_rnd; ++rnd1){
-        for(int rnd2 = rnd1+1; rnd2 < nb_rnd; ++rnd2){
+        for(const auto& rnd_it : rnd_vec_index) {
           // build all 2pt traces leading to C2_mes
           // Corr = tr(D_d^-1(t_sink) Gamma D_u^-1(t_source) Gamma)
           // TODO: Just a workaround
     
+          //#pragma omp task shared(rnd_it, i)
           compute_meson_small_traces(i.second, basic.get_operator
-              (t_source, t_sink/dilT, 1, i.first, rnd1, rnd2),
+            (t_source, t_sink/dilT, 1, i.first, rnd_it.first, rnd_it.second),
             //TODO: shouldn't that be op_Corr[i.second].id_rVdaggerVr?
-            vdaggerv.return_rvdaggervr(i.second, t_sink, rnd2, rnd1),
-            Corr[i.first][i.second][t_source][t_sink][rnd1][rnd2]);
+            vdaggerv.return_rvdaggervr(i.second, t_sink, rnd_it.second, rnd_it.first),
+            Corr[i.first][i.second][t_source][t_sink][rnd_it.first][rnd_it.second]);
 
-          }} // Loops over random vectors end here! 
+        } // Loop over random vectors ends here! 
       }}//Loops over all Quantum numbers 
     
       // Using the dagger operation to get all possible random vector combinations
       // TODO: Think about imaginary correlations functions - There might be an 
       //       additional minus sign involved
-    }
+    //} // end parallel region
     
-      for(const auto& op : op_C2){
-      for(const auto& i : op.index){
-    
-        // TODO: A collpase of both random vectors might be better but
-        //       must be done by hand because rnd2 starts from rnd1+1
-        #pragma omp parallel for schedule(dynamic)
-        for(int rnd1 = 0; rnd1 < nb_rnd; ++rnd1){
-        for(int rnd2 = rnd1+1; rnd2 < nb_rnd; ++rnd2){
-
-          Corr[i.first][i.second][t_source][t_sink][rnd2][rnd1] = 
-            std::conj(Corr[i.first][i.second][t_source][t_sink]
-            [rnd1][rnd2]);
-
-        }} // Loops over random vectors end here! 
-      }}//Loops over all Quantum numbers 
     }// Loops over t_source
   }// Loops over t_sink
 
@@ -125,13 +113,10 @@ void LapH::Correlators::build_and_write_2pt(const size_t config_i){
   const vec_pdg_C2 op_C2 = global_data->get_op_C2();
   const vec_pdg_Corr op_Corr = global_data->get_op_Corr();
   const size_t nb_op = global_data->get_number_of_operators();
+  const indexlist_2 rnd_vec_index = global_data->get_rnd_vec_C2();
 
-  const std::vector<quark> quarks = global_data->get_quarks();
-  const size_t nb_rnd = quarks[0].number_of_rnd_vec;
-  const size_t dilE = quarks[0].number_of_dilution_E;
-
-  // compute the norm for 4pt functions
-  int norm = nb_rnd*(nb_rnd-1)*(nb_rnd-2);
+  // compute the norm for 2pt functions
+  int norm = rnd_vec_index.size();
   std::cout << "\n\tNumber of contraction combinations: " << norm << std::endl;
   const double norm1 = Lt * norm;
 
@@ -152,20 +137,16 @@ void LapH::Correlators::build_and_write_2pt(const size_t config_i){
     for(const auto& op : op_C2) {
     for(const auto& i : op.index) {
 
-      for(int rnd1 = 0; rnd1 < nb_rnd; ++rnd1){
-      for(int rnd2 = 0; rnd2 < nb_rnd; ++rnd2){
-      if(rnd1 != rnd2){
-//        C2_mes[op.p_sq][op.dg_so][op.dg_si]
+      for(const auto& rnd : rnd_vec_index) {
         C2_mes[op.id][abs((t_sink - t_source - Lt) % Lt)] += 
-           Corr[i.first][i.second][t_source][t_sink][rnd1][rnd2];
-      }}}//Loops over random vectors
+           Corr[i.first][i.second][t_source][t_sink][rnd.first][rnd.second];
+      } //Loop over random vectors
     }}//Loops over all Quantum numbers
   }}//Loops over time
 
   // normalization of correlation function
-  double norm3 = Lt * nb_rnd * (nb_rnd - 1);
   for(auto i = C2_mes.data(); i < (C2_mes.data()+C2_mes.num_elements()); i++)
-    *i /= norm3;
+    *i /= norm1;
 
   // output to lime file
   // outfile     - filename
@@ -200,12 +181,10 @@ void LapH::Correlators::build_and_write_C4_1(const size_t config_i){
   const vec_pdg_Corr op_Corr = global_data->get_op_Corr();
   const vec_pdg_C4 op_C4 = global_data->get_op_C4();
   const int nb_mom = global_data->get_number_of_momenta();
-
-  const std::vector<quark> quarks = global_data->get_quarks();
-  const size_t nb_rnd = quarks[0].number_of_rnd_vec;
+  const indexlist_4 rnd_vec_index = global_data->get_rnd_vec_C4();
 
   // compute the norm for 4pt functions
-  int norm = nb_rnd*(nb_rnd-1)*(nb_rnd-2);
+  int norm = rnd_vec_index.size();
   std::cout << "\n\tNumber of contraction combinations: " << norm << std::endl;
   const double norm1 = Lt * norm;
 
@@ -228,20 +207,11 @@ void LapH::Correlators::build_and_write_C4_1(const size_t config_i){
     for(const auto& op : op_C4){
     for(const auto& i : op.index){
 
-      for(int rnd1 = 0; rnd1 < nb_rnd; ++rnd1){
-      for(int rnd2 = 0; rnd2 < nb_rnd; ++rnd2){      
-      if(rnd2 != rnd1){
-        for(int rnd3 = 0; rnd3 < nb_rnd; ++rnd3){
-        if((rnd3 != rnd2) && (rnd3 != rnd1)){
-          for(int rnd4 = 0; rnd4 < nb_rnd; ++rnd4){
-          if((rnd4 != rnd1) && (rnd4 != rnd2) && (rnd4 != rnd3)){
-
-            C4_mes[op.id][abs((t_sink - t_source - Lt) % Lt)] +=
-              (Corr[i[0]][i[2]][t_source_1][t_sink_1][rnd1][rnd3]) *
-              (Corr[i[1]][i[3]][t_source][t_sink][rnd2][rnd4]);
-          }}// loop rnd4 and if
-        }}// loop rnd3 and if
-      }}}// loops rnd1 and rnd 2 and if
+      for(const auto& rnd : rnd_vec_index) {
+        C4_mes[op.id][abs((t_sink - t_source - Lt) % Lt)] +=
+          (Corr[i[0]][i[2]][t_source_1][t_sink_1][rnd[0]][rnd[2]]) *
+          (Corr[i[1]][i[3]][t_source][t_sink][rnd[1]][rnd[3]]);
+      } // loop over random vectors
     }}//loops operators
   }}// loops t_sink and t_source
   // Normalization of 4pt-function
@@ -303,12 +273,10 @@ void LapH::Correlators::build_and_write_C4_2(const size_t config_i){
   const vec_pdg_Corr op_Corr = global_data->get_op_Corr();
   const vec_pdg_C4 op_C4 = global_data->get_op_C4();
   const int nb_mom = global_data->get_number_of_momenta();
-
-  const std::vector<quark> quarks = global_data->get_quarks();
-  const size_t nb_rnd = quarks[0].number_of_rnd_vec;
+  const indexlist_4 rnd_vec_index = global_data->get_rnd_vec_C4();
 
  // compute the norm for 4pt functions
-  int norm = nb_rnd*(nb_rnd-1)*(nb_rnd-2);
+  int norm = rnd_vec_index.size();
   std::cout << "\n\tNumber of contraction combinations: " << norm << std::endl;
   const double norm1 = Lt * norm;
 
@@ -336,20 +304,11 @@ void LapH::Correlators::build_and_write_C4_2(const size_t config_i){
     for(const auto& op : op_C4){
     for(const auto& i : op.index){
 
-      for(int rnd1 = 0; rnd1 < nb_rnd; ++rnd1){
-      for(int rnd2 = 0; rnd2 < nb_rnd; ++rnd2){      
-      if(rnd2 != rnd1){
-        for(int rnd3 = 0; rnd3 < nb_rnd; ++rnd3){
-        if((rnd3 != rnd2) && (rnd3 != rnd1)){
-          for(int rnd4 = 0; rnd4 < nb_rnd; ++rnd4){
-          if((rnd4 != rnd1) && (rnd4 != rnd2) && (rnd4 != rnd3)){
-
-            C4_mes[op.id][abs((t_sink - t_source - Lt) % Lt)] +=
-              (Corr[i[0]][i[2]][t_source_1][t_sink][rnd1][rnd3]) *
-              (Corr[i[1]][i[3]][t_source][t_sink_1][rnd2][rnd4]);
-          }}// loop rnd4
-        }}// loop rnd3
-      }}}// loops rnd2 and rnd1
+      for(const auto& rnd : rnd_vec_index) {
+        C4_mes[op.id][abs((t_sink - t_source - Lt) % Lt)] +=
+          (Corr[i[0]][i[2]][t_source_1][t_sink][rnd[0]][rnd[2]]) *
+          (Corr[i[1]][i[3]][t_source][t_sink_1][rnd[1]][rnd[3]]);
+      } // loop over random vectors
     }}//loops operators
   }}// loops t_source and t_sink
 

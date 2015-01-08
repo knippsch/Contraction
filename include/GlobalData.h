@@ -75,15 +75,22 @@ private:
   std::vector<size_t> dg;
 
   vec_pdg_Corr op_Corr;
+  
   vec_pd_VdaggerV op_VdaggerV;
   vec_pd_rVdaggerVr op_rVdaggerVr;
+
   vec_pdg_C2 op_C2;
   vec_pdg_C4 op_C4;
+
+  indexlist_2 rnd_vec_C2;
+  indexlist_4 rnd_vec_C4;
 
   void init_from_infile();
   void set_Corr();
   void set_C2();
   void set_C4();
+  void set_rnd_vec_C2();
+  void set_rnd_vec_C4();
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -209,6 +216,12 @@ public:
   }
   inline const vec_pdg_C4& get_op_C4() {
     return op_C4;
+  }
+  inline const indexlist_2& get_rnd_vec_C2() {
+    return rnd_vec_C2;
+  }
+  inline const indexlist_4& get_rnd_vec_C4() {
+    return rnd_vec_C4;
   }
   inline const size_t get_number_of_VdaggerV() {
     return number_of_VdaggerV;
