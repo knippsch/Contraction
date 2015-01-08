@@ -11,6 +11,16 @@ static GlobalData * const global_data = GlobalData::Instance();
 
 //Tag handling/////////////////////////////////////////////////////////////////
 
+// add two three momenta
+std::array<int, 3 > add_mom(const std::array<int,3> p1 , const std::array<int,3> p2){
+  std::array<int, 3 > sum;
+  for(size_t i = 0; i < sum.size(); ++i){
+    sum[i] = p1[i]+p2[i];
+  }
+return sum;
+
+}
+
 // Calculate p^2
  int square_comp(const std::array<int, 3>& p1,
                        const std::array<int, 3>& p2){
@@ -24,90 +34,110 @@ static GlobalData * const global_data = GlobalData::Instance();
 // Compare two tags of correlation functions
  bool compare_tags(const Tag& tag1, const Tag& tag2){
   bool flag = true;
+  if (tag1.mom_cm != tag2.mom_cm) flag = false;
   if (memcmp(tag1.mom, tag2.mom, sizeof(tag1.mom)) != 0) flag = false;
   if (memcmp(tag1.dis, tag2.dis, sizeof(tag1.dis)) != 0) flag = false;
   if (memcmp(tag1.gam, tag2.gam, sizeof(tag1.gam)) != 0) flag = false;
   return flag;
 }
 
+
 // Set the tag from two operator structures
-void set_tag_2pt(Tag& tag, const std::pair<size_t, size_t>& i){
+void set_tag(Tag& tag, const std::pair<size_t, size_t>& i){
 
   const vec_pdg_Corr op_Corr = global_data->get_op_Corr();
 
-  tag.mom[0] = op_Corr[i.first].p3[0]*op_Corr[i.first].p3[0] + 
-      op_Corr[i.first].p3[1]*op_Corr[i.first].p3[1] + 
-      op_Corr[i.first].p3[2]*op_Corr[i.first].p3[2];
+  tag.mom[0] = square_comp(op_Corr[i.first].p3, op_Corr[i.first].p3);
+ // tag.mom[0] = op_Corr[i.first].p3[0]*op_Corr[i.first].p3[0] + 
+ //     op_Corr[i.first].p3[1]*op_Corr[i.first].p3[1] + 
+ //     op_Corr[i.first].p3[2]*op_Corr[i.first].p3[2];
   tag.mom[1] = tag.mom[0];
+    for(size_t c = 0; c < 3; ++c){
+      tag.dis[0][c] =op_Corr[i.first].dis3[c]; 
+    }
+    for(size_t c = 0; c < 3; ++c){
+      tag.dis[1][c] =op_Corr[i.second].dis3[c]; 
+    }
+//  tag.dis[0][0] = op_Corr[i.first].dis3[0]; 
+//  tag.dis[0][1] = op_Corr[i.first].dis3[1];
+//  tag.dis[0][2] = op_Corr[i.first].dis3[2];
+//  tag.dis[1][0] = op_Corr[i.second].dis3[0]; 
+//  tag.dis[1][1] = op_Corr[i.second].dis3[1];
+//  tag.dis[1][2] = op_Corr[i.second].dis3[2];
 
-  tag.dis[0][0] = op_Corr[i.first].dis3[0]; 
-  tag.dis[0][1] = op_Corr[i.first].dis3[1];
-  tag.dis[0][2] = op_Corr[i.first].dis3[2];
-  tag.dis[1][0] = op_Corr[i.second].dis3[0]; 
-  tag.dis[1][1] = op_Corr[i.second].dis3[1];
-  tag.dis[1][2] = op_Corr[i.second].dis3[2];
-
-  tag.gam[0] = op_Corr[i.first].gamma[0];
-  tag.gam[1] = op_Corr[i.second].gamma[0];
+  tag.gam[0][0] = op_Corr[i.first].gamma[0];
+  tag.gam[1][0] = op_Corr[i.second].gamma[0];
 
 }
 
 // Set the tag from two operator structures
-void set_tag_4pt(Tag_4pt& tag, const std::array<size_t, 4>& i){
+void set_tag(Tag& tag, const std::array<size_t, 4>& i){
 
   const vec_pdg_Corr op_Corr = global_data->get_op_Corr();
 
   //TODO: use loops for that. I'm too tired
+  std::array<int,3> cm_1 = add_mom(op_Corr[i[0]].p3, op_Corr[i[1]].p3);
+  tag.mom_cm = square_comp(cm_1, cm_1);
+ // tag.mom_cm = (op_Corr[i[0]].p3[0]+op_Corr[i[1]].p3[0]) *
+ //              (op_Corr[i[0]].p3[0]+op_Corr[i[1]].p3[0]) +
+ //              (op_Corr[i[0]].p3[1]+op_Corr[i[1]].p3[1]) *
+ //              (op_Corr[i[0]].p3[1]+op_Corr[i[1]].p3[1]) +
+ //              (op_Corr[i[0]].p3[2]+op_Corr[i[1]].p3[2]) *
+ //              (op_Corr[i[0]].p3[2]+op_Corr[i[1]].p3[2]);
+  tag.mom[0] = square_comp(op_Corr[i[0]].p3, op_Corr[i[0]].p3);
+  tag.mom[1] = square_comp(op_Corr[i[1]].p3, op_Corr[i[1]].p3);
+  tag.mom[2] = square_comp(op_Corr[i[2]].p3, op_Corr[i[2]].p3);
+  tag.mom[3] = square_comp(op_Corr[i[3]].p3, op_Corr[i[3]].p3);
+//  tag.mom[0] = op_Corr[i[0]].p3[0]*op_Corr[i[0]].p3[0] + 
+//               op_Corr[i[0]].p3[1]*op_Corr[i[0]].p3[1] + 
+//               op_Corr[i[0]].p3[2]*op_Corr[i[0]].p3[2];
+//  tag.mom[1] = op_Corr[i[1]].p3[0]*op_Corr[i[1]].p3[0] + 
+//               op_Corr[i[1]].p3[1]*op_Corr[i[1]].p3[1] + 
+//               op_Corr[i[1]].p3[2]*op_Corr[i[1]].p3[2];
+//  tag.mom[2] = op_Corr[i[2]].p3[0]*op_Corr[i[2]].p3[0] + 
+//               op_Corr[i[2]].p3[1]*op_Corr[i[2]].p3[1] + 
+//               op_Corr[i[2]].p3[2]*op_Corr[i[2]].p3[2];
+//  tag.mom[3] = op_Corr[i[3]].p3[0]*op_Corr[i[3]].p3[0] + 
+//               op_Corr[i[3]].p3[1]*op_Corr[i[3]].p3[1] + 
+//               op_Corr[i[3]].p3[2]*op_Corr[i[3]].p3[2];
 
-  tag.mom_cm = (op_Corr[i[0]].p3[0]+op_Corr[i[1]].p3[0]) *
-               (op_Corr[i[0]].p3[0]+op_Corr[i[1]].p3[0]) +
-               (op_Corr[i[0]].p3[1]+op_Corr[i[1]].p3[1]) *
-               (op_Corr[i[0]].p3[1]+op_Corr[i[1]].p3[1]) +
-               (op_Corr[i[0]].p3[2]+op_Corr[i[1]].p3[2]) *
-               (op_Corr[i[0]].p3[2]+op_Corr[i[1]].p3[2]);
-
-  tag.mom[0] = op_Corr[i[0]].p3[0]*op_Corr[i[0]].p3[0] + 
-               op_Corr[i[0]].p3[1]*op_Corr[i[0]].p3[1] + 
-               op_Corr[i[0]].p3[2]*op_Corr[i[0]].p3[2];
-  tag.mom[1] = op_Corr[i[1]].p3[0]*op_Corr[i[1]].p3[0] + 
-               op_Corr[i[1]].p3[1]*op_Corr[i[1]].p3[1] + 
-               op_Corr[i[1]].p3[2]*op_Corr[i[1]].p3[2];
-  tag.mom[2] = op_Corr[i[2]].p3[0]*op_Corr[i[2]].p3[0] + 
-               op_Corr[i[2]].p3[1]*op_Corr[i[2]].p3[1] + 
-               op_Corr[i[2]].p3[2]*op_Corr[i[2]].p3[2];
-  tag.mom[3] = op_Corr[i[3]].p3[0]*op_Corr[i[3]].p3[0] + 
-               op_Corr[i[3]].p3[1]*op_Corr[i[3]].p3[1] + 
-               op_Corr[i[3]].p3[2]*op_Corr[i[3]].p3[2];
-
-  tag.dis[0][0] = op_Corr[i[0]].dis3[0]; 
-  tag.dis[0][1] = op_Corr[i[0]].dis3[1];
-  tag.dis[0][2] = op_Corr[i[0]].dis3[2];
-  tag.dis[1][0] = op_Corr[i[1]].dis3[0]; 
-  tag.dis[1][1] = op_Corr[i[1]].dis3[1];
-  tag.dis[1][2] = op_Corr[i[1]].dis3[2];
-  tag.dis[2][0] = op_Corr[i[2]].dis3[0]; 
-  tag.dis[2][1] = op_Corr[i[2]].dis3[1];
-  tag.dis[2][2] = op_Corr[i[2]].dis3[2];
-  tag.dis[3][0] = op_Corr[i[3]].dis3[0]; 
-  tag.dis[3][1] = op_Corr[i[3]].dis3[1];
-  tag.dis[3][2] = op_Corr[i[3]].dis3[2];
-
-  tag.gam[0][0] = op_Corr[i[0]].gamma[0];
-  tag.gam[0][1] = op_Corr[i[0]].gamma[1];
-  tag.gam[0][2] = op_Corr[i[0]].gamma[2];
-  tag.gam[0][3] = op_Corr[i[0]].gamma[3];
-  tag.gam[1][0] = op_Corr[i[1]].gamma[0];
-  tag.gam[1][1] = op_Corr[i[1]].gamma[1];
-  tag.gam[1][2] = op_Corr[i[1]].gamma[2];
-  tag.gam[1][3] = op_Corr[i[1]].gamma[3];
-  tag.gam[2][0] = op_Corr[i[2]].gamma[0];
-  tag.gam[2][1] = op_Corr[i[2]].gamma[1];
-  tag.gam[2][2] = op_Corr[i[2]].gamma[2];
-  tag.gam[2][3] = op_Corr[i[2]].gamma[3];
-  tag.gam[3][0] = op_Corr[i[3]].gamma[0];
-  tag.gam[3][1] = op_Corr[i[3]].gamma[1];
-  tag.gam[3][2] = op_Corr[i[3]].gamma[2];
-  tag.gam[3][3] = op_Corr[i[3]].gamma[3];
+  for(size_t q = 0; q < 4; ++q){
+    for (size_t c = 0; c < 3; ++c){
+      tag.dis[q][c] = op_Corr[i[q]].dis3[c];
+    }
+    for (size_t c = 0; c < 4; ++c){
+      tag.gam[q][c] = op_Corr[i[q]].gamma[c];
+    }
+  }
+//  tag.dis[0][0] = op_Corr[i[0]].dis3[0]; 
+//  tag.dis[0][1] = op_Corr[i[0]].dis3[1];
+//  tag.dis[0][2] = op_Corr[i[0]].dis3[2];
+//  tag.dis[1][0] = op_Corr[i[1]].dis3[0]; 
+//  tag.dis[1][1] = op_Corr[i[1]].dis3[1];
+//  tag.dis[1][2] = op_Corr[i[1]].dis3[2];
+//  tag.dis[2][0] = op_Corr[i[2]].dis3[0]; 
+//  tag.dis[2][1] = op_Corr[i[2]].dis3[1];
+//  tag.dis[2][2] = op_Corr[i[2]].dis3[2];
+//  tag.dis[3][0] = op_Corr[i[3]].dis3[0]; 
+//  tag.dis[3][1] = op_Corr[i[3]].dis3[1];
+//  tag.dis[3][2] = op_Corr[i[3]].dis3[2];
+//
+//  tag.gam[0][0] = op_Corr[i[0]].gamma[0];
+//  tag.gam[0][1] = op_Corr[i[0]].gamma[1];
+//  tag.gam[0][2] = op_Corr[i[0]].gamma[2];
+//  tag.gam[0][3] = op_Corr[i[0]].gamma[3];
+//  tag.gam[1][0] = op_Corr[i[1]].gamma[0];
+//  tag.gam[1][1] = op_Corr[i[1]].gamma[1];
+//  tag.gam[1][2] = op_Corr[i[1]].gamma[2];
+//  tag.gam[1][3] = op_Corr[i[1]].gamma[3];
+//  tag.gam[2][0] = op_Corr[i[2]].gamma[0];
+//  tag.gam[2][1] = op_Corr[i[2]].gamma[1];
+//  tag.gam[2][2] = op_Corr[i[2]].gamma[2];
+//  tag.gam[2][3] = op_Corr[i[2]].gamma[3];
+//  tag.gam[3][0] = op_Corr[i[3]].gamma[0];
+//  tag.gam[3][1] = op_Corr[i[3]].gamma[1];
+//  tag.gam[3][2] = op_Corr[i[3]].gamma[2];
+//  tag.gam[3][3] = op_Corr[i[3]].gamma[3];
 
 }
 
@@ -247,7 +277,7 @@ void convert_C2_mes_to_vec(array_cd_d2& C2_mes, std::vector<Tag>& tags,
   for(const auto& op : op_C2){
 
     corr[op.id].assign(C2_mes[op.id].origin(), C2_mes[op.id].origin() + C2_mes[op.id].size());
-    set_tag_2pt(tags[op.id], op.index.front());
+    set_tag(tags[op.id], op.index.front());
 
   }
 }

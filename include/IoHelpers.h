@@ -15,18 +15,15 @@
 // Typedefs ///////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-struct Tag {
-  int mom[2];
-  int dis[2][3];
-  int gam[2];
-};
 
-struct Tag_4pt {
+// use a general tag for 2pt and 4pt functions
+struct Tag {
   int mom_cm;
   int mom[4];
   int dis[4][3];
   int gam[4][4];
 };
+
 
 struct GlobalDat {
   std::vector<size_t> rnd_seeds;
@@ -68,6 +65,22 @@ inline std::complex<double>  swap_complex(std::complex<double> val){
                               swap_endian<double>(std::imag(val)));
 }
 
+// swap endianess of one tag
+inline Tag swap_single_tag(const Tag& tag){
+  Tag le_tag;
+  le_tag.mom_cm = swap_endian<int>(tag.mom_cm);
+  for(size_t pos = 0; pos < 4; ++pos ){
+    le_tag.mom[pos] = swap_endian<int>(tag.mom[pos]);
+    for(size_t comp = 0; comp < 3; ++comp){
+      le_tag.dis[pos][comp] = swap_endian<int>(tag.dis[pos][comp]);
+    }
+    for(size_t comp = 0; comp < 4; ++comp){
+      le_tag.gam[pos][comp] = swap_endian<int>(tag.gam[pos][comp]);
+    }
+  }
+  return le_tag;
+}
+
 // swap endianess of one correlation function
 inline std::vector<cmplx> swap_single_corr(const std::vector<cmplx>& corr){
   size_t ext = corr.size();
@@ -81,18 +94,6 @@ inline std::vector<cmplx> swap_single_corr(const std::vector<cmplx>& corr){
 }
 
 
-// swap endianess of one tag
-inline Tag swap_single_tag(const Tag& tag){
-  Tag le_tag;
-  for(size_t pos = 0; pos < 2; ++pos ){
-    le_tag.mom[pos] = swap_endian<int>(tag.mom[pos]);
-    for(size_t comp = 0; comp < 3; comp++){
-      le_tag.dis[pos][comp] = swap_endian<int>(tag.dis[pos][comp]);
-    }
-    le_tag.gam[pos] = swap_endian<int>(tag.gam[pos]);
-  }
-  return le_tag;
-}
 
 // swap endaness of runinfo
 inline GlobalDat swap_glob_dat(const GlobalDat& run_info){
@@ -125,11 +126,11 @@ inline bool file_exist(const char* name) {
 
 // set the tag for the second message for a 2pt function given the indexpair
 // of quantum numbers in op_Corr for source and sink
-void set_tag_2pt(Tag& tag, const std::pair<size_t, size_t>& i);
+ void set_tag(Tag& tag, const std::pair<size_t, size_t>& i);
 
 // set the tag for the second message for a 4pt function given the 
 // indexquadruple of quantum numbers in op_Corr for source and sink
-void set_tag_4pt(Tag_4pt& tag, const std::array<size_t, 4>& i);
+void set_tag(Tag& tag, const std::array<size_t, 4>& i);
 
 // Convert ascii labels to correlation tag
 Tag id(size_t g_so, size_t g_si, size_t p_so, size_t p_si, size_t dis_so, 
@@ -138,6 +139,8 @@ Tag id(size_t g_so, size_t g_si, size_t p_so, size_t p_si, size_t dis_so,
 // Compare two tags of correlation functions
 bool compare_tags(const Tag& tag1, const Tag& tag2);
 
+// add two three momenta
+std::array<int, 3 > add_mom(const std::array<int,3> p1 , const std::array<int,3> p2);
 // Calculate p^2
 int square_comp(const std::array<int, 3>& p1, const std::array<int, 3>& p2);
 
@@ -163,7 +166,7 @@ void file_check(const size_t glob_check,
 // convert multiarray 2pt correlator to vector to match write_2pt_lime
 void convert_C2_mes_to_vec(array_cd_d2& C2_mes, std::vector<Tag>& tags,
                            std::vector<vec>& corr);
-void convert_C4_mes_to_vec(array_cd_d2& C4_mes, std::vector<Tag_4pt>& tags,
+void convert_C4_mes_to_vec(array_cd_d2& C4_mes, std::vector<Tag>& tags,
                            std::vector<vec>& corr);
 
 #endif // IO_HELPERS_H_
