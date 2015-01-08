@@ -31,7 +31,7 @@ static GlobalData * const global_data = GlobalData::Instance();
 }
 
 // Set the tag from two operator structures
-void set_tag(Tag& tag, const std::pair<size_t, size_t>& i){
+void set_tag_2pt(Tag& tag, const std::pair<size_t, size_t>& i){
 
   const vec_pdg_Corr op_Corr = global_data->get_op_Corr();
 
@@ -49,6 +49,65 @@ void set_tag(Tag& tag, const std::pair<size_t, size_t>& i){
 
   tag.gam[0] = op_Corr[i.first].gamma[0];
   tag.gam[1] = op_Corr[i.second].gamma[0];
+
+}
+
+// Set the tag from two operator structures
+void set_tag_4pt(Tag_4pt& tag, const std::array<size_t, 4>& i){
+
+  const vec_pdg_Corr op_Corr = global_data->get_op_Corr();
+
+  //TODO: use loops for that. I'm too tired
+
+  tag.mom_cm = (op_Corr[i[0]].p3[0]+op_Corr[i[1]].p3[0]) *
+               (op_Corr[i[0]].p3[0]+op_Corr[i[1]].p3[0]) +
+               (op_Corr[i[0]].p3[1]+op_Corr[i[1]].p3[1]) *
+               (op_Corr[i[0]].p3[1]+op_Corr[i[1]].p3[1]) +
+               (op_Corr[i[0]].p3[2]+op_Corr[i[1]].p3[2]) *
+               (op_Corr[i[0]].p3[2]+op_Corr[i[1]].p3[2]);
+
+  tag.mom[0] = op_Corr[i[0]].p3[0]*op_Corr[i[0]].p3[0] + 
+               op_Corr[i[0]].p3[1]*op_Corr[i[0]].p3[1] + 
+               op_Corr[i[0]].p3[2]*op_Corr[i[0]].p3[2];
+  tag.mom[1] = op_Corr[i[1]].p3[0]*op_Corr[i[1]].p3[0] + 
+               op_Corr[i[1]].p3[1]*op_Corr[i[1]].p3[1] + 
+               op_Corr[i[1]].p3[2]*op_Corr[i[1]].p3[2];
+  tag.mom[2] = op_Corr[i[2]].p3[0]*op_Corr[i[2]].p3[0] + 
+               op_Corr[i[2]].p3[1]*op_Corr[i[2]].p3[1] + 
+               op_Corr[i[2]].p3[2]*op_Corr[i[2]].p3[2];
+  tag.mom[3] = op_Corr[i[3]].p3[0]*op_Corr[i[3]].p3[0] + 
+               op_Corr[i[3]].p3[1]*op_Corr[i[3]].p3[1] + 
+               op_Corr[i[3]].p3[2]*op_Corr[i[3]].p3[2];
+
+  tag.dis[0][0] = op_Corr[i[0]].dis3[0]; 
+  tag.dis[0][1] = op_Corr[i[0]].dis3[1];
+  tag.dis[0][2] = op_Corr[i[0]].dis3[2];
+  tag.dis[1][0] = op_Corr[i[1]].dis3[0]; 
+  tag.dis[1][1] = op_Corr[i[1]].dis3[1];
+  tag.dis[1][2] = op_Corr[i[1]].dis3[2];
+  tag.dis[2][0] = op_Corr[i[2]].dis3[0]; 
+  tag.dis[2][1] = op_Corr[i[2]].dis3[1];
+  tag.dis[2][2] = op_Corr[i[2]].dis3[2];
+  tag.dis[3][0] = op_Corr[i[3]].dis3[0]; 
+  tag.dis[3][1] = op_Corr[i[3]].dis3[1];
+  tag.dis[3][2] = op_Corr[i[3]].dis3[2];
+
+  tag.gam[0][0] = op_Corr[i[0]].gamma[0];
+  tag.gam[0][1] = op_Corr[i[0]].gamma[1];
+  tag.gam[0][2] = op_Corr[i[0]].gamma[2];
+  tag.gam[0][3] = op_Corr[i[0]].gamma[3];
+  tag.gam[1][0] = op_Corr[i[1]].gamma[0];
+  tag.gam[1][1] = op_Corr[i[1]].gamma[1];
+  tag.gam[1][2] = op_Corr[i[1]].gamma[2];
+  tag.gam[1][3] = op_Corr[i[1]].gamma[3];
+  tag.gam[2][0] = op_Corr[i[2]].gamma[0];
+  tag.gam[2][1] = op_Corr[i[2]].gamma[1];
+  tag.gam[2][2] = op_Corr[i[2]].gamma[2];
+  tag.gam[2][3] = op_Corr[i[2]].gamma[3];
+  tag.gam[3][0] = op_Corr[i[3]].gamma[0];
+  tag.gam[3][1] = op_Corr[i[3]].gamma[1];
+  tag.gam[3][2] = op_Corr[i[3]].gamma[2];
+  tag.gam[3][3] = op_Corr[i[3]].gamma[3];
 
 }
 
@@ -180,30 +239,39 @@ void convert_C2_mes_to_vec(array_cd_d2& C2_mes, std::vector<Tag>& tags,
   const vec_pdg_C2 op_C2 = global_data->get_op_C2();
 
   corr.resize(op_C2.size());
-//  for(auto& c : corr)
-//    c.resize(Lt);
+  for(auto& c : corr)
+    c.resize(Lt);
   tags.resize(op_C2.size());
 
 
   for(const auto& op : op_C2){
 
     corr[op.id].assign(C2_mes[op.id].origin(), C2_mes[op.id].origin() + C2_mes[op.id].size());
-    set_tag(tags[op.id], op.index.front());
-
-//    sprintf(outfile, 
-//        "%s/dirac_%02ld_%02ld_p_%01ld_%01ld_displ_%01ld_%01ld/"
-//        "C2_pi+-_conf%04d.dat", 
-//        outpath.c_str(), dirac, dirac, p, p, 
-//        displ, displ, (int)config_i);
-////    std::cout << outfile << std::endl;
-//    if((fp = fopen(outfile, "wb")) == NULL)
-//      std::cout << "fail to open outputfile: " << outfile << std::endl;
-//
-//    fwrite((double*) &(C2_mes[op.id][0]), 
-//                                            sizeof(double), 2 * Lt, fp);
-//    fclose(fp);
+    set_tag_2pt(tags[op.id], op.index.front());
 
   }
 }
 
+#if 0
+//TODO: basically the same function as convert_C2_mes_to_vec. Try to overload
+// or template or whatever
+void convert_C4_mes_to_vec(array_cd_d2& C4_mes, std::vector<Tag_4pt>& tags,
+                        std::vector<vec>& corr){
 
+  const size_t Lt = global_data->get_Lt();
+  const vec_pdg_C4 op_C4 = global_data->get_op_C4();
+
+  corr.resize(op_C4.size());
+  for(auto& c : corr)
+    c.resize(Lt);
+  tags.resize(op_C4.size());
+
+
+  for(const auto& op : op_C4){
+
+    corr[op.id].assign(C4_mes[op.id].origin(), C4_mes[op.id].origin() + C4_mes[op.id].size());
+    set_tag(tags[op.id], op.index.front());
+
+  }
+}
+#endif

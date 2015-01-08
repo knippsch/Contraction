@@ -35,7 +35,7 @@ private:
   LapH::Perambulator peram;
   std::vector<LapH::RandomVector> rnd_vec;
   LapH::VdaggerV vdaggerv;
-  array_cd_d6 C4_mes;
+  array_cd_d2 C4_mes;
   array_cd_d2 C2_mes;
   array_cd_d6 Corr;
 

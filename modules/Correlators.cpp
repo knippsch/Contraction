@@ -21,7 +21,10 @@ LapH::Correlators::Correlators() : basic(), peram(), rnd_vec(), vdaggerv(),
 
   rnd_vec.resize(nb_rnd, LapH::RandomVector(Lt*nb_ev*4));
 
-  C4_mes.resize(boost::extents[nb_mom_sq][nb_mom_sq][nb_mom_sq][nb_dg][nb_dg][Lt]);
+  //TODO: size of C4_mes and C2_mes must be replaced by size of corresponding
+  //operator lists. Momentary values are upper limit
+  C4_mes.resize(boost::extents[1*nb_mom_sq*nb_mom_sq*nb_dg*nb_dg][Lt]);
+//  C4_mes.resize(boost::extents[2][Lt]);
   C2_mes.resize(boost::extents[nb_mom_sq*nb_dg*nb_dg][Lt]);
   Corr.resize(boost::extents[nb_op][nb_op][Lt][Lt][nb_rnd][nb_rnd]);
 }

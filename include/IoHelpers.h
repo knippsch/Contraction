@@ -21,6 +21,13 @@ struct Tag {
   int gam[2];
 };
 
+struct Tag_4pt {
+  int mom_cm;
+  int mom[4];
+  int dis[4][3];
+  int gam[4][4];
+};
+
 struct GlobalDat {
   std::vector<size_t> rnd_seeds;
   size_t nb_rnd_vecs;
@@ -115,24 +122,39 @@ inline bool file_exist(const char* name) {
     return false;
   }   
 }
-// Set the tag from two operator structures
-  void set_tag(Tag& tag, const std::pair<size_t, size_t>& i);
+
+// set the tag for the second message for a 2pt function given the indexpair
+// of quantum numbers in op_Corr for source and sink
+void set_tag_2pt(Tag& tag, const std::pair<size_t, size_t>& i);
+
+// set the tag for the second message for a 4pt function given the 
+// indexquadruple of quantum numbers in op_Corr for source and sink
+void set_tag_4pt(Tag_4pt& tag, const std::array<size_t, 4>& i);
+
 // Convert ascii labels to correlation tag
-Tag id(size_t g_so, size_t g_si, size_t p_so, size_t p_si, size_t dis_so, size_t dis_si);
+Tag id(size_t g_so, size_t g_si, size_t p_so, size_t p_si, size_t dis_so, 
+       size_t dis_si);
+
 // Compare two tags of correlation functions
- bool compare_tags(const Tag& tag1, const Tag& tag2);
+bool compare_tags(const Tag& tag1, const Tag& tag2);
+
 // Calculate p^2
- int square_comp(const std::array<int, 3>& p1,
-                       const std::array<int, 3>& p2);
+int square_comp(const std::array<int, 3>& p1, const std::array<int, 3>& p2);
 
 // swap vector of all correlation functions
 inline void swap_correlators(std::vector<vec>& corr){
-  for (auto& func : corr) func = swap_single_corr(func);
+  for (auto& func : corr){
+    func = swap_single_corr(func);
+  }
 }
+
 // swap vector of all tags
 inline void swap_tag_vector(std::vector<Tag>& tags){
-  for (auto& label : tags) label = swap_single_tag(label);
+  for (auto& label : tags){
+    label = swap_single_tag(label);
+  }
 }
+
 // Check checksums
 void file_check(const size_t glob_check,
                 const std::vector<boost::uint64_t>& checksums,
@@ -140,6 +162,8 @@ void file_check(const size_t glob_check,
 
 // convert multiarray 2pt correlator to vector to match write_2pt_lime
 void convert_C2_mes_to_vec(array_cd_d2& C2_mes, std::vector<Tag>& tags,
-                        std::vector<vec>& corr);
+                           std::vector<vec>& corr);
+void convert_C4_mes_to_vec(array_cd_d2& C4_mes, std::vector<Tag_4pt>& tags,
+                           std::vector<vec>& corr);
 
 #endif // IO_HELPERS_H_

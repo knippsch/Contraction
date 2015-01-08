@@ -65,8 +65,8 @@ void LapH::Correlators::compute_meson_4pt_cross_trace(LapH::CrossOperator& X) {
             }
           #pragma omp critical
           {
-            C4_mes[op.p_sq_cm][op.p_sq_so_1][op.p_sq_si_1][op.dg_so][op.dg_si]
-                [abs((t_sink - t_source) - Lt) % Lt] += priv_C4;
+            C4_mes[op.id][abs((t_sink - t_source) - Lt) % Lt] += priv_C4;
+//            C4_mes[op.p_sq_cm][op.p_sq_so_1][op.p_sq_si_1][op.dg_so][op.dg_si]
           }
       }}//loops operators
       } // end parallel region
@@ -82,6 +82,7 @@ void LapH::Correlators::compute_meson_4pt_cross_trace(LapH::CrossOperator& X) {
 /******************************************************************************/
 /******************************************************************************/
 /******************************************************************************/
+
 void LapH::Correlators::write_C4_3(const size_t config_i){
 
   char outfile[400];
@@ -97,27 +98,41 @@ void LapH::Correlators::write_C4_3(const size_t config_i){
   const indexlist_4 rnd_vec_index = global_data->get_rnd_vec_C4();
   const size_t norm1 = Lt*rnd_vec_index.size();
 
+  const vec_pdg_Corr op_Corr = global_data->get_op_Corr();
+  const vec_pdg_C4 op_C4 = global_data->get_op_C4();
+
   // normalisation
   for(auto i = C4_mes.data(); i < (C4_mes.data()+C4_mes.num_elements()); i++)
     *i /= norm1;
 
   // output to binary file
-  for(size_t dirac_1 = 0; dirac_1 < nb_dir; ++dirac_1){     
-  for(size_t dirac_2 = 0; dirac_2 < nb_dir; ++dirac_2){
-    for(size_t p = 0; p < nb_mom_sq; p++){
-      sprintf(outfile, 
-          "%s/dirac_%02d_%02d_p_%01d_%01d_displ_%01d_%01d/"
-          "C4_3_conf%04d.dat", 
-          outpath.c_str(), dirac_ind.at(dirac_1), dirac_ind.at(dirac_2), 
-          (int)p, (int)p, 0, 0, (int)config_i);
-//      std::cout << outfile << std::endl;
-      if((fp = fopen(outfile, "wb")) == NULL)
-        std::cout << "fail to open outputfile" << std::endl;
-      fwrite((double*) &(C4_mes[0][p][p][dirac_1][dirac_2][0]), 
-             sizeof(double), 2 * Lt, fp);
-      fclose(fp);
-    }// loop p
-  }}// loops dirac_1 dirac_2
+  for(const auto& op : op_C4){
+    size_t gam_so = op_Corr[op.index.front()[0]].gamma[0];
+    size_t gam_si = op_Corr[op.index.front()[2]].gamma[0];
+    size_t mom_so = op_Corr[op.index.front()[0]].p3[0] * op_Corr[op.index.front()[0]].p3[0] + 
+                  op_Corr[op.index.front()[0]].p3[1] * op_Corr[op.index.front()[0]].p3[1] + 
+                  op_Corr[op.index.front()[0]].p3[2] * op_Corr[op.index.front()[0]].p3[2];
+    size_t mom_si = op_Corr[op.index.front()[2]].p3[0] * op_Corr[op.index.front()[2]].p3[0] + 
+                  op_Corr[op.index.front()[2]].p3[1] * op_Corr[op.index.front()[2]].p3[1] + 
+                  op_Corr[op.index.front()[2]].p3[2] * op_Corr[op.index.front()[2]].p3[2];
+    size_t dis_so = op_Corr[op.index.front()[0]].dis3[0] * op_Corr[op.index.front()[0]].dis3[0] + 
+                  op_Corr[op.index.front()[0]].dis3[1] * op_Corr[op.index.front()[0]].dis3[1] + 
+                  op_Corr[op.index.front()[0]].dis3[2] * op_Corr[op.index.front()[0]].dis3[2];
+    size_t dis_si = op_Corr[op.index.front()[2]].dis3[0] * op_Corr[op.index.front()[2]].dis3[0] + 
+                  op_Corr[op.index.front()[2]].dis3[1] * op_Corr[op.index.front()[2]].dis3[1] + 
+                  op_Corr[op.index.front()[2]].dis3[2] * op_Corr[op.index.front()[2]].dis3[2];
 
+    sprintf(outfile, 
+        "%s/dirac_%02ld_%02ld_p_%01ld_%01ld_displ_%01ld_%01ld/"
+        "C4_3_conf%04d.dat", 
+        outpath.c_str(), gam_so, gam_si, mom_so, mom_si, 
+        dis_so, dis_si, (int)config_i);
+    std::cout << outfile << std::endl;
+    if((fp = fopen(outfile, "wb")) == NULL)
+      std::cout << "fail to open outputfile: " << outfile << std::endl;
+
+    fwrite((double*) &(C4_mes[op.id][0]), sizeof(double), 2 * Lt, fp);
+    fclose(fp);
+  }
 }
 
