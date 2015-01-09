@@ -14,12 +14,14 @@
 #include "IoHelpers.h"
 #include "boost/crc.hpp"
 #include "boost/integer.hpp"
+#include "GlobalData.h"
 #include "lime.h"
 #include "typedefs.h"
 
 // converts a boost multiarray correlator to std::vector<vec> and sets tags
 // to be used in write_2pt_lime()
 void export_corr_2pt(const char* filename, array_cd_d2& C2_mes);
+void export_corr_4pt(const char* filename, array_cd_d2& C4_mes);
 
 // Writes a vector of 2pt correlation functions and their tags to a file with
 // filename

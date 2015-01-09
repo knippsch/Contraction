@@ -262,46 +262,4 @@ void file_check(const size_t glob_check,
 
 }
 
-void convert_C2_mes_to_vec(array_cd_d2& C2_mes, std::vector<Tag>& tags,
-                        std::vector<vec>& corr){
 
-  const size_t Lt = global_data->get_Lt();
-  const vec_pdg_C2 op_C2 = global_data->get_op_C2();
-
-  corr.resize(op_C2.size());
-  for(auto& c : corr)
-    c.resize(Lt);
-  tags.resize(op_C2.size());
-
-
-  for(const auto& op : op_C2){
-
-    corr[op.id].assign(C2_mes[op.id].origin(), C2_mes[op.id].origin() + C2_mes[op.id].size());
-    set_tag(tags[op.id], op.index.front());
-
-  }
-}
-
-#if 0
-//TODO: basically the same function as convert_C2_mes_to_vec. Try to overload
-// or template or whatever
-void convert_C4_mes_to_vec(array_cd_d2& C4_mes, std::vector<Tag_4pt>& tags,
-                        std::vector<vec>& corr){
-
-  const size_t Lt = global_data->get_Lt();
-  const vec_pdg_C4 op_C4 = global_data->get_op_C4();
-
-  corr.resize(op_C4.size());
-  for(auto& c : corr)
-    c.resize(Lt);
-  tags.resize(op_C4.size());
-
-
-  for(const auto& op : op_C4){
-
-    corr[op.id].assign(C4_mes[op.id].origin(), C4_mes[op.id].origin() + C4_mes[op.id].size());
-    set_tag(tags[op.id], op.index.front());
-
-  }
-}
-#endif

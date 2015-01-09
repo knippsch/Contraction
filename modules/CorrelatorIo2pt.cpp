@@ -1,17 +1,66 @@
 #include "CorrelatorIo2pt.h"
 
+// Definition of a pointer on global data
+static GlobalData * const global_data = GlobalData::Instance();
+
+//TODO: put that into the IoHelpers. Does not work naively as the template
+// type must be known at compile time
+
+// convert multiarray 2pt correlator to vector to match write_2pt_lime
+template <typename listvector> 
+void convert_C2_mes_to_vec(const listvector& op_mes, array_cd_d2& C2_mes, 
+                           std::vector<Tag>& tags, std::vector<vec>& corr){
+
+  const size_t Lt = global_data->get_Lt();
+
+  corr.resize(op_mes.size());
+  for(auto& c : corr)
+    c.resize(Lt);
+  tags.resize(op_mes.size());
+
+  for(const auto& op : op_mes){
+    //TODO: solve the copying of C2_mes (boost) into corr (std::vec) without
+    // the copy constructor in assign()
+    corr[op.id].assign(C2_mes[op.id].origin(), C2_mes[op.id].origin() + 
+                       C2_mes[op.id].size());
+    set_tag(tags[op.id], op.index.front());
+
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 void export_corr_2pt(const char* filename, array_cd_d2& C2_mes){
   
+  const vec_pdg_C2 op_C2 = global_data->get_op_C2();
+
   GlobalDat dat;
   std::vector<Tag> tags;
   std::vector<vec> corr;
 
-  convert_C2_mes_to_vec(C2_mes, tags, corr);
+  convert_C2_mes_to_vec <vec_pdg_C2> (op_C2, C2_mes, tags, corr);
 
   write_2pt_lime(filename, dat, tags, corr);
 
 }
 
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+void export_corr_4pt(const char* filename, array_cd_d2& C4_mes){
+  
+  const vec_pdg_C4 op_C4 = global_data->get_op_C4();
+
+  GlobalDat dat;
+  std::vector<Tag> tags;
+  std::vector<vec> corr;
+
+  convert_C2_mes_to_vec <vec_pdg_C4> (op_C4, C4_mes, tags, corr);
+
+  write_2pt_lime(filename, dat, tags, corr);
+
+}
 ///////////////////////////////////////////////////////////////////////////////
 // Write 2pt correlator ///////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -202,4 +251,5 @@ void get_2pt_lime(const char* filename, const size_t num_corrs,
 //  }
 //
 //}
+
 

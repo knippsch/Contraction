@@ -15,7 +15,6 @@
 // Typedefs ///////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-
 // use a general tag for 2pt and 4pt functions
 struct Tag {
   int mom_cm;
@@ -163,10 +162,10 @@ void file_check(const size_t glob_check,
                 const std::vector<boost::uint64_t>& checksums,
                 const std::vector<cmplx>& correlators);
 
+//TODO: would be good to have this in the IoHelpers instead of CorrelatorIo.cpp
 // convert multiarray 2pt correlator to vector to match write_2pt_lime
-void convert_C2_mes_to_vec(array_cd_d2& C2_mes, std::vector<Tag>& tags,
-                           std::vector<vec>& corr);
-void convert_C4_mes_to_vec(array_cd_d2& C4_mes, std::vector<Tag>& tags,
-                           std::vector<vec>& corr);
+//template <typename listvector> 
+//void convert_C2_mes_to_vec(const listvector& op_mes, array_cd_d2& C2_mes, 
+//                           std::vector<Tag>& tags, std::vector<vec>& corr);
 
 #endif // IO_HELPERS_H_
