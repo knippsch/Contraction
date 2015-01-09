@@ -28,16 +28,14 @@ void write_2pt_lime(const char* filename, GlobalDat& dat,
   if(!file_exist(filename)){
 
     // calculate checksum of all correlators
-    size_t glob_bytes = corr.size() * (corr[0]).size();
 
     //concatenate all correlation functions in one vector
-    std::vector<cmplx> collect(glob_bytes);
-    size_t length = glob_bytes*2*sizeof(double);
-    std::cout << "lngth is: " << length << std::endl;
+    std::vector<cmplx> collect;
     for(auto& c : corr)
       for (auto& el : c) collect.push_back(el);
+    size_t glob_bytes = collect.size()*2*sizeof(double);
     size_t global_chksum = checksum <std::vector<cmplx> > (collect,
-        length);
+        glob_bytes);
     std::cout << "Global Checksum is: " << global_chksum << std::endl;
     if(be) global_chksum = swap_endian<size_t>(global_chksum);
     write_1st_msg(filename, dat, global_chksum);
@@ -174,34 +172,34 @@ void get_2pt_lime(const char* filename, const size_t num_corrs,
 // Dump to ASCII //////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-void ASCII_dump_2pt(const char* filename, size_t g_so, size_t g_si, size_t p_so,
-                  size_t p_si, size_t dis_so, size_t dis_si){
-
-  Tag tag;
-  tag.mom[0] = p_so;
-  tag.mom[1] = p_si;
-  tag.gam[0] = g_so;
-  tag.gam[1] = g_si;
-  if (dis_so == 0){
-    tag.dis[0][0] = 0;
-    tag.dis[0][1] = 0;
-    tag.dis[0][2] = 0;
-  }
-  if (dis_si == 0){
-    tag.dis[1][0] = 0;
-    tag.dis[1][1] = 0;
-    tag.dis[1][2] = 0;
-  }
-
-  vec cor;
-  // needs to be taken from input file
-  size_t corr_length = 48;
-  size_t num_corrs = 2;
-  get_2pt_lime(filename, num_corrs, corr_length, tag, cor );
-  for(size_t t = 0; t < cor.size(); ++t){
-    std::cout << g_so << " " << g_si << " " << p_so << " " << p_si << " " << dis_so << " " << dis_si << " " << t <<
-              " " << cor[t] << std::endl;
-  }
-
-}
+// void ASCII_dump_2pt(const char* filename, size_t g_so, size_t g_si, size_t p_so,
+//                  size_t p_si, size_t dis_so, size_t dis_si){
+//
+//  Tag tag;
+//  tag.mom[0] = p_so;
+//  tag.mom[1] = p_si;
+//  tag.gam[0] = g_so;
+//  tag.gam[1] = g_si;
+//  if (dis_so == 0){
+//    tag.dis[0][0] = 0;
+//    tag.dis[0][1] = 0;
+//    tag.dis[0][2] = 0;
+//  }
+//  if (dis_si == 0){
+//    tag.dis[1][0] = 0;
+//    tag.dis[1][1] = 0;
+//    tag.dis[1][2] = 0;
+//  }
+//
+//  vec cor;
+//  // needs to be taken from input file
+//  size_t corr_length = 48;
+//  size_t num_corrs = 2;
+//  get_2pt_lime(filename, num_corrs, corr_length, tag, cor );
+//  for(size_t t = 0; t < cor.size(); ++t){
+//    std::cout << g_so << " " << g_si << " " << p_so << " " << p_si << " " << dis_so << " " << dis_si << " " << t <<
+//              " " << cor[t] << std::endl;
+//  }
+//
+//}
 
