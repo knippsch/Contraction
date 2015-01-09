@@ -213,7 +213,7 @@ void LapH::Correlators::build_and_write_C4_1(const size_t config_i){
   // C4_mes  - boost structure containing all correlators
 
   sprintf(outfile, "%s/C4_1_conf%04d.dat", outpath.c_str(), (int)config_i);
-  export_corr_2pt(outfile, C4_mes);
+  export_corr_4pt(outfile, C4_mes);
 
   time = clock() - time;
   printf("\t\tSUCCESS - %.1f seconds\n", ((float) time)/CLOCKS_PER_SEC);
@@ -272,7 +272,7 @@ void LapH::Correlators::build_and_write_C4_2(const size_t config_i){
   // C4_mes  - boost structure containing all correlators
 
   sprintf(outfile, "%s/C4_2_conf%04d.dat", outpath.c_str(), (int)config_i);
-  export_corr_2pt(outfile, C4_mes);
+  export_corr_4pt(outfile, C4_mes);
 
   time = clock() - time;
   printf("\t\tSUCCESS - %.1f seconds\n", ((float) time)/CLOCKS_PER_SEC);

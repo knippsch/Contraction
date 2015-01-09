@@ -40,9 +40,13 @@ void export_corr_2pt(const char* filename, array_cd_d2& C2_mes){
   std::vector<vec> corr;
 
   convert_C2_mes_to_vec <vec_pdg_C2> (op_C2, C2_mes, tags, corr);
-
-  write_2pt_lime(filename, dat, tags, corr);
-
+  if (file_exist(filename)){
+    char filename_new [150];
+    sprintf(filename_new,"_changed");
+    std::cout << "file already exists! Renaming to "
+    << filename_new << std::endl;
+    write_2pt_lime(filename_new, dat, tags, corr);
+  }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -73,9 +77,6 @@ void write_2pt_lime(const char* filename, GlobalDat& dat,
     swap_tag_vector(tags);
     dat = swap_glob_dat(dat);
   }
-  // if the file should not exist initialize it with config info as first message
-  if(!file_exist(filename)){
-
     // calculate checksum of all correlators
 
     //concatenate all correlation functions in one vector
@@ -88,7 +89,6 @@ void write_2pt_lime(const char* filename, GlobalDat& dat,
     std::cout << "Global Checksum is: " << global_chksum << std::endl;
     if(be) global_chksum = swap_endian<size_t>(global_chksum);
     write_1st_msg(filename, dat, global_chksum);
-  }
 
   // setup what is needed for output to lime
   FILE* fp;
@@ -190,12 +190,6 @@ void read_2pt_lime(const char* filename, std::vector<Tag>& tags,
   else std::cout << "#elements for tags and correlators not equal" << std::endl;
 }
 
-std::vector<cmplx> corr_to_tag(const size_t length, Tag& tag){
-  std::vector<cmplx> corr;
-
-  return corr;
-}
-
 // Look for correlator corresponding to tag given as argument
 void get_2pt_lime(const char* filename, const size_t num_corrs,
     const size_t corr_length, const Tag& tag,
@@ -225,8 +219,10 @@ void get_2pt_lime(const char* filename, const size_t num_corrs,
 //                  size_t p_si, size_t dis_so, size_t dis_si){
 //
 //  Tag tag;
+//
 //  tag.mom[0] = p_so;
 //  tag.mom[1] = p_si;
+//
 //  tag.gam[0] = g_so;
 //  tag.gam[1] = g_si;
 //  if (dis_so == 0){
@@ -246,10 +242,9 @@ void get_2pt_lime(const char* filename, const size_t num_corrs,
 //  size_t num_corrs = 2;
 //  get_2pt_lime(filename, num_corrs, corr_length, tag, cor );
 //  for(size_t t = 0; t < cor.size(); ++t){
-//    std::cout << g_so << " " << g_si << " " << p_so << " " << p_si << " " << dis_so << " " << dis_si << " " << t <<
-//              " " << cor[t] << std::endl;
+//    std::cout << g_so << " " << g_si << " " << p_so << " " << p_si <<  " " <<
+//              dis_so << " " << dis_si << " " << t << " " << cor[t] << std::endl;
 //  }
 //
 //}
-
-
+//

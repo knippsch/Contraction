@@ -97,48 +97,22 @@ void LapH::Correlators::write_C4_3(const size_t config_i){
       global_data->get_name_lattice();
 
   const int Lt = global_data->get_Lt();
-  const size_t nb_mom_sq = global_data->get_number_of_momentum_squared();
-  const std::vector<int> dirac_ind {5};
-  const size_t nb_dir = dirac_ind.size();
 
   const indexlist_4 rnd_vec_index = global_data->get_rnd_vec_C4();
   const size_t norm1 = Lt*rnd_vec_index.size();
 
-  const vec_pdg_Corr op_Corr = global_data->get_op_Corr();
   const vec_pdg_C4 op_C4 = global_data->get_op_C4();
 
   // normalisation
   for(auto i = C4_mes.data(); i < (C4_mes.data()+C4_mes.num_elements()); i++)
     *i /= norm1;
 
-  // output to binary file
-  for(const auto& op : op_C4){
-    size_t gam_so = op_Corr[op.index.front()[0]].gamma[0];
-    size_t gam_si = op_Corr[op.index.front()[2]].gamma[0];
-    size_t mom_so = op_Corr[op.index.front()[0]].p3[0] * op_Corr[op.index.front()[0]].p3[0] + 
-                  op_Corr[op.index.front()[0]].p3[1] * op_Corr[op.index.front()[0]].p3[1] + 
-                  op_Corr[op.index.front()[0]].p3[2] * op_Corr[op.index.front()[0]].p3[2];
-    size_t mom_si = op_Corr[op.index.front()[2]].p3[0] * op_Corr[op.index.front()[2]].p3[0] + 
-                  op_Corr[op.index.front()[2]].p3[1] * op_Corr[op.index.front()[2]].p3[1] + 
-                  op_Corr[op.index.front()[2]].p3[2] * op_Corr[op.index.front()[2]].p3[2];
-    size_t dis_so = op_Corr[op.index.front()[0]].dis3[0] * op_Corr[op.index.front()[0]].dis3[0] + 
-                  op_Corr[op.index.front()[0]].dis3[1] * op_Corr[op.index.front()[0]].dis3[1] + 
-                  op_Corr[op.index.front()[0]].dis3[2] * op_Corr[op.index.front()[0]].dis3[2];
-    size_t dis_si = op_Corr[op.index.front()[2]].dis3[0] * op_Corr[op.index.front()[2]].dis3[0] + 
-                  op_Corr[op.index.front()[2]].dis3[1] * op_Corr[op.index.front()[2]].dis3[1] + 
-                  op_Corr[op.index.front()[2]].dis3[2] * op_Corr[op.index.front()[2]].dis3[2];
+  // output to lime file
+  // outfile - filename
+  // C4_mes  - boost structure containing all correlators
 
-    sprintf(outfile, 
-        "%s/dirac_%02ld_%02ld_p_%01ld_%01ld_displ_%01ld_%01ld/"
-        "C4_3_conf%04d.dat", 
-        outpath.c_str(), gam_so, gam_si, mom_so, mom_si, 
-        dis_so, dis_si, (int)config_i);
-    std::cout << outfile << std::endl;
-    if((fp = fopen(outfile, "wb")) == NULL)
-      std::cout << "fail to open outputfile: " << outfile << std::endl;
+  sprintf(outfile, "%s/C4_3_conf%04d.dat", outpath.c_str(), (int)config_i);
+  export_corr_4pt(outfile, C4_mes);
 
-    fwrite((double*) &(C4_mes[op.id][0]), sizeof(double), 2 * Lt, fp);
-    fclose(fp);
-  }
 }
 
