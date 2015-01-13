@@ -44,14 +44,15 @@ int main(int ac, char* av[]) {
  rlxs_init(2,1337);
  // 100 Correlators
  std::vector<vec> correlators(100);
- for (auto& el : correlators) el.resize(96);
+ for (auto& el : correlators) el.resize(48);
  std::vector<Tag> attributes(100);
  // Fill correlators with random numbers
  for (auto& el : correlators) fill_corr_rand(el, &el-&correlators[0]);
  write_2pt_lime("checksum_test", run_id, attributes, correlators);
  //swap_correlators(correlators);
  //swap_correlators(correlators);
- for (auto& el : correlators.at(12)) std::cout << el << std::endl;
+ //for (auto& el : correlators.at(12)) std::cout << el << std::endl;
+
  //concatenate all correlation functions in one vector
  std::vector<cmplx> collect;
  for(auto& c : correlators)
@@ -65,13 +66,13 @@ int main(int ac, char* av[]) {
 
  std::vector<Tag> tags_in(100);
  std::vector<vec> correlators_in(100);
- for (auto& corr : correlators_in) corr.resize(96);
- std::cout << "read_in from file: final_write " << std::endl;
- //read_2pt_lime("final_write", tags_in, correlators_in);
- std::vector<cmplx> result;
+for (auto& corr : correlators_in) corr.resize(48);
+ std::cout << "read_in from file: big_test " << std::endl;
+ //read_2pt_lime("final_write", tags_in, correlators_in
+ //std::vector<cmplx> result;
   //get_2pt_lime("final_write", 100, 96, id, result );
-  for(auto& dat : result) std::cout << dat << std::endl;
- // ASCII_dump_2pt("/hiskp2/werner/output/A40.20/C2_pi+-_conf1528.dat", 5, 5, 0, 0, 0, 0); 
+ // for(auto& dat : result) std::cout << dat << std::endl;
+  ASCII_dump_2pt("checksum_test", 48, 100 ); 
   // for (auto& el : correlators_in.at(0)) std::cout << el << std::endl;
  
 

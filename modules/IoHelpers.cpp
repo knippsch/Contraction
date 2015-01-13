@@ -9,6 +9,7 @@ static GlobalData * const global_data = GlobalData::Instance();
 // swap endianess of global data
 
 
+
 //Tag handling/////////////////////////////////////////////////////////////////
 
 // add two three momenta
@@ -84,6 +85,152 @@ void set_tag(Tag& tag, const std::array<size_t, 4>& i){
   }
 
 }
+
+// Map configurations of an infile to a tag
+// void map_input_tag(const char* infile, Tag in){
+//  
+// // Get options from file to tag
+// 
+//   //one line of config file
+//   std::string config_line;
+//   //key and value to divide string to
+//   std::string keyword;
+//   std::string value;
+//   
+//   //three map class instances for int double and const char
+//   std::map <std::string, int> integers;
+//   std::map <std::string, double> floatings;
+// 
+//   //stream for config file
+//   std::fstream config;
+//   config.open(infile, std::fstream::in);
+// 
+//   //get each line of configuration into config_line
+//   while (!std::getline(config, config_line).eof()){
+//     if(config_line[0] != '#') {
+//         //find first occurence of '=' in each line and divide strings
+//         unsigned pos = config_line.find_first_of("=");
+//         keyword = config_line.substr(0,(pos-1));
+//         value = config_line.substr( (pos+2), std::string::npos);
+// 
+//         // String valued map variables
+//         // Set momenta first
+//         // Center of mass momenta momenta
+//         if (keyword == "mom_sq_cm") {
+//           in.mom_cm = (int)value;
+//         }
+//         if (keyword == "mom_1") {
+//           in.mom[0] = (int)value;
+//         }
+//         if (keyword == "mom_2") {
+//           in.mom[1] = (int)value;
+//         }
+//         if (keyword == "mom_3") {
+//           in.mom[2] = (int)value;
+//         }
+//         if (keyword == "mom_4") {
+//           in.mom[3] = (int)value;
+//         }
+//         // Gamma structures need splitting of the three values
+//         if (keyword == "gamma_1" ) {
+//           in.gam[0][0] = atoi(value.substr(0).c_str());
+//           in.gam[0][1] = atoi(value.substr(2).c_str());
+//           in.gam[0][2] = atoi(value.substr(4).c_str());
+//           in.gam[0][3] = atoi(value.substr(6).c_str());
+//         }
+//         if (keyword == "gamma_2" ) {
+//           in.gam[1][0] = atoi(value.substr(0).c_str());
+//           in.gam[1][1] = atoi(value.substr(2).c_str());
+//           in.gam[1][2] = atoi(value.substr(4).c_str());
+//           in.gam[1][3] = atoi(value.substr(6).c_str());
+//         }
+//         if (keyword == "gamma_3" ) {
+//           in.gam[2][0] = atoi(value.substr(0).c_str());
+//           in.gam[2][1] = atoi(value.substr(2).c_str());
+//           in.gam[2][2] = atoi(value.substr(4).c_str());
+//           in.gam[2][3] = atoi(value.substr(6).c_str());
+//         }
+//         if (keyword == "gamma_4") {
+//           in.gam[3][0] = atoi(value.substr(0).c_str());
+//           in.gam[3][1] = atoi(value.substr(2).c_str());
+//           in.gam[3][2] = atoi(value.substr(4).c_str());
+//           in.gam[3][3] = atoi(value.substr(6).c_str());
+//         }
+// 
+//         // Displacement vectors
+//         if (keyword == "dis_1"){
+//           in.dis[0][0] = ;
+//           in.dis[0][1] = ;
+//           in.dis[0][2] = ;
+//         }
+//         if (keyword == "dis_2"){
+//           in.dis[1][0] = ;
+//           in.dis[1][1] = ;
+//           in.dis[1][2] = ;
+//         }
+//         if (keyword == "dis_3"){
+//           in.dis[2][0] = ;
+//           in.dis[2][1] = ;
+//           in.dis[2][2] = ;
+//         }
+//         if (keyword == "dis_4"){
+//           in.dis[3][0] = ;
+//           in.dis[3][1] = ;
+//           in.dis[3][2] = ;
+//         }
+//     }
+//   }
+//   config.close();
+// 
+// // CM momentum squared
+//  in.mom_cm = ;
+// 
+// // Source
+// // 1st particle
+//  in.mom[0] = ;
+//  in.dis[0][0] = ;
+//  in.dis[0][1] = ;
+//  in.dis[0][2] = ;
+// 
+//  in.gam[0][0] = ;
+//  in.gam[0][1] = ;
+//  in.gam[0][2] = ;
+//  in.gam[0][3] = ;
+// 
+//  // 2nd particle 
+//  in.mom[1] = ;
+//  in.dis[1][0] = ;
+//  in.dis[1][1] = ;
+//  in.dis[1][2] = ;
+// 
+//  in.gam[1][0] = ;
+//  in.gam[1][1] = ;
+//  in.gam[1][2] = ;
+//  in.gam[1][3] = ;
+// 
+//  // Sink
+//  // 1st particle
+//  in.mom[2] = ;
+//  in.dis[2][0] = ;
+//  in.dis[2][1] = ;
+//  in.dis[2][2] = ;
+// 
+//  in.gam[2][0] = ;
+//  in.gam[2][1] = ;
+//  in.gam[2][2] = ;
+//  in.gam[2][3] = ;
+// 
+//  // 2nd particle
+//  in.mom[3] = ;
+//  in.dis[3][0] = ;
+//  in.dis[3][1] = ;
+//  in.dis[3][2] = ;
+// 
+//  in.gam[3][0] = ;
+//  in.gam[3][1] = ;
+//  in.gam[3][2] = ;
+//  in.gam[3][3] = ;
+// }
 
 //TODO
 // Convert ascii labels to correlation tag
@@ -190,7 +337,7 @@ void file_check(const size_t glob_check,
                 const std::vector<boost::uint64_t>& checksums,
                 const std::vector<cmplx>& correlators){
   size_t tmp = 0;
-  size_t bytecount = correlators.size()*sizeof(double);
+  size_t bytecount = correlators.size()*2*sizeof(double);
   
   tmp = checksum<std::vector<cmplx> > (correlators, bytecount);
   if (big_endian()) swap_endian <size_t> (tmp);

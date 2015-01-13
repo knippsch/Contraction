@@ -61,7 +61,12 @@ void export_corr_4pt(const char* filename, array_cd_d2& C4_mes){
   std::vector<vec> corr;
 
   convert_C2_mes_to_vec <vec_pdg_C4> (op_C4, C4_mes, tags, corr);
-
+  if (file_exist(filename)){
+    char filename_new [150];
+    sprintf(filename_new,"_changed");
+    std::cout << "file already exists! Renaming to "
+    << filename_new << std::endl;
+  }
   write_2pt_lime(filename, dat, tags, corr);
 
 }
@@ -108,7 +113,8 @@ void write_2pt_lime(const char* filename, GlobalDat& dat,
 
 // IDEA: First read in everything and compare checksums, if not correct give
 // warning and exit
-// afterwards look for correlator with tag.
+// afterwards look for correlator with tag. vectors tags and correlators have
+// to be specified with the right size
 
 void read_2pt_lime(const char* filename, std::vector<Tag>& tags,
                    std::vector<vec>& correlators){
@@ -117,7 +123,7 @@ void read_2pt_lime(const char* filename, std::vector<Tag>& tags,
     if(FILE* fp = fopen(filename, "r")){
       size_t global_check = 0;
       std::vector<size_t> checksums(tags.size());
-
+      const int Lt = correlators[0].size();
       int MB_flag = 0; int ME_flag = 0;
       int file_status = 0;
       int act_status = 0;
@@ -129,10 +135,9 @@ void read_2pt_lime(const char* filename, std::vector<Tag>& tags,
       // From first message read global checksum
       MB_flag = limeReaderMBFlag(r);
       ME_flag = limeReaderMEFlag(r);
-      std::cout << MB_flag << " " << ME_flag << std::endl;
+      //std::cout << MB_flag << " " << ME_flag << std::endl;
       if(MB_flag == 1 && ME_flag == 0){
         act_status = limeReaderReadData(&global_check, &check_bytes, r);
-        std::cout << global_check << std::endl;
         if (bigend) global_check = swap_endian<size_t>(global_check);
         std::cout << global_check << std::endl;
       }
@@ -146,7 +151,7 @@ void read_2pt_lime(const char* filename, std::vector<Tag>& tags,
         file_status = limeReaderNextRecord(r);
         MB_flag = limeReaderMBFlag(r);
         ME_flag = limeReaderMEFlag(r);
-        //std::cout << MB_flag << " " << ME_flag << std::endl;
+//        std::cout << MB_flag << " " << ME_flag << std::endl;
         // read correlator checksum
         if(MB_flag == 1 && ME_flag == 0){
           size_t check = 0;
@@ -165,22 +170,17 @@ void read_2pt_lime(const char* filename, std::vector<Tag>& tags,
         // read correlator data
         else if(MB_flag == 0 && ME_flag == 1){
           vec corr;
-          //TODO adapt to global data
-          corr.resize(48);
-          //std::cout << "initialized tmeporal correlator" << std::endl;
+          corr.resize(Lt);
           act_status = limeReaderReadData(corr.data(), &data_bytes, r);
-          //std::cout << "read_in tmeporal correlator" << std::endl;
-          //std::cout << corr.size() << std::endl;
           if (bigend) corr = swap_single_corr(corr);
           correlators.at(cnt/3) = corr;
         }
         ++cnt;
       } while (file_status != LIME_EOF);
       // Check file integrity
-      //std::cout << correlators.size();
       size_t glob_bytes = correlators.size()*correlators[0].size();
       //concatenate all correlation functions in one vector
-      std::vector<cmplx> collect(glob_bytes);
+      std::vector<cmplx> collect;
       for(auto& c : correlators)
         for (auto& el : c) collect.push_back(el);
       file_check(global_check, checksums, collect);
@@ -215,36 +215,23 @@ void get_2pt_lime(const char* filename, const size_t num_corrs,
 // Dump to ASCII //////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-// void ASCII_dump_2pt(const char* filename, size_t g_so, size_t g_si, size_t p_so,
-//                  size_t p_si, size_t dis_so, size_t dis_si){
-//
-//  Tag tag;
-//
-//  tag.mom[0] = p_so;
-//  tag.mom[1] = p_si;
-//
-//  tag.gam[0] = g_so;
-//  tag.gam[1] = g_si;
-//  if (dis_so == 0){
-//    tag.dis[0][0] = 0;
-//    tag.dis[0][1] = 0;
-//    tag.dis[0][2] = 0;
-//  }
-//  if (dis_si == 0){
-//    tag.dis[1][0] = 0;
-//    tag.dis[1][1] = 0;
-//    tag.dis[1][2] = 0;
-//  }
-//
-//  vec cor;
-//  // needs to be taken from input file
-//  size_t corr_length = 48;
-//  size_t num_corrs = 2;
-//  get_2pt_lime(filename, num_corrs, corr_length, tag, cor );
-//  for(size_t t = 0; t < cor.size(); ++t){
-//    std::cout << g_so << " " << g_si << " " << p_so << " " << p_si <<  " " <<
-//              dis_so << " " << dis_si << " " << t << " " << cor[t] << std::endl;
-//  }
-//
-//}
-//
+// Temporal extent has to be given
+void ASCII_dump_2pt(const char* filename, const size_t Lt, const size_t num_corrs){
+
+  // Set up temporary structure as copy of incoming
+  std::vector<vec> correlators(num_corrs);
+  for (auto& corr : correlators) corr.resize(Lt);
+  std::vector<Tag> tags (num_corrs);
+
+  // Read in whole Configuration function
+  read_2pt_lime(filename, tags, correlators);
+
+ for (size_t num = 0; num < num_corrs; ++num){
+  for (size_t t = 0; t < Lt; ++t){
+    std::cout << t << " " << correlators[num][t].real() << " " <<
+              correlators[num][t].imag() << std::endl;
+  }
+ }
+
+}
+

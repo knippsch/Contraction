@@ -17,9 +17,13 @@
 
 // use a general tag for 2pt and 4pt functions
 struct Tag {
+  // The center of mass momentum squared
   int mom_cm;
+  // the center of mass momenta for 4 particles
   int mom[4];
+  // 4 displacement vectors
   int dis[4][3];
+  // 4 gamma 4 vectors
   int gam[4][4];
 };
 
@@ -123,6 +127,9 @@ inline bool file_exist(const char* name) {
   }   
 }
 
+// Map configurations of an infile to a tag
+// Tag map_input(const char* infile);
+
 // set the tag for the second message for a 2pt function given the indexpair
 // of quantum numbers in op_Corr for source and sink
  void set_tag(Tag& tag, const std::pair<size_t, size_t>& i);
@@ -150,7 +157,7 @@ inline void swap_correlators(std::vector<vec>& corr){
   }
 }
 
-// swap vector of all tags
+// swap vector of all 
 inline void swap_tag_vector(std::vector<Tag>& tags){
   for (auto& label : tags){
     label = swap_single_tag(label);
