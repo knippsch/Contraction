@@ -250,7 +250,7 @@ void ASCII_dump_corr(const char* filename, const size_t Lt,
    for (size_t num = 0; num < n; ++num){
     for (size_t t = 0; t < Lt; ++t){
       std::cout << p_sq << " " << l_sq << " " << t << " " <<
-                corrs_found[num][t].real() << " " <<
+                std::scientific << corrs_found[num][t].real() << " " <<
                 corrs_found[num][t].imag() << std::endl;
     }
    }
