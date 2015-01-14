@@ -27,7 +27,9 @@ struct Tag {
   int gam[4][4];
 };
 
-
+// Global infos on the run should be stored here, no idea what that could be
+// IDEAS: Configuration number, channels, rnd seeds, number of input vectors,
+// Lattice size, ensemble used
 struct GlobalDat {
   std::vector<size_t> rnd_seeds;
   size_t nb_rnd_vecs;
@@ -130,6 +132,8 @@ inline bool file_exist(const char* name) {
 // Map configurations of an infile to a tag
 // Tag map_input(const char* infile);
 
+// Copy over array to std::array<int, 3>
+std::array<int, 3> std_arr(int* arr);
 // set the tag for the second message for a 2pt function given the indexpair
 // of quantum numbers in op_Corr for source and sink
  void set_tag(Tag& tag, const std::pair<size_t, size_t>& i);

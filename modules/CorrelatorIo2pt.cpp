@@ -198,7 +198,6 @@ void get_2pt_lime(const char* filename, const size_t num_corrs,
   std::vector<vec> tmp_correlators(num_corrs);
   for(auto& corr : tmp_correlators) corr.resize(corr_length);
   std::vector<Tag> tmp_tags (num_corrs);
-
   // Read in whole Configuration function
   read_2pt_lime(filename, tmp_tags, tmp_correlators);
   // look for appropriate tag in vector of tags
@@ -216,8 +215,9 @@ void get_2pt_lime(const char* filename, const size_t num_corrs,
 ///////////////////////////////////////////////////////////////////////////////
 
 // Temporal extent has to be given
-void ASCII_dump_2pt(const char* filename, const size_t Lt, const size_t num_corrs){
-
+void ASCII_dump_corr(const char* filename, const size_t Lt,
+                    const size_t num_corrs, const size_t p_sq,
+                    const size_t l_sq) {
   // Set up temporary structure as copy of incoming
   std::vector<vec> correlators(num_corrs);
   for (auto& corr : correlators) corr.resize(Lt);
@@ -225,13 +225,36 @@ void ASCII_dump_2pt(const char* filename, const size_t Lt, const size_t num_corr
 
   // Read in whole Configuration function
   read_2pt_lime(filename, tags, correlators);
+  std::vector<Tag> tags_found;
+  std::vector<vec> corrs_found;
 
- for (size_t num = 0; num < num_corrs; ++num){
-  for (size_t t = 0; t < Lt; ++t){
-    std::cout << t << " " << correlators[num][t].real() << " " <<
-              correlators[num][t].imag() << std::endl;
+  // Append matching tags and correlators to vectors
+  for(size_t n = 0; n < num_corrs; ++n){
+    if (tags[n].mom_cm == p_sq) {
+        std::array<int, 3> d1 = std_arr(tags[n].dis[1]);
+        std::array<int, 3> d2 = std_arr(tags[n].dis[0]);
+        if (square_comp(d1, d2) == l_sq){
+        tags_found.push_back(tags[n]);
+        corrs_found.push_back(correlators[n]);
+      }
+    }
   }
- }
+  size_t n = corrs_found.size();
+  if( n == 0) std::cout << "No matching Correlators found!" <<
+                              std::endl;
+  else{
+    std::cout << "# " << n << " correlators read in from file: " <<
+              filename << std::endl;
+    std::cout << "# cm_mom_sq dis_so_sq t real(C[t]) imag(C[t])" <<
+              std::endl;
+   for (size_t num = 0; num < n; ++num){
+    for (size_t t = 0; t < Lt; ++t){
+      std::cout << p_sq << " " << l_sq << " " << t << " " <<
+                corrs_found[num][t].real() << " " <<
+                corrs_found[num][t].imag() << std::endl;
+    }
+   }
+  }
 
 }
 

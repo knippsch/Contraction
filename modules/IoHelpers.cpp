@@ -22,7 +22,16 @@ return sum;
 
 }
 
-// Calculate p^2
+// Copy over array to std::array<int, 3>
+std::array<int, 3> std_arr(int arr[]){
+  std::array<int,3> std;
+  for(size_t i = 0; i < 3; ++i){
+    std[i] = arr[i];
+  }
+  return std;
+}
+
+// Calculate square of two 3 int arrays
 int square_comp(const std::array<int, 3>& p1,
                 const std::array<int, 3>& p2){
   int square = 0;
@@ -31,6 +40,7 @@ int square_comp(const std::array<int, 3>& p1,
   }
   return square;
 }
+
 
 // Compare two tags of correlation functions
 bool compare_tags(const Tag& tag1, const Tag& tag2){
@@ -42,7 +52,7 @@ bool compare_tags(const Tag& tag1, const Tag& tag2){
   return flag;
 }
 
-
+  
 // Set the tag from two operator structures
 void set_tag(Tag& tag, const std::pair<size_t, size_t>& i){
 
@@ -243,9 +253,11 @@ void set_tag(Tag& tag, const std::array<size_t, 4>& i){
 //  item.gam[0] = g_so;
 //  item.gam[1] = g_si;
 //  return item;
-//} 
+//}
 
+////////////////////////////////////////////////////////////////////////////////
 // File handling ///////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 
 // write global checksum, and runinfo in new file
 void write_1st_msg(const char* filename, GlobalDat& dat,
