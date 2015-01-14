@@ -28,10 +28,11 @@ void LapH::Correlators::build_Corr(){
     // CJ: OMP cannot do the parallelization over an auto loop,
     //     implementing a workaround by hand
     //     not used at the moment, increases runtime by a factor of 2
-    //#pragma omp parallel
-    //#pragma omp single
-    //{
+    #pragma omp parallel
+    #pragma omp single
+    {
       for(const auto& op : op_C2){
+      #pragma omp task shared(op)
       for(const auto& i : op.index){
     
         // TODO: A collpase of both random vectors might be better but
@@ -41,7 +42,6 @@ void LapH::Correlators::build_Corr(){
           // Corr = tr(D_d^-1(t_sink) Gamma D_u^-1(t_source) Gamma)
           // TODO: Just a workaround
     
-          //#pragma omp task shared(rnd_it, i)
           compute_meson_small_traces(i.second, basic.get_operator
             (t_source, t_sink/dilT, 1, i.first, rnd_it.first, rnd_it.second),
             //TODO: shouldn't that be op_Corr[i.second].id_rVdaggerVr?
@@ -49,12 +49,14 @@ void LapH::Correlators::build_Corr(){
             Corr[i.first][i.second][t_source][t_sink][rnd_it.first][rnd_it.second]);
 
         } // Loop over random vectors ends here! 
-      }}//Loops over all Quantum numbers 
+      }
+//      #pragma omp taskwait
+      }//Loops over all Quantum numbers 
     
       // Using the dagger operation to get all possible random vector combinations
       // TODO: Think about imaginary correlations functions - There might be an 
       //       additional minus sign involved
-    //} // end parallel region
+    } // end parallel region
     
     }// Loops over t_source
   }// Loops over t_sink

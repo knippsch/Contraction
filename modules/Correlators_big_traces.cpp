@@ -42,7 +42,7 @@ void LapH::Correlators::compute_meson_4pt_cross_trace(LapH::CrossOperator& X) {
       if(t_source == t_sink)
         continue;
     
-      // The parallelisation is done with #pragme omp for because it is 
+      // The parallelisation is not done with #pragma omp for because it is 
       // incompatible with auto loops
       #pragma omp parallel
       #pragma omp single
