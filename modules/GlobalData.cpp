@@ -115,7 +115,7 @@ void GlobalData::init_from_infile() {
   //              where X is the number of randomvectors
 //  set_rnd_vec_C1();
   set_rnd_vec_C2();
-//  set_rnd_vec_C3();
+  set_rnd_vec_C3();
   set_rnd_vec_C4();
 }
 

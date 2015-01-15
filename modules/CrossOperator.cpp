@@ -32,7 +32,7 @@ void LapH::CrossOperator::construct(const BasicOperator& basic,
 
   const int Lt = global_data->get_Lt();
   const std::vector<quark> quarks = global_data->get_quarks();
-  const size_t nb_rnd = quarks[0].number_of_rnd_vec;
+  const indexlist_3 rnd_vec_index = global_data->get_rnd_vec_C3();
   const size_t dilE = quarks[0].number_of_dilution_E;
   const size_t dilT = quarks[0].number_of_dilution_T;
   const vec_pdg_C4 op_C4 = global_data->get_op_C4();
@@ -59,28 +59,24 @@ void LapH::CrossOperator::construct(const BasicOperator& basic,
   }
 
 #pragma omp parallel
+#pragma omp single
 {     
   for(const auto& op : op_C4){
   for(const auto& i : op.index){
     size_t id_so = i[2+nb];
     size_t id_si = i[1-nb];
 
-    #pragma omp for collapse(2) schedule(dynamic)
-    for(size_t rnd1 = 0; rnd1 < nb_rnd; ++rnd1){
-    for(size_t rnd2 = 0; rnd2 < nb_rnd; ++rnd2){
-    if(rnd2 != rnd1){
-    for(size_t rnd3 = 0; rnd3 < nb_rnd; ++rnd3){
-    if((rnd3 != rnd1) && (rnd3 != rnd2)){
-
+    #pragma omp task shared (op, i)
+    for(auto& rnd_it : rnd_vec_index) {
       compute_X(basic, id_si, 
-                basic.get_operator(t_source, tu, td, id_so, rnd1, rnd2),
-                vdaggerv.return_rvdaggervr(id_si, t2, rnd2, rnd3),
-                X[nb][id_so][id_si][rnd1][rnd2][rnd3]);
+                basic.get_operator(t_source, tu, td, id_so, rnd_it[0], rnd_it[1]),
+                vdaggerv.return_rvdaggervr(id_si, t2, rnd_it[1], rnd_it[2]),
+                X[nb][id_so][id_si][rnd_it[0]][rnd_it[1]][rnd_it[2]]);
 
 //      compute_X(basic, vdaggerv, id_so, id_si, rnd1, rnd2, rnd3, t_source, tu, 
 //          td, t2, X[nb]);
 
-    }}}}}// loops random vectors
+    } // loop over random vectors
   }}// loops operators
 }
 
@@ -116,25 +112,24 @@ void LapH::CrossOperator::compute_X(const BasicOperator& basic,
 /******************************************************************************/
 void LapH::CrossOperator::swap(const size_t nb1, const size_t nb2){
   
-  const std::vector<quark> quarks = global_data->get_quarks();
-  const size_t nb_rnd = quarks[0].number_of_rnd_vec;
+  const indexlist_3 rnd_vec_index = global_data->get_rnd_vec_C3();
   const vec_pdg_Corr op_Corr = global_data->get_op_Corr();
   // TODO: }
   // TODO: Think about for each loop
 
-  // can one collapse autoloops?
-  for(auto& op_so : op_Corr){
-  for(auto& op_si : op_Corr){
-    #pragma omp parallel for collapse(2) schedule(dynamic)
-    for(size_t rnd1 = 0; rnd1 < nb_rnd; ++rnd1){
-    for(size_t rnd2 = 0; rnd2 < nb_rnd; ++rnd2){
-    if(rnd2 != rnd1){
-    for(size_t rnd3 = 0; rnd3 < nb_rnd; ++rnd3){
-    if((rnd3 != rnd1) && (rnd3 != rnd2)){
+  // omp parallel for cannot handle autoloops,
+  // therefore this workaround is implemented
+  #pragma omp parallel
+  #pragma omp single
+  {
+    for(auto& op_so : op_Corr){
+    for(auto& op_si : op_Corr){
+      #pragma omp task shared(op_so, op_si)
+      for(auto& rnd_it : rnd_vec_index) {
+        X[nb1][op_so.id][op_si.id][rnd_it[0]][rnd_it[1]][rnd_it[2]].swap(
+        X[nb2][op_so.id][op_si.id][rnd_it[0]][rnd_it[1]][rnd_it[2]]);
 
-      X[nb1][op_so.id][op_si.id][rnd1][rnd2][rnd3].swap(
-      X[nb2][op_so.id][op_si.id][rnd1][rnd2][rnd3]);
-
-    }}}}}// loops random vectors
-  }}//loops operators
+      } // random vector loop
+    }}//loops operators
+  }
 }
