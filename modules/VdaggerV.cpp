@@ -23,23 +23,25 @@ inline void read_eigenvectors_from_file(LapH::EigenVector& V,
 /******************************************************************************/
 /******************************************************************************/
 
-// can I throw nb_mom out?
-LapH::VdaggerV::VdaggerV() : vdaggerv(), rvdaggervr(), momentum(), //nb_mom(1),
+LapH::VdaggerV::VdaggerV() : vdaggerv(), rvdaggervr(), momentum(),
                              is_vdaggerv_set(false) {
-
-  // is needed in the whole class
-//  nb_mom = global_data->get_number_of_momenta();
 
   const size_t Lt = global_data->get_Lt();
   const size_t Vs = global_data->get_Lx() * global_data->get_Ly() * 
-                 global_data->get_Lz();         
+                    global_data->get_Lz();         
   const std::vector<quark> quarks = global_data->get_quarks();
   const size_t nb_rnd = quarks[0].number_of_rnd_vec;
 
-  const size_t nb_VdaggerV = global_data->get_number_of_VdaggerV();
-  const size_t nb_rVdaggerVr = global_data->get_number_of_rVdaggerVr();
+  //const vec_pd_VdaggerV op_VdaggerV = global_data->get_op_VdaggerV();
+  //TODO: use an own get function that or load op_VdaggerV and size()
+  //const size_t nb_VdaggerV = global_data->get_number_of_VdaggerV();
+  //const size_t nb_rVdaggerVr = global_data->get_number_of_rVdaggerVr();
 
   const vec_pd_VdaggerV op_VdaggerV = global_data->get_op_VdaggerV();
+  const vec_pd_rVdaggerVr op_rVdaggerVr = global_data->get_op_rVdaggerVr();
+
+  const size_t nb_VdaggerV = op_VdaggerV.size();
+  const size_t nb_rVdaggerVr = op_rVdaggerVr.size();
 
   // only half of the array is stored to save memory. But be careful, it 
   // must be mapped correctly from outside by addressing the momentum
@@ -61,6 +63,7 @@ void LapH::VdaggerV::create_momenta () {
   const int Lx = global_data->get_Lx();
   const int Ly = global_data->get_Ly();
   const int Lz = global_data->get_Lz();
+
   const vec_pd_VdaggerV op_VdaggerV = global_data->get_op_VdaggerV();
   const vec_pdg_Corr op_Corr = global_data->get_op_Corr();
 
@@ -87,10 +90,9 @@ void LapH::VdaggerV::create_momenta () {
         for(int z = 0; z < Lz; ++z){
           // multiply \vec{p} \cdot \vec{x} with complex unit and exponentiate
           momentum[op.id][xHyH + z] = exp(-I * (ipxHipyH + ipz * z));
-        }
-      }
-    }
-  }
+    }}}//loops over spatial vectors end here
+  }//loop over redundant quantum numbers ends here
+
 }
 
 /******************************************************************************/
@@ -104,11 +106,9 @@ void LapH::VdaggerV::build_vdaggerv (const int config_i) {
   const size_t Lt = global_data->get_Lt();
   const size_t dim_row = global_data->get_dim_row();
   const size_t nb_ev = global_data->get_number_of_eigen_vec();
-  const size_t nb_VdaggerV = global_data->get_number_of_VdaggerV();
   const size_t id_unity = global_data->get_index_of_unity();
-  const vec_pd_VdaggerV op_VdaggerV = global_data->get_op_VdaggerV();
 
-  const size_t nb_dis = global_data->get_number_of_displ();
+  const vec_pd_VdaggerV op_VdaggerV = global_data->get_op_VdaggerV();
 
   std::fill(vdaggerv.origin(), vdaggerv.origin() + vdaggerv.num_elements(), 
             Eigen::MatrixXcd::Zero(nb_ev, nb_ev));
@@ -160,7 +160,8 @@ void LapH::VdaggerV::build_vdaggerv (const int config_i) {
 /******************************************************************************/
 /******************************************************************************/
 void LapH::VdaggerV::build_rvdaggervr(const int config_i,
-                             const std::vector<LapH::RandomVector>& rnd_vec) {
+                               const std::vector<LapH::RandomVector>& rnd_vec) {
+
   // check of vdaggerv is already build
   if(not is_vdaggerv_set){
     std::cout << "\n\n\tCaution: vdaggerv is not set and rvdaggervr cannot be" 
@@ -176,7 +177,7 @@ void LapH::VdaggerV::build_rvdaggervr(const int config_i,
   const std::vector<quark> quarks = global_data->get_quarks();
   const size_t dilE = quarks[0].number_of_dilution_E;
   const size_t nb_rnd = quarks[0].number_of_rnd_vec;
-  const size_t nb_VdaggerV = global_data->get_number_of_VdaggerV();
+
   const vec_pd_rVdaggerVr op_rVdaggerVr = global_data->get_op_rVdaggerVr();
   const vec_pdg_Corr op_Corr = global_data->get_op_Corr();
 

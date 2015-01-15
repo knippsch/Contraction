@@ -1,5 +1,7 @@
 #include "Correlators.h"
 
+//TODO outfile can be hidden in the export_meson_2pt() (and rename that thing)
+
 // Definition of a pointer on global data
 static GlobalData * const global_data = GlobalData::Instance();
 
@@ -9,13 +11,14 @@ static GlobalData * const global_data = GlobalData::Instance();
 void LapH::Correlators::build_Corr(){
 
   const size_t Lt = global_data->get_Lt();
-
-  const vec_pdg_C2 op_C2 = global_data->get_op_C2();
   const std::vector<quark> quarks = global_data->get_quarks();
   const int dilT = quarks[0].number_of_dilution_T;
+
+  const vec_pdg_C2 op_C2 = global_data->get_op_C2();
+  const vec_pdg_Corr op_Corr = global_data->get_op_Corr();
   const indexlist_2 rnd_vec_index = global_data->get_rnd_vec_C2();
   // TODO: must be changed in GlobalData {
-  // TODO: }
+  // TODO: }     Was ist das? - Markus
 
   std::cout << "\n\tcomputing the traces of pi_+/-:\r";
   clock_t time = clock();
@@ -90,9 +93,7 @@ void LapH::Correlators::compute_meson_small_traces(const size_t id_si,
     Corr += value * (Q2.block(block*dilE, block*dilE, dilE, dilE) *
             rVdaggerVr.block(0, (basic.order_dirac(id_si, block)*dilE), 
             dilE, dilE)).trace();
-
     }
-
 }
 
 /******************************************************************************/
@@ -111,7 +112,6 @@ void LapH::Correlators::build_and_write_2pt(const size_t config_i){
   const int Lt = global_data->get_Lt();
 
   const vec_pdg_C2 op_C2 = global_data->get_op_C2();
-  const vec_pdg_Corr op_Corr = global_data->get_op_Corr();
   const indexlist_2 rnd_vec_index = global_data->get_rnd_vec_C2();
 
   // compute the norm for 2pt functions
@@ -172,7 +172,6 @@ void LapH::Correlators::build_and_write_C4_1(const size_t config_i){
   // global variables from input file needed here
   const int Lt = global_data->get_Lt();
 
-  const vec_pdg_Corr op_Corr = global_data->get_op_Corr();
   const vec_pdg_C4 op_C4 = global_data->get_op_C4();
   const indexlist_4 rnd_vec_index = global_data->get_rnd_vec_C4();
 
@@ -231,7 +230,6 @@ void LapH::Correlators::build_and_write_C4_2(const size_t config_i){
   // global variables from input file needed here
   const int Lt = global_data->get_Lt();
 
-  const vec_pdg_Corr op_Corr = global_data->get_op_Corr();
   const vec_pdg_C4 op_C4 = global_data->get_op_C4();
   const indexlist_4 rnd_vec_index = global_data->get_rnd_vec_C4();
 

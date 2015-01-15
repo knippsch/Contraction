@@ -225,16 +225,18 @@ static void create_gamma (std::vector<struct lookup>& gamma, const int i) {
 /******************************************************************************/
 // constructor ****************************************************************/
 /******************************************************************************/
-BasicOperator::BasicOperator() : gamma(), 
-                                 Q2() {
+BasicOperator::BasicOperator() : gamma(), Q2() {
 
   const size_t Lt = global_data->get_Lt();
-  const size_t nb_mom = global_data->get_number_of_momenta();
-  const size_t nb_op = nb_mom;                                                 //!!!!
   const std::vector<quark> quarks = global_data->get_quarks();
   const size_t nb_rnd = quarks[0].number_of_rnd_vec;
   const size_t dilT = quarks[0].number_of_dilution_T;
   const size_t Q2_size = 4 * quarks[0].number_of_dilution_E;
+  
+  const vec_pdg_Corr op_Corr = global_data->get_op_Corr();
+
+  const size_t nb_op = op_Corr.size();
+
   // creating gamma matrices
   gamma.resize(16);
   for(int i = 0; i < 16; ++i)
@@ -254,23 +256,21 @@ void BasicOperator::init_operator(const char dilution,
                                   const LapH::Perambulator& peram){
 
   const int Lt = global_data->get_Lt();
-  const vec_pdg_Corr op_Corr = global_data->get_op_Corr();
   const size_t nb_ev = global_data->get_number_of_eigen_vec();
   const std::vector<quark> quarks = global_data->get_quarks();
   const size_t nb_rnd = quarks[0].number_of_rnd_vec;
   const size_t dilE = quarks[0].number_of_dilution_E;
   const int dilT = quarks[0].number_of_dilution_T;
   const size_t Q2_size = 4 * dilE;
-  const size_t nb_mom = global_data->get_number_of_momenta();
-  const size_t nb_dg = global_data->get_number_of_displ_gamma();
-  const size_t nb_op = global_data->get_number_of_operators();
-  const size_t nb_dir = global_data->get_number_of_dirac();
+  
+  const vec_pdg_Corr op_Corr = global_data->get_op_Corr();
+
+  const size_t nb_op = op_Corr.size();
 
   std::cout << "\n" << std::endl;
   clock_t time = clock();
-#pragma omp parallel 
-{
-  // TODO: Dirac Structure is still missing
+  #pragma omp parallel 
+  {
   Eigen::MatrixXcd M = Eigen::MatrixXcd::Zero(Q2_size, 4 * nb_ev);
   #pragma omp for schedule(dynamic)
   for(int t_0 = 0; t_0 < Lt; t_0++){
@@ -307,6 +307,9 @@ void BasicOperator::init_operator(const char dilution,
                   (peram[rnd_i].block(nb_ev * (4 * t_0 + row), 
                                       dilE * (4 * t + col), 
                                       nb_ev, dilE)).adjoint() *
+                  // TODO: calculate V^daggerV Omega from op.flag_VdaggerV > 0
+                  // and multiply Omega from the left
+                  // and then (V^daggerV Omega)^dagger * Omega
                   (vdaggerv.return_vdaggerv(op.id_VdaggerV, t_0)).adjoint();
               }  
 
@@ -345,13 +348,14 @@ void BasicOperator::init_operator(const char dilution,
       }// loop over rnd_i ends here
     }//loop operators
   }// loops over t_0 ends here
-}// pragma omp ends
+  }// pragma omp ends
 
   std::cout << "\tcomputing double quarkline: 100.00%" << std::endl;
   time = clock() - time;
   std::cout << "\t\tSUCCESS - " << ((float) time) / CLOCKS_PER_SEC 
             << " seconds" << std::endl;
 }
+
 /******************************************************************************/
 /******************************************************************************/
 /******************************************************************************/
@@ -386,9 +390,11 @@ size_t BasicOperator::order_dirac(const size_t index, size_t block) const {
   }
 
   return block;
-
 }
 
+/******************************************************************************/
+/******************************************************************************/
+/******************************************************************************/
 void BasicOperator::value_dirac(const size_t index, const size_t block, 
                                 cmplx& value) const{
 
@@ -402,25 +408,34 @@ void BasicOperator::value_dirac(const size_t index, const size_t block,
 
 }
 
-
 /******************************************************************************/
 /******************************************************************************/
 /******************************************************************************/
 void BasicOperator::mult_dirac(const Eigen::MatrixXcd& matrix,
-Eigen::MatrixXcd& reordered, const size_t index)
-const {
-const vec_pdg_Corr op_Corr = global_data->get_op_Corr();
-const size_t rows = matrix.rows();
-const size_t cols = matrix.cols();
-if( (rows != reordered.rows()) || (cols != reordered.cols()) ){
-std::cout << "Error! In BasicOperator::mult_dirac: size of matrix and "
-"reordered must be equal" << std::endl;
-exit(0);
+                               Eigen::MatrixXcd& reordered, 
+                               const size_t index) const {
+
+  const vec_pdg_Corr op_Corr = global_data->get_op_Corr();
+
+  const size_t rows = matrix.rows();
+  const size_t cols = matrix.cols();
+  const size_t col = cols/4;
+  if( (rows != reordered.rows()) || (cols != reordered.cols()) ){
+    std::cout << "Error! In BasicOperator::mult_dirac: size of matrix and "
+                 "reordered must be equal" << std::endl;
+    exit(0);
+  }
+
+  for(const auto& dirac : op_Corr[index].gamma){
+    if(dirac != 4){
+      for(size_t block = 0; block < 4; block++){
+        reordered.block(0, block * col, rows, col) = 
+          gamma[dirac].value[block] *
+          matrix.block(0, gamma[dirac].row[block]*col, rows, col);
+      }
+    }
+  }
+
 }
-const size_t col = cols/4;
-for(const auto& dirac : op_Corr[index].gamma)
-if(dirac != 4)
-for(size_t block = 0; block < 4; block++)
-reordered.block(0, block * col, rows, col) = gamma[dirac].value[block] *
-matrix.block(0, gamma[dirac].row[block]*col, rows, col);
-}
+
+

@@ -43,6 +43,7 @@ typedef boost::multi_array<Eigen::MatrixXcd, 9> array_Xcd_d9_eigen;
 typedef boost::multi_array<Eigen::MatrixXcd, 10> array_Xcd_d10_eigen;
 
 // index typedefs
+typedef std::list<size_t> indexlist_1;
 typedef std::list<std::pair<size_t, size_t> > indexlist_2;
 typedef std::list<std::array<size_t, 4> > indexlist_4;
 

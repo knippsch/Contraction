@@ -10,6 +10,7 @@ static GlobalData * const global_data = GlobalData::Instance();
 void LapH::Correlators::compute_meson_4pt_cross_trace(LapH::CrossOperator& X) {
 
   const int Lt = global_data->get_Lt();
+
   const vec_pdg_C4 op_C4 = global_data->get_op_C4();
   const indexlist_4 rnd_vec_index = global_data->get_rnd_vec_C4();
   // TODO: must be changed in GlobalData {
@@ -89,6 +90,7 @@ void LapH::Correlators::compute_meson_4pt_cross_trace(LapH::CrossOperator& X) {
 /******************************************************************************/
 /******************************************************************************/
 
+//TODO: is that still necessary?
 void LapH::Correlators::write_C4_3(const size_t config_i){
 
   char outfile[400];

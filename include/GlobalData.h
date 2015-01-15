@@ -30,7 +30,6 @@
 
 class GlobalData {
 
-
 private:
   //! A pointer on the class itself
   static GlobalData* instance_;
