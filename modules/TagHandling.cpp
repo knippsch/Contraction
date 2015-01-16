@@ -56,94 +56,88 @@ void compose_string(const char* filename, std::string& tag){
     tag+=misc;
   }
 }
+// create array from stirng
+static std::array<int, 3> create_3darray_from_string(std::string in) {
+  std::array<int, 3> out;
+  std::vector<std::string> tokens;
+  // erasing the brakets at the beginning and the end
+  if (in[1] == '('){
+    in.erase(0,2);
+    in.erase(in.end()-1);
+  }
+  else{
+    in.erase(0,1);
+  }
+  boost::split(tokens, in, boost::is_any_of(","));
+  if(tokens.size() == 3){
+  return {{boost::lexical_cast<int>(tokens[0]),
+    boost::lexical_cast<int>(tokens[1]),
+    boost::lexical_cast<int>(tokens[2]) }};
+  }
+  else{
+    return{{0, 0, 0}};
+  }
+}
 
 //  turn string into tag for use in CorrelatorIo.cpp
 void string_to_tag(const std::string& search, Tag sign){
-
-  // bookkeeping variables
-  std::string tmp;
-  std::vector<size_t> pos_col;
+  std::vector<std::string> splits;
 
   // Quantum numbers
   std::string particle;
   std::vector<std::string> quarks;
   std::vector<std::string> operat;
+  std::vector<std::vector<std::string > > quanta;
 
   // quantum numbers as arrays
-  std::vector<std::array<int, 3 > > mom;
-  std::vector<std::array<int, 3 > > dis;
-  std::vector<size_t > gam;
-  
-  // get all positions of delimiters
-  for(size_t pos = 0; pos < search.length(); ++pos){
-    char c = search[pos];
-    if(c == ':') pos_col.push_back(pos);
+  std::vector<std::string > mom;
+  std::vector<std::string > dis;
+  std::vector<std::string > gam;
+
+  // quantum numbers as vectors and ints
+  std::vector<std::array<int, 3 > > mom_i;
+  std::vector<std::array<int, 3 > > dis_i;
+  std::vector<int> gam_i;
+
+  boost::split(splits, search, boost::is_any_of(":"));
+  particle = splits[0];
+  splits.erase(splits.begin());
+  //  sort into quarks and operators
+  for(auto& c : splits) {
+    if(c.size()==1) quarks.push_back(c);
+    else operat.push_back(c);
   }
-  for(auto& c: pos_col) std::cout << c << std::endl;
-  // first entry always is correlator type
-  particle = search.substr(0, pos_col[0]);
-  std::cout << "particle type is: " << particle << std::endl;
-  // sort quarks and operators
-  //  loop has to end earlier, want to compare distances
-  for(size_t col = 1 ; col < pos_col.size(); ++col){
-    std::cout << col << " " << pos_col[col]  << " " << pos_col[col-1] << std::endl;
-    if(pos_col[col] - pos_col[col-1] == 2){
-      // append character in between to quarks
-      quarks.push_back(search.substr(pos_col[col-1]+1, 1));
-    }
-    else{
-      // append characters to operators
-      size_t dst = pos_col[col] - pos_col[col-1] - 1;
-      operat.push_back(search.substr(pos_col[col-1]+1, dst));
+  quanta.resize(operat.size());
+
+  for (size_t op =  0; op < operat.size(); ++op){
+    boost::split(quanta[op], operat[op], boost::is_any_of("."));
+  } 
+  // sort quanta into mom dis and gam
+  for(auto& qu : quanta){
+    for(auto& el : qu){
+      if(el.front() == 'p') mom.push_back(el);
+      else if(el.front() == 'g') gam.push_back(el);
+      else if(el.front() == 'd') dis.push_back(el);
     }
   }
-  for(auto& c : quarks) std::cout << c << std::endl;
-  for(auto& o : operat) std::cout << o << std::endl; 
+//  for(auto& el : mom) std::vector<std::string> num;
+  for(auto& el : gam) gam_i.push_back(boost::lexical_cast<int>(el.substr(1)));
+  for(auto& el : dis) dis_i.push_back(create_3darray_from_string(el));
+  for(auto& el : mom) mom_i.push_back(create_3darray_from_string(el));
 
-  // now split operator strings and sort into tag
-  for(size_t c = 0; c < operat.size(); ++c){
+//  //TEST OUTPUT
+  std::cout << " Dirac gammas: " << std::endl;
 
-    std::vector<size_t> pos_dot;
-    // get all positions of delimiters
-    for(size_t pos = 0; pos < operat[c].length(); ++pos){
-      char c = search[pos];
-      if(c == '.') pos_dot.push_back(pos);
-    }
-    // sort quarks and operators
-    //  loop has to end earlier, want to compare distances
-//    for(size_t col = 1 ; col < pos_dot.size(); ++col){
-//      std::cout << col << " " << pos_dot[col]  << " " << pos_col[col-1] << std::endl;
-//      
-//      if(first of splitted string =='g'){
-//        append rest until dot to gamma
-//      }
+  for(auto& el : gam_i) std::cout << el << std::endl;
+
+  std::cout << "\n Displacements: " << std::endl;
 //
-//      else if(first 1st of splitted == 'd'){
-//          if(second of splitted == '0') append 000 as displacement
-//          else{
-//          append next three integers to displacement
-//          }
-//          
-//      }
+  for(auto& el : dis_i) std::cout << el[0] << " " << el[1] << " " << el[2] << std::endl;
 //
-//      else if(first of splitted == p){
-//          if(second of splitted == '0') append 000 as momentum
-//          else{
-//          append next three integers to momentum
-//          }
+  std::cout << "\n Momenta: " << std::endl;
 //
-//      }
-//    }
-
-  }
-  // set an n array from input 
-  // set_c_arr(sign., )
-
+  for(auto& el : mom_i) std::cout << el[0] << " " << el[1] << " " << el[2] << std::endl;
 }
-
-
-
-
 
 
 

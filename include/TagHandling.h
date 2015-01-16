@@ -6,6 +6,8 @@
 #include <vector>
 #include <iostream>
 #include "IoHelpers.h"
+#include "boost/algorithm/string.hpp"
+#include "boost/lexical_cast.hpp"
 // compose string to look for in the outfile from infile taking an input
 // filename and storing the string for the search in tag
 void compose_string(const char* filename, std::string& tag);
