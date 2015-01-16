@@ -31,7 +31,7 @@ void compose_string(const char* filename, std::string& tag){
       if(entry=="function") corr_type = option;
       if(entry=="operator_list") qu_numbers.push_back(option);
       if(entry=="quark") quarks.push_back(option);
-      if(entry=="miscellanous") misc = option;
+      if(entry=="misc") misc = option;
     }
   }
   // all is read in, file can be closed
@@ -85,6 +85,7 @@ void string_to_tag(const std::string& search, Tag sign){
 
   // Quantum numbers
   std::string particle;
+  std::string misc;
   std::vector<std::string> quarks;
   std::vector<std::string> operat;
   std::vector<std::vector<std::string > > quanta;
@@ -100,43 +101,74 @@ void string_to_tag(const std::string& search, Tag sign){
   std::vector<int> gam_i;
 
   boost::split(splits, search, boost::is_any_of(":"));
-  particle = splits[0];
+  particle = splits.front();
+  misc = splits.back();
   splits.erase(splits.begin());
-  //  sort into quarks and operators
+  splits.pop_back();
+  // sort into quarks and operators
   for(auto& c : splits) {
-    if(c.size()==1) quarks.push_back(c);
+    if(c.size() == 1) quarks.push_back(c);
     else operat.push_back(c);
   }
-  quanta.resize(operat.size());
-
-  for (size_t op =  0; op < operat.size(); ++op){
-    boost::split(quanta[op], operat[op], boost::is_any_of("."));
+  // each particle gets an own set of vectors for its quantum numbers
+  for(auto& op : operat){
+    std::vector<std::string > particle;
+    split(particle, op, boost::is_any_of("."));
+    quanta.push_back(particle);
   } 
-  // sort quanta into mom dis and gam
-  for(auto& qu : quanta){
-    for(auto& el : qu){
-      if(el.front() == 'p') mom.push_back(el);
-      else if(el.front() == 'g') gam.push_back(el);
-      else if(el.front() == 'd') dis.push_back(el);
+  // loop over all particles
+  std::cout << "# particles: " << quanta.size() << std::endl;;
+  for(auto& pos : quanta){
+    // each particle has 3 types of attributes
+    std::vector<std::string > p_str;
+    std::vector<std::string > d_str;
+    std::vector<std::string > g_str;
+    // same in an integer version
+    std::vector<std::array<int, 3 > > p_int;
+    std::vector<std::array<int, 3 > > d_int;
+    std::vector<int> g_int;
+    for(auto& qu : pos){
+    //sort strings according to type
+        //std::cout << qu << std::endl;
+        if(qu.front() == 'p') p_str.push_back(qu);
+        else if(qu.front() == 'g') g_str.push_back(qu);
+        else if(qu.front() == 'd') d_str.push_back(qu);
     }
-  }
-//  for(auto& el : mom) std::vector<std::string> num;
-  for(auto& el : gam) gam_i.push_back(boost::lexical_cast<int>(el.substr(1)));
-  for(auto& el : dis) dis_i.push_back(create_3darray_from_string(el));
-  for(auto& el : mom) mom_i.push_back(create_3darray_from_string(el));
-
-//  //TEST OUTPUT
+    for(auto& el : p_str)p_int.push_back(create_3darray_from_string(el));
+    for(auto& el : d_str)d_int.push_back(create_3darray_from_string(el));
+    for(auto& el : g_str)g_int.push_back((boost::lexical_cast<int>(el.substr(1))));
+      //TEST OUTPUT
   std::cout << " Dirac gammas: " << std::endl;
 
-  for(auto& el : gam_i) std::cout << el << std::endl;
+  for(auto& el : g_int) std::cout << el << std::endl;
 
   std::cout << "\n Displacements: " << std::endl;
 //
-  for(auto& el : dis_i) std::cout << el[0] << " " << el[1] << " " << el[2] << std::endl;
+  for(auto& el : d_int) std::cout << el[0] << " " << el[1] << " " << el[2] << std::endl;
 //
   std::cout << "\n Momenta: " << std::endl;
 //
-  for(auto& el : mom_i) std::cout << el[0] << " " << el[1] << " " << el[2] << std::endl;
+  for(auto& el : p_int) std::cout << el[0] << " " << el[1] << " " << el[2] << std::endl;
+    } 
+  
+
+//  for (size_t op =  0; op < operat.size(); ++op){
+//    boost::split(quanta[op], operat[op], boost::is_any_of("."));
+//  }
+//  // each particle should gets own 3 vectors
+//  // handle each quanta entry separately 
+//  for(auto& qu : quanta){
+//    for(auto& el : qu){
+//      if(el.front() == 'p') mom.push_back(el);
+//      else if(el.front() == 'g') gam.push_back(el);
+//      else if(el.front() == 'd') dis.push_back(el);
+//    }
+//  }
+////  for(auto& el : mom) std::vector<std::string> num;
+//  for(auto& el : gam) gam_i.push_back(boost::lexical_cast<int>(el.substr(1)));
+//  for(auto& el : dis) dis_i.push_back(create_3darray_from_string(el));
+//  for(auto& el : mom) mom_i.push_back(create_3darray_from_string(el));
+
 }
 
 
