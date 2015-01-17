@@ -117,7 +117,6 @@ void string_to_tag(const std::string& search, Tag sign){
     quanta.push_back(particle);
   } 
   // loop over all particles
-  std::cout << "# particles: " << quanta.size() << std::endl;;
   for(auto& pos : quanta){
     // each particle has 3 types of attributes
     std::vector<std::string > p_str;
@@ -134,41 +133,10 @@ void string_to_tag(const std::string& search, Tag sign){
         else if(qu.front() == 'g') g_str.push_back(qu);
         else if(qu.front() == 'd') d_str.push_back(qu);
     }
-    for(auto& el : p_str)p_int.push_back(create_3darray_from_string(el));
-    for(auto& el : d_str)d_int.push_back(create_3darray_from_string(el));
-    for(auto& el : g_str)g_int.push_back((boost::lexical_cast<int>(el.substr(1))));
-      //TEST OUTPUT
-  std::cout << " Dirac gammas: " << std::endl;
-
-  for(auto& el : g_int) std::cout << el << std::endl;
-
-  std::cout << "\n Displacements: " << std::endl;
-//
-  for(auto& el : d_int) std::cout << el[0] << " " << el[1] << " " << el[2] << std::endl;
-//
-  std::cout << "\n Momenta: " << std::endl;
-//
-  for(auto& el : p_int) std::cout << el[0] << " " << el[1] << " " << el[2] << std::endl;
-    } 
-  
-
-//  for (size_t op =  0; op < operat.size(); ++op){
-//    boost::split(quanta[op], operat[op], boost::is_any_of("."));
-//  }
-//  // each particle should gets own 3 vectors
-//  // handle each quanta entry separately 
-//  for(auto& qu : quanta){
-//    for(auto& el : qu){
-//      if(el.front() == 'p') mom.push_back(el);
-//      else if(el.front() == 'g') gam.push_back(el);
-//      else if(el.front() == 'd') dis.push_back(el);
-//    }
-//  }
-////  for(auto& el : mom) std::vector<std::string> num;
-//  for(auto& el : gam) gam_i.push_back(boost::lexical_cast<int>(el.substr(1)));
-//  for(auto& el : dis) dis_i.push_back(create_3darray_from_string(el));
-//  for(auto& el : mom) mom_i.push_back(create_3darray_from_string(el));
-
+    for(auto& el : p_str) sign.mom.push_back(create_3darray_from_string(el));
+    for(auto& el : d_str) sign.dis.push_back(create_3darray_from_string(el));
+    for(auto& el : g_str) sign.gam.push_back((boost::lexical_cast<int>(el.substr(1))));
+ } 
 }
 
 
