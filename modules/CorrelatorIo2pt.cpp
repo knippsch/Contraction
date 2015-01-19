@@ -7,69 +7,69 @@ static GlobalData * const global_data = GlobalData::Instance();
 // type must be known at compile time
 
 // convert multiarray 2pt correlator to vector to match write_2pt_lime
-template <typename listvector> 
-void convert_C2_mes_to_vec(const listvector& op_mes, array_cd_d2& C2_mes, 
-                           std::vector<Tag>& tags, std::vector<vec>& corr){
-
-  const size_t Lt = global_data->get_Lt();
-
-  corr.resize(op_mes.size());
-  for(auto& c : corr)
-    c.resize(Lt);
-  tags.resize(op_mes.size());
-
-  for(const auto& op : op_mes){
-    //TODO: solve the copying of C2_mes (boost) into corr (std::vec) without
-    // the copy constructor in assign()
-    corr[op.id].assign(C2_mes[op.id].origin(), C2_mes[op.id].origin() + 
-                       C2_mes[op.id].size());
-    set_tag(tags[op.id], op.index.front());
-
-  }
-}
-
-///////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////
-void export_corr_2pt(const char* filename, array_cd_d2& C2_mes){
-  
-  const vec_pdg_C2 op_C2 = global_data->get_op_C2();
-
-  GlobalDat dat;
-  std::vector<Tag> tags;
-  std::vector<vec> corr;
-
-  convert_C2_mes_to_vec <vec_pdg_C2> (op_C2, C2_mes, tags, corr);
-  if (file_exist(filename)){
-    char filename_new [150];
-    sprintf(filename_new,"_changed");
-    std::cout << "file already exists! Renaming to "
-    << filename_new << std::endl;
-    write_2pt_lime(filename_new, dat, tags, corr);
-  }
-}
+//template <typename listvector> 
+//void convert_C2_mes_to_vec(const listvector& op_mes, array_cd_d2& C2_mes, 
+//                           std::vector<Tag>& tags, std::vector<vec>& corr){
+//
+//  const size_t Lt = global_data->get_Lt();
+//
+//  corr.resize(op_mes.size());
+//  for(auto& c : corr)
+//    c.resize(Lt);
+//  tags.resize(op_mes.size());
+//
+//  for(const auto& op : op_mes){
+//    //TODO: solve the copying of C2_mes (boost) into corr (std::vec) without
+//    // the copy constructor in assign()
+//    corr[op.id].assign(C2_mes[op.id].origin(), C2_mes[op.id].origin() + 
+//                       C2_mes[op.id].size());
+//    set_tag(tags[op.id], op.index.front());
+//
+//  }
+//}
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-void export_corr_4pt(const char* filename, array_cd_d2& C4_mes){
-  
-  const vec_pdg_C4 op_C4 = global_data->get_op_C4();
+//void export_corr_2pt(const char* filename, array_cd_d2& C2_mes){
+//  
+//  const vec_pdg_C2 op_C2 = global_data->get_op_C2();
+//
+//  GlobalDat dat;
+//  std::vector<Tag> tags;
+//  std::vector<vec> corr;
+//
+//  convert_C2_mes_to_vec <vec_pdg_C2> (op_C2, C2_mes, tags, corr);
+//  if (file_exist(filename)){
+//    char filename_new [150];
+//    sprintf(filename_new,"_changed");
+//    std::cout << "file already exists! Renaming to "
+//    << filename_new << std::endl;
+//    write_2pt_lime(filename_new, dat, tags, corr);
+//  }
+//}
 
-  GlobalDat dat;
-  std::vector<Tag> tags;
-  std::vector<vec> corr;
-
-  convert_C2_mes_to_vec <vec_pdg_C4> (op_C4, C4_mes, tags, corr);
-  if (file_exist(filename)){
-    char filename_new [150];
-    sprintf(filename_new,"_changed");
-    std::cout << "file already exists! Renaming to "
-    << filename_new << std::endl;
-  }
-  write_2pt_lime(filename, dat, tags, corr);
-
-}
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+//void export_corr_4pt(const char* filename, array_cd_d2& C4_mes){
+//  
+//  const vec_pdg_C4 op_C4 = global_data->get_op_C4();
+//
+//  GlobalDat dat;
+//  std::vector<Tag> tags;
+//  std::vector<vec> corr;
+//
+//  convert_C2_mes_to_vec <vec_pdg_C4> (op_C4, C4_mes, tags, corr);
+//  if (file_exist(filename)){
+//    char filename_new [150];
+//    sprintf(filename_new,"_changed");
+//    std::cout << "file already exists! Renaming to "
+//    << filename_new << std::endl;
+//  }
+//  write_2pt_lime(filename, dat, tags, corr);
+//
+//}
 ///////////////////////////////////////////////////////////////////////////////
 // Write 2pt correlator ///////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -130,6 +130,7 @@ void read_2pt_lime(const char* filename, std::vector<Tag>& tags,
       LimeReader* r = limeCreateReader(fp);
       n_uint64_t check_bytes = sizeof(size_t);
       n_uint64_t tag_bytes = sizeof(Tag);
+      std::cout << tag_bytes << std::endl;
       n_uint64_t data_bytes = correlators[0].size()*2*sizeof(double);
       file_status = limeReaderNextRecord(r);
       // From first message read global checksum
@@ -214,47 +215,47 @@ void get_2pt_lime(const char* filename, const size_t num_corrs,
 // Dump to ASCII //////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-// Temporal extent has to be given
-void ASCII_dump_corr(const char* filename, const size_t Lt,
-                    const size_t num_corrs, const size_t p_sq,
-                    const size_t l_sq) {
-  // Set up temporary structure as copy of incoming
-  std::vector<vec> correlators(num_corrs);
-  for (auto& corr : correlators) corr.resize(Lt);
-  std::vector<Tag> tags (num_corrs);
-
-  // Read in whole Configuration function
-  read_2pt_lime(filename, tags, correlators);
-  std::vector<Tag> tags_found;
-  std::vector<vec> corrs_found;
-
-  // Append matching tags and correlators to vectors
-  for(size_t n = 0; n < num_corrs; ++n){
-    if (tags[n].mom_cm == p_sq) {
-        std::array<int, 3> d1 = std_arr(tags[n].dis[1]);
-        std::array<int, 3> d2 = std_arr(tags[n].dis[0]);
-        if (square_comp(d1, d2) == l_sq){
-        tags_found.push_back(tags[n]);
-        corrs_found.push_back(correlators[n]);
-      }
-    }
-  }
-  size_t n = corrs_found.size();
-  if( n == 0) std::cout << "No matching Correlators found!" <<
-                              std::endl;
-  else{
-    std::cout << "# " << n << " correlators read in from file: " <<
-              filename << std::endl;
-    std::cout << "# cm_mom_sq dis_so_sq t real(C[t]) imag(C[t])" <<
-              std::endl;
-   for (size_t num = 0; num < n; ++num){
-    for (size_t t = 0; t < Lt; ++t){
-      std::cout << p_sq << " " << l_sq << " " << t << " " <<
-                std::scientific << corrs_found[num][t].real() << " " <<
-                corrs_found[num][t].imag() << std::endl;
-    }
-   }
-  }
-
-}
+//// Temporal extent has to be given
+//void ASCII_dump_corr(const char* filename, const size_t Lt,
+//                    const size_t num_corrs, const size_t p_sq,
+//                    const size_t l_sq) {
+//  // Set up temporary structure as copy of incoming
+//  std::vector<vec> correlators(num_corrs);
+//  for (auto& corr : correlators) corr.resize(Lt);
+//  std::vector<Tag> tags (num_corrs);
+//
+//  // Read in whole Configuration function
+//  read_2pt_lime(filename, tags, correlators);
+//  std::vector<Tag> tags_found;
+//  std::vector<vec> corrs_found;
+//
+//  // Append matching tags and correlators to vectors
+//  for(size_t n = 0; n < num_corrs; ++n){
+//    if (tags[n].mom_cm == p_sq) {
+//        std::array<int, 3> d1 = std_arr(tags[n].dis[1]);
+//        std::array<int, 3> d2 = std_arr(tags[n].dis[0]);
+//        if (square_comp(d1, d2) == l_sq){
+//        tags_found.push_back(tags[n]);
+//        corrs_found.push_back(correlators[n]);
+//      }
+//    }
+//  }
+//  size_t n = corrs_found.size();
+//  if( n == 0) std::cout << "No matching Correlators found!" <<
+//                              std::endl;
+//  else{
+//    std::cout << "# " << n << " correlators read in from file: " <<
+//              filename << std::endl;
+//    std::cout << "# cm_mom_sq dis_so_sq t real(C[t]) imag(C[t])" <<
+//              std::endl;
+//   for (size_t num = 0; num < n; ++num){
+//    for (size_t t = 0; t < Lt; ++t){
+//      std::cout << p_sq << " " << l_sq << " " << t << " " <<
+//                std::scientific << corrs_found[num][t].real() << " " <<
+//                corrs_found[num][t].imag() << std::endl;
+//    }
+//   }
+//  }
+//
+//}
 

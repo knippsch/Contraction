@@ -16,6 +16,7 @@
 #include "boost/integer.hpp"
 #include "GlobalData.h"
 #include "lime.h"
+#include "TagHandling.h"
 #include "typedefs.h"
 
 // converts a boost multiarray correlator to std::vector<vec> and sets tags
@@ -39,7 +40,7 @@ void get_2pt_lime(const char* filename, const size_t num_corrs,
                   std::vector<cmplx >& corr);
 
 // Dump ASCII version of correlator on screen 
- void ASCII_dump_corr(const char* filename, const size_t Lt,
-                     const size_t num_corrs,
-                     const size_t p_sq, const size_t l_sq );
+// void ASCII_dump_corr(const char* filename, const size_t Lt,
+//                     const size_t num_corrs,
+//                     const size_t p_sq, const size_t l_sq );
 #endif //IO_2PT_H_

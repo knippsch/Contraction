@@ -56,6 +56,7 @@ void compose_string(const char* filename, std::string& tag){
     tag+=misc;
   }
 }
+
 // create array from stirng
 static std::array<int, 3> create_3darray_from_string(std::string in) {
   std::array<int, 3> out;
@@ -65,24 +66,37 @@ static std::array<int, 3> create_3darray_from_string(std::string in) {
     in.erase(0,2);
     in.erase(in.end()-1);
   }
-  else{
-    in.erase(0,1);
-  }
   boost::split(tokens, in, boost::is_any_of(","));
   if(tokens.size() == 3){
-  return {{boost::lexical_cast<int>(tokens[0]),
-    boost::lexical_cast<int>(tokens[1]),
-    boost::lexical_cast<int>(tokens[2]) }};
+    return {{boost::lexical_cast<int>(tokens[0]),
+      boost::lexical_cast<int>(tokens[1]),
+      boost::lexical_cast<int>(tokens[2]) }};
   }
   else{
     return{{0, 0, 0}};
   }
 }
 
-//  turn string into tag for use in CorrelatorIo.cpp
-void string_to_tag(const std::string& search, Tag sign){
-  std::vector<std::string> splits;
+// create array for gamma from stirng
+static std::array<int, 4> create_gamarray_from_string(std::string in) {
+  std::array<int, 4> out;
+  std::vector<std::string> tokens;
+  // erasing the brakets at the beginning and the end 
+  boost::split(tokens, in, boost::is_any_of("g"));
+  tokens.erase(tokens.begin());
+  //for (auto& el : tokens) std::cout << el << std::endl;
+  for (size_t ind_out = 0; ind_out < tokens.size(); ++ind_out){
+    out[ind_out] = boost::lexical_cast<int>(tokens[ind_out]); 
+  }
+  // fill 0 in for the rest
+  for (size_t rest = tokens.size(); rest < 4; ++rest ) out[rest] = 0;
+  return out;
+}
 
+//  turn string into tag for use in CorrelatorIo.cpp
+void string_to_tag(const std::string& search, Tag& sign){
+  std::vector<std::string> splits;
+  
   // Quantum numbers
   std::string particle;
   std::string misc;
@@ -94,11 +108,6 @@ void string_to_tag(const std::string& search, Tag sign){
   std::vector<std::string > mom;
   std::vector<std::string > dis;
   std::vector<std::string > gam;
-
-  // quantum numbers as vectors and ints
-  std::vector<std::array<int, 3 > > mom_i;
-  std::vector<std::array<int, 3 > > dis_i;
-  std::vector<int> gam_i;
 
   boost::split(splits, search, boost::is_any_of(":"));
   particle = splits.front();
@@ -121,27 +130,116 @@ void string_to_tag(const std::string& search, Tag sign){
     // each particle has 3 types of attributes
     std::vector<std::string > p_str;
     std::vector<std::string > d_str;
-    std::vector<std::string > g_str;
-    // same in an integer version
-    std::vector<std::array<int, 3 > > p_int;
-    std::vector<std::array<int, 3 > > d_int;
-    std::vector<int> g_int;
+    std::string g_str;
     for(auto& qu : pos){
-    //sort strings according to type
-        //std::cout << qu << std::endl;
-        if(qu.front() == 'p') p_str.push_back(qu);
-        else if(qu.front() == 'g') g_str.push_back(qu);
-        else if(qu.front() == 'd') d_str.push_back(qu);
+      //sort strings according to type
+      if(qu.front() == 'p') p_str.push_back(qu);
+      else if(qu.front() == 'g') g_str += qu;
+      else if(qu.front() == 'd') d_str.push_back(qu);
     }
-    for(auto& el : p_str) sign.mom.push_back(create_3darray_from_string(el));
-    for(auto& el : d_str) sign.dis.push_back(create_3darray_from_string(el));
-    for(auto& el : g_str) sign.gam.push_back((boost::lexical_cast<int>(el.substr(1))));
- } 
+
+      for(auto& el : p_str) sign.mom.push_back(create_3darray_from_string(el));
+      for(auto& el : d_str) sign.dis.push_back(create_3darray_from_string(el));
+      sign.gam.push_back(create_gamarray_from_string(g_str));
+  }
+  sign.mom_cm = square_comp(sign.mom[0], sign.mom[1]);
+  for(auto& el : quarks) sign.q_cont += el;
+   
+}
+
+// print tag
+void print_tag(const Tag& query){
+  std::cout << "Quark content: " << query.q_cont << std::endl;
+  std::cout << "Center of mass momentum is: " << query.mom_cm  << std::endl;
+  std::cout << "momenta:" << std::endl;
+  for (auto& el : query.mom ) {
+    for (auto& comp : el) std::cout << comp << " ";
+    std::cout << " " << std::endl;
+  }
+   std::cout << " \n displacements:" << std::endl;
+  for (auto& el : query.dis ) {
+    for (auto& comp : el) std::cout << comp << " ";
+    std::cout << " " << std::endl;
+  }
+   std::cout << " \n gammas:" << std::endl;
+  for (auto& el : query.gam ) {
+    for (auto& comp : el) std::cout << comp << " ";
+    std::cout << " " << std::endl;
+  }
+}
+
+// Compare two tags of correlation functions
+bool compare_tags(const Tag& tag1, const Tag& tag2){
+  bool flag = true;
+  if (tag1.q_cont != tag2.q_cont) flag = false;
+  if (tag1.mom_cm != tag2.mom_cm) flag = false;
+  for(size_t p = 0; p < tag1.mom.size(); ++p){
+    if (tag1.mom[p] != tag2.mom[p]) flag = false;
+    if (tag1.dis[p] != tag2.dis[p]) flag = false;
+    if (tag1.gam[p] != tag2.gam[p]) flag = false;
+  }
+  return flag;
 }
 
 
+void zero_tag(const size_t pts, Tag& def){
+  def.mom_cm = 0;
+  std::array<int, 3 > zero_3d {0,0,0};
+  std::array<int, 4 > zero_4d {0,0,0,0};
+  for (size_t ind = 0; ind < pts; ++ind) {
+    def.mom.push_back(zero_3d);
+    def.dis.push_back(zero_3d);
+    def.gam.push_back(zero_4d);
+  } 
+}
 
+void zero_vec_tag(const size_t pts, std::vector<Tag> attr){
+  for (auto& el : attr) zero_tag(pts, el);
+}
 
+ //TODO: functions need to be adjusted to new tag structure 
+// Set the tag from two operator structures
+//void set_tag(Tag& tag, const std::pair<size_t, size_t>& i){
+//
+//  const vec_pdg_Corr op_Corr = global_data->get_op_Corr();
+//
+//  tag.mom[0] = square_comp(op_Corr[i.first].p3, op_Corr[i.first].p3);
+//  tag.mom[1] = tag.mom[0];
+//    for(size_t c = 0; c < 3; ++c){
+//      tag.dis[0][c] =op_Corr[i.first].dis3[c]; 
+//    }
+//    for(size_t c = 0; c < 3; ++c){
+//      tag.dis[1][c] =op_Corr[i.second].dis3[c]; 
+//    }
+//
+//  tag.gam[0][0] = op_Corr[i.first].gamma[0];
+//  tag.gam[1][0] = op_Corr[i.second].gamma[0];
+//
+//}
+//
+//// Set the tag from two operator structures
+//void set_tag(Tag& tag, const std::array<size_t, 4>& i){
+//
+//  const vec_pdg_Corr op_Corr = global_data->get_op_Corr();
+//
+//  //TODO: use loops for that. I'm too tired
+//  std::array<int,3> cm_1 = add_mom(op_Corr[i[0]].p3, op_Corr[i[1]].p3);
+//  tag.mom_cm = square_comp(cm_1, cm_1);
+//  tag.mom[0] = square_comp(op_Corr[i[0]].p3, op_Corr[i[0]].p3);
+//  tag.mom[1] = square_comp(op_Corr[i[1]].p3, op_Corr[i[1]].p3);
+//  tag.mom[2] = square_comp(op_Corr[i[2]].p3, op_Corr[i[2]].p3);
+//  tag.mom[3] = square_comp(op_Corr[i[3]].p3, op_Corr[i[3]].p3);
+//
+//  for(size_t q = 0; q < 4; ++q){
+//    for (size_t c = 0; c < 3; ++c){
+//      tag.dis[q][c] = op_Corr[i[q]].dis3[c];
+//    }
+//    for (size_t c = 0; c < 4; ++c){
+//      tag.gam[q][c] = op_Corr[i[q]].gamma[c];
+//    }
+//  }
+//
+//}
 
 
 
