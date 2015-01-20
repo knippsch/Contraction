@@ -42,7 +42,7 @@ struct GlobalDat {
 };
  void write_1st_msg(const char* filename, GlobalDat& dat,
                            size_t chksum);
- void append_msgs(const char* filename, std::vector<vec>& corr, std::vector<struct Tag>& tags,
+ void append_msgs(const char* filename, std::vector<vec>& corr, std::vector<std::string>& tags,
               LimeWriter* w, bool be);
    
 // Endianess ///////////////////////////////////////////////////////////////////
@@ -76,15 +76,15 @@ inline std::complex<double>  swap_complex(std::complex<double> val){
 }
   
 // swap endianess of one tag
-inline Tag swap_single_tag(const Tag& tag){
-  Tag le_tag;
-  le_tag.mom_cm = swap_endian<int>(tag.mom_cm);
-  for (auto& p : tag.mom) le_tag.mom.push_back(swap_endian<std::array<int, 3 > >(p));
-  for (auto& d : tag.dis) le_tag.dis.push_back(swap_endian<std::array<int, 3 > >(d));
-  for (auto& g : tag.gam) le_tag.gam.push_back(swap_endian<std::array<int, 4 > >(g));
-
-  return le_tag;
-}
+//inline Tag swap_single_tag(const Tag& tag){
+//  Tag le_tag;
+//  le_tag.mom_cm = swap_endian<int>(tag.mom_cm);
+//  for (auto& p : tag.mom) le_tag.mom.push_back(swap_endian<std::array<int, 3 > >(p));
+//  for (auto& d : tag.dis) le_tag.dis.push_back(swap_endian<std::array<int, 3 > >(d));
+//  for (auto& g : tag.gam) le_tag.gam.push_back(swap_endian<std::array<int, 4 > >(g));
+//
+//  return le_tag;
+//}
 
 // swap endianess of one correlation function
 inline std::vector<cmplx> swap_single_corr(const std::vector<cmplx>& corr){
@@ -153,11 +153,11 @@ inline void swap_correlators(std::vector<vec>& corr){
 }
 
 // swap vector of all 
-inline void swap_tag_vector(std::vector<Tag>& tags){
-  for (auto& label : tags){
-    label = swap_single_tag(label);
-  }
-}
+//inline void swap_tag_vector(std::vector<Tag>& tags){
+//  for (auto& label : tags){
+//    label = swap_single_tag(label);
+//  }
+//}
 
 // Check checksums
 void file_check(const size_t glob_check,

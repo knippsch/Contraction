@@ -27,16 +27,16 @@ void export_corr_4pt(const char* filename, array_cd_d2& C4_mes);
 // Writes a vector of 2pt correlation functions and their tags to a file with
 // filename
 void write_2pt_lime(const char* filename, GlobalDat& dat, 
-                    std::vector<Tag>& tags, std::vector<vec>& corr);
+                    std::vector<std::string>& tags, std::vector<vec>& corr);
 
 // Reads in a file of correlation functions into a vector of correlation
 // functions including their tags. Global Checksum is checked implicitly
-void read_2pt_lime(const char* filename, std::vector<Tag>& tag,
+void read_2pt_lime(const char* filename, std::vector<std::string>& tag,
                    std::vector<vec>& corr);
 
 // Gets a single correlation function from a file utilizing read_2pt_lime
 void get_2pt_lime(const char* filename, const size_t num_corrs,
-                  const size_t corr_length, const Tag& tag,
+                  const size_t corr_length, const std::string& tag,
                   std::vector<cmplx >& corr);
 
 // Dump ASCII version of correlator on screen 

@@ -74,12 +74,12 @@ static GlobalData * const global_data = GlobalData::Instance();
 // Write 2pt correlator ///////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 void write_2pt_lime(const char* filename, GlobalDat& dat, 
-                    std::vector<Tag>& tags, std::vector<vec>& corr){
+                    std::vector<std::string>& tags, std::vector<vec>& corr){
 
   bool be = big_endian();
   if (be){
     swap_correlators(corr);
-    swap_tag_vector(tags);
+    //swap_tag_vector(tags);
     dat = swap_glob_dat(dat);
   }
     // calculate checksum of all correlators
@@ -106,8 +106,9 @@ void write_2pt_lime(const char* filename, GlobalDat& dat,
   limeDestroyWriter( w );
   fclose(fp);
 }
+
 ///////////////////////////////////////////////////////////////////////////////
-// Read 2pt correlator ////////////////////////////////////////////////////////
+// Read npt correlator ////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
 
@@ -116,7 +117,7 @@ void write_2pt_lime(const char* filename, GlobalDat& dat,
 // afterwards look for correlator with tag. vectors tags and correlators have
 // to be specified with the right size
 
-void read_2pt_lime(const char* filename, std::vector<Tag>& tags,
+void read_2pt_lime(const char* filename, std::vector<std::string>& tags,
                    std::vector<vec>& correlators){
   bool bigend = big_endian();
   if(tags.size() == correlators.size()){
@@ -129,7 +130,7 @@ void read_2pt_lime(const char* filename, std::vector<Tag>& tags,
       int act_status = 0;
       LimeReader* r = limeCreateReader(fp);
       n_uint64_t check_bytes = sizeof(size_t);
-      n_uint64_t tag_bytes = sizeof(Tag);
+      n_uint64_t tag_bytes = tags[0].length()*sizeof(char);
       std::cout << tag_bytes << std::endl;
       n_uint64_t data_bytes = correlators[0].size()*2*sizeof(double);
       file_status = limeReaderNextRecord(r);
@@ -159,13 +160,15 @@ void read_2pt_lime(const char* filename, std::vector<Tag>& tags,
           act_status = limeReaderReadData(&check, &check_bytes, r);
           if (bigend) check = swap_endian<size_t>(check);
           checksums.at(cnt/3) = check;
-          //std::cout << check << std::endl;
+         // std::cout << check << std::endl;
         }
         // read correlator tag
         else if(MB_flag == 0 && ME_flag == 0){
-          Tag read_tag;
-          act_status = limeReaderReadData(&read_tag, &tag_bytes, r);
-          if (bigend) read_tag = swap_single_tag(read_tag);
+          std::string read_tag;
+          read_tag.resize(tags[0].length());
+          act_status = limeReaderReadData(&read_tag[0], &tag_bytes, r);
+          //std::cout << read_tag << std::endl;
+          //if (bigend) read_tag = swap_single_tag(read_tag);
           tags.at(cnt/3) = read_tag;
         }
         // read correlator data
@@ -193,18 +196,18 @@ void read_2pt_lime(const char* filename, std::vector<Tag>& tags,
 
 // Look for correlator corresponding to tag given as argument
 void get_2pt_lime(const char* filename, const size_t num_corrs,
-    const size_t corr_length, const Tag& tag,
+    const size_t corr_length, const std::string& tag,
     std::vector<cmplx >& corr){
   // Set up temporary structure as copy of incoming
   std::vector<vec> tmp_correlators(num_corrs);
   for(auto& corr : tmp_correlators) corr.resize(corr_length);
-  std::vector<Tag> tmp_tags (num_corrs);
+  std::vector<std::string> tmp_tags (num_corrs);
   // Read in whole Configuration function
   read_2pt_lime(filename, tmp_tags, tmp_correlators);
   // look for appropriate tag in vector of tags
   size_t tmp_tag_ind;
   for(size_t ind = 0; ind < tmp_tags.size(); ++ind)
-    if (compare_tags(tag, tmp_tags[ind])) tmp_tag_ind = ind;
+    if (tag == tmp_tags[ind]) tmp_tag_ind = ind;
   
   // store correlation function in output data
   corr = tmp_correlators[tmp_tag_ind];

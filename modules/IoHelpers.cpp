@@ -85,7 +85,7 @@ static bool tag_exist(const char* filename, Tag id){
 }
 
 //append correlation functions to file
-void append_msgs(const char* filename, std::vector<vec>& corr, std::vector<Tag>& tags,
+void append_msgs(const char* filename, std::vector<vec>& corr, std::vector<std::string>& tags,
               LimeWriter* w, bool be){
   // Each message contains three records:
   // 1st: Checksum for the Correlator
@@ -96,7 +96,7 @@ void append_msgs(const char* filename, std::vector<vec>& corr, std::vector<Tag>&
   LimeRecordHeader* corr_hd;
 
   boost::uint64_t corr_chksum;
-  n_uint64_t tag_bytes = sizeof(tags[0]);
+  n_uint64_t tag_bytes = tags[0].length()*sizeof(char);
   n_uint64_t data_bytes = (corr[0]).size()*2*sizeof(double);
   char headername[100];  
   // Access flags for record and message: MB (Message Begin): 1 if true, ME
@@ -120,7 +120,7 @@ void append_msgs(const char* filename, std::vector<vec>& corr, std::vector<Tag>&
     id = limeCreateHeader( MB_flag, ME_flag, headername , tag_bytes );
     limeWriteRecordHeader( id, w );
     limeDestroyHeader( id );
-    limeWriteRecordData( &tags[el], &tag_bytes, w );
+    limeWriteRecordData( &tags[el][0], &tag_bytes, w );
 
     // 3rd record for correlator belonging to tag
     ME_flag = 1; MB_flag = 0; 
