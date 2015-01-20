@@ -94,7 +94,7 @@ static std::array<int, 4> create_gamarray_from_string(std::string in) {
 }
 
 //  turn string into tag for use in CorrelatorIo.cpp
-void string_to_tag(const std::string& search, Tag& sign){
+void string_to_tag(const std::string& in, Tag& out){
   std::vector<std::string> splits;
   
   // Quantum numbers
@@ -109,7 +109,7 @@ void string_to_tag(const std::string& search, Tag& sign){
   std::vector<std::string > dis;
   std::vector<std::string > gam;
 
-  boost::split(splits, search, boost::is_any_of(":"));
+  boost::split(splits, in, boost::is_any_of(":"));
   particle = splits.front();
   misc = splits.back();
   splits.erase(splits.begin());
@@ -138,13 +138,42 @@ void string_to_tag(const std::string& search, Tag& sign){
       else if(qu.front() == 'd') d_str.push_back(qu);
     }
 
-      for(auto& el : p_str) sign.mom.push_back(create_3darray_from_string(el));
-      for(auto& el : d_str) sign.dis.push_back(create_3darray_from_string(el));
-      sign.gam.push_back(create_gamarray_from_string(g_str));
+      for(auto& el : p_str) out.mom.push_back(create_3darray_from_string(el));
+      for(auto& el : d_str) out.dis.push_back(create_3darray_from_string(el));
+      out.gam.push_back(create_gamarray_from_string(g_str));
   }
-  sign.mom_cm = square_comp(sign.mom[0], sign.mom[1]);
-  for(auto& el : quarks) sign.q_cont += el;
+  out.mom_cm = square_comp(out.mom[0], out.mom[1]);
+  for(auto& el : quarks) out.q_cont += el;
    
+}
+
+void tag_to_string(const Tag& in, std::string& out){
+  size_t no_part = in.q_cont.length();
+  std::cout << in.q_cont << std::endl;
+  for(size_t i = 0; i < no_part; ++i){
+    //get string of quantum each quantum number
+    out.push_back(in.q_cont[i]);
+    out += ":";
+    //out += (std::c_str(in.q_cont[i]) + ":");
+    // gammas of each point go first
+    out += "g";
+    std::vector<std::string> tmp;
+    for(auto& el : in.gam[i]) tmp.push_back(std::to_string(el));
+    std::string joined = boost::algorithm::join(tmp,".g");
+    out += (joined + ".");
+    tmp.clear();
+
+    //then displacement
+    for(auto& el : in.dis[i]) tmp.push_back(std::to_string(el));
+    joined = boost::algorithm::join(tmp,",");
+    out += "d(" + joined + ").";
+    tmp.clear();
+
+    //at last momentum
+    for(auto& el : in.mom[i]) tmp.push_back(std::to_string(el));
+    joined = boost::algorithm::join(tmp,",");
+    out += "p(" + joined +"):";
+  }
 }
 
 // print tag
@@ -184,8 +213,8 @@ bool compare_tags(const Tag& tag1, const Tag& tag2){
 
 void zero_tag(const size_t pts, Tag& def){
   def.mom_cm = 0;
-  std::array<int, 3 > zero_3d {0,0,0};
-  std::array<int, 4 > zero_4d {0,0,0,0};
+  std::array<int, 3 > zero_3d {{0,0,0}};
+  std::array<int, 4 > zero_4d {{0,0,0,0}};
   for (size_t ind = 0; ind < pts; ++ind) {
     def.mom.push_back(zero_3d);
     def.dis.push_back(zero_3d);

@@ -18,7 +18,7 @@ all: rmxeq mkdep mkxeq
 
 # main programs and modules to be compiled
 
-MAIN = test_corr_io
+MAIN = test_tag
 
 GENERAL = TagHandling IoHelpers GlobalData CorrelatorIo2pt ranlxs 
 #GENERAL = GlobalData BasicOperator Perambulator io_utils config_utils RandomVector \

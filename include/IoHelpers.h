@@ -16,9 +16,6 @@
 // Typedefs ///////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-// use a general tag for n-pt functions
-// Each tag contains a string of participating quarks to be checked against with
-// on the search of a Tag
 struct Tag {
   // The center of mass momentum squared
   std::string q_cont;
@@ -30,9 +27,10 @@ struct Tag {
   // 4 gamma 4 vectors
   std::vector<std::array<int, 4 > > gam;
 };
+// use a general tag for n-pt functions
+// Each tag contains a string of participating quarks to be checked against with
+// on the search of a Tag
 
-// get the size in bytes of a Tag
-size_t bytes_in_tag(Tag& tag);
 
 // Global infos on the run should be stored here, no idea what that could be
 // IDEAS: Configuration number, channels, rnd seeds, number of input vectors,
@@ -44,7 +42,7 @@ struct GlobalDat {
 };
  void write_1st_msg(const char* filename, GlobalDat& dat,
                            size_t chksum);
- void append_msgs(const char* filename, std::vector<vec>& corr, std::vector<Tag>& tags,
+ void append_msgs(const char* filename, std::vector<vec>& corr, std::vector<struct Tag>& tags,
               LimeWriter* w, bool be);
    
 // Endianess ///////////////////////////////////////////////////////////////////
@@ -101,7 +99,6 @@ inline std::vector<cmplx> swap_single_corr(const std::vector<cmplx>& corr){
 }
 
 
-
 // swap endaness of runinfo
 inline GlobalDat swap_glob_dat(const GlobalDat& run_info){
   GlobalDat le_glob;
@@ -136,6 +133,7 @@ inline bool file_exist(const char* name) {
 
 // Copy over array to std::array<int, 3>
 std::array<int, 3> std_arr(int* arr);
+// The other way round
 
 // Convert ascii labels to correlation tag
 Tag id(size_t g_so, size_t g_si, size_t p_so, size_t p_si, size_t dis_so, 

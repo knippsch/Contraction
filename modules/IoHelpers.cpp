@@ -42,8 +42,6 @@ int square_comp(const std::array<int, 3>& p1,
 }
 
 
-
-
 ////////////////////////////////////////////////////////////////////////////////
 // File handling ///////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -79,10 +77,6 @@ void write_1st_msg(const char* filename, GlobalDat& dat,
   fclose(fp);
 } 
 
-size_t bytes_in_tag(Tag& tag){
-  size_t bytes = 0;
-  for
-}
 
 static bool tag_exist(const char* filename, Tag id){
   bool found = false;

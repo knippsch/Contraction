@@ -8,6 +8,7 @@
 #include "IoHelpers.h"
 #include "boost/algorithm/string.hpp"
 #include "boost/lexical_cast.hpp"
+
 // set the tag for the second message for a 2pt function given the indexpair
 // of quantum numbers in op_Corr for source and sink
 // void set_tag(Tag& tag, const std::pair<size_t, size_t>& i);
@@ -23,8 +24,8 @@ void compose_string(const char* filename, std::string& tag);
 // Write a function that turns a string to a searchable tag perhaps better to
 // have this in the IoHelpers.h (Think about merge)
 //
-void string_to_tag(const std::string& search, Tag& sign);
-
+void string_to_tag(const std::string& in, Tag& out);
+void tag_to_string(const Tag& in, std::string& out);
 // print tag
 void print_tag(const Tag& query);
 
