@@ -40,7 +40,6 @@ void get_2pt_lime(const char* filename, const size_t num_corrs,
                   std::vector<cmplx >& corr);
 
 // Dump ASCII version of correlator on screen 
-// void ASCII_dump_corr(const char* filename, const size_t Lt,
-//                     const size_t num_corrs,
-//                     const size_t p_sq, const size_t l_sq );
+ void ASCII_dump_corr(const char* filename, const char* infile, const size_t Lt,
+                     const size_t num_corrs);
 #endif //IO_2PT_H_
