@@ -32,13 +32,8 @@ LapH::VdaggerV::VdaggerV() : vdaggerv(), rvdaggervr(), momentum(),
   const std::vector<quark> quarks = global_data->get_quarks();
   const size_t nb_rnd = quarks[0].number_of_rnd_vec;
 
-  //const vec_pd_VdaggerV op_VdaggerV = global_data->get_op_VdaggerV();
-  //TODO: use an own get function that or load op_VdaggerV and size()
-  //const size_t nb_VdaggerV = global_data->get_number_of_VdaggerV();
-  //const size_t nb_rVdaggerVr = global_data->get_number_of_rVdaggerVr();
-
-  const vec_pd_VdaggerV op_VdaggerV = global_data->get_op_VdaggerV();
-  const vec_pd_rVdaggerVr op_rVdaggerVr = global_data->get_op_rVdaggerVr();
+  const vec_pd_VdaggerV op_VdaggerV = global_data->get_lookup_VdaggerV();
+  const vec_pd_rVdaggerVr op_rVdaggerVr = global_data->get_lookup_rVdaggerVr();
 
   const size_t nb_VdaggerV = op_VdaggerV.size();
   const size_t nb_rVdaggerVr = op_rVdaggerVr.size();
@@ -64,8 +59,8 @@ void LapH::VdaggerV::create_momenta () {
   const int Ly = global_data->get_Ly();
   const int Lz = global_data->get_Lz();
 
-  const vec_pd_VdaggerV op_VdaggerV = global_data->get_op_VdaggerV();
-  const vec_pdg_Corr op_Corr = global_data->get_op_Corr();
+  const vec_pd_VdaggerV op_VdaggerV = global_data->get_lookup_VdaggerV();
+  const vec_pdg_Corr op_Corr = global_data->get_lookup_corr();
 
   static const std::complex<double> I(0.0, 1.0);
 
@@ -108,7 +103,7 @@ void LapH::VdaggerV::build_vdaggerv (const int config_i) {
   const size_t nb_ev = global_data->get_number_of_eigen_vec();
   const size_t id_unity = global_data->get_index_of_unity();
 
-  const vec_pd_VdaggerV op_VdaggerV = global_data->get_op_VdaggerV();
+  const vec_pd_VdaggerV op_VdaggerV = global_data->get_lookup_VdaggerV();
 
   std::fill(vdaggerv.origin(), vdaggerv.origin() + vdaggerv.num_elements(), 
             Eigen::MatrixXcd::Zero(nb_ev, nb_ev));
@@ -178,8 +173,8 @@ void LapH::VdaggerV::build_rvdaggervr(const int config_i,
   const size_t dilE = quarks[0].number_of_dilution_E;
   const size_t nb_rnd = quarks[0].number_of_rnd_vec;
 
-  const vec_pd_rVdaggerVr op_rVdaggerVr = global_data->get_op_rVdaggerVr();
-  const vec_pdg_Corr op_Corr = global_data->get_op_Corr();
+  const vec_pd_rVdaggerVr op_rVdaggerVr = global_data->get_lookup_rVdaggerVr();
+  const vec_pdg_Corr op_Corr = global_data->get_lookup_corr();
 
   std::fill(rvdaggervr.data(), rvdaggervr.data() + rvdaggervr.num_elements(), 
             Eigen::MatrixXcd::Zero(dilE, 4*dilE));
@@ -198,7 +193,7 @@ void LapH::VdaggerV::build_rvdaggervr(const int config_i,
   for(const auto& op : op_rVdaggerVr){
     if(op.adjoint == false){
 
-      size_t id_VdaggerV = op_Corr[op.index].id_VdaggerV;
+      size_t id_VdaggerV = op_Corr[op.index].id_vdv;
 
       for(size_t rnd_i = 0; rnd_i < nb_rnd; ++rnd_i) {
         Eigen::MatrixXcd M = Eigen::MatrixXcd::Zero(nb_ev, 4*dilE);

@@ -1,3 +1,4 @@
+#if 0
 /*
  * GlobalData.cpp
  *
@@ -1010,3 +1011,5 @@ void GlobalData::read_parameters (int ac, char* av[]) {
     exit(0);
   }
 }
+
+#endif

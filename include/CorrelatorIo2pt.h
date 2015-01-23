@@ -14,7 +14,7 @@
 #include "IoHelpers.h"
 #include "boost/crc.hpp"
 #include "boost/integer.hpp"
-#include "GlobalData.h"
+#include "global_data.h"
 #include "lime.h"
 #include "typedefs.h"
 

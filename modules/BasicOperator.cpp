@@ -233,7 +233,7 @@ BasicOperator::BasicOperator() : gamma(), Q2() {
   const size_t dilT = quarks[0].number_of_dilution_T;
   const size_t Q2_size = 4 * quarks[0].number_of_dilution_E;
   
-  const vec_pdg_Corr op_Corr = global_data->get_op_Corr();
+  const vec_pdg_Corr op_Corr = global_data->get_lookup_corr();
 
   const size_t nb_op = op_Corr.size();
 
@@ -263,7 +263,7 @@ void BasicOperator::init_operator(const char dilution,
   const int dilT = quarks[0].number_of_dilution_T;
   const size_t Q2_size = 4 * dilE;
   
-  const vec_pdg_Corr op_Corr = global_data->get_op_Corr();
+  const vec_pdg_Corr op_Corr = global_data->get_lookup_corr();
 
   const size_t nb_op = op_Corr.size();
 
@@ -285,32 +285,28 @@ void BasicOperator::init_operator(const char dilution,
       for(size_t rnd_i = 0; rnd_i < nb_rnd; ++rnd_i) {
         for(int t = 0; t < Lt/dilT; t++){
           // new momentum -> recalculate M[0]
-          // M only depends on momentum and displacement. flag_VdaggerV 
+          // M only depends on momentum and displacement. first_vdv 
           // prevents repeated calculation for different gamma structures
-          if(op.flag_VdaggerV != 0){
+          if(op.first_vdv == true){
 
-            //TODO: somehow change return_vdaggerv to return a reference
-            // to the adjoint if flag_VdaggerV < 0 and delete if condition
-            // here. Not easily possible because Eigen doesnt allow to 
-            // Eigen doesn't allow to return temporary objects.
             for(size_t col = 0; col < 4; ++col) {
             for(size_t row = 0; row < 4; ++row) {
-              if(op.flag_VdaggerV > 0){
+              if(op.negative_momentum == false){
                 M.block(dilE * col, nb_ev * row, dilE, nb_ev) = 
                   (peram[rnd_i].block(nb_ev * (4 * t_0 + row), 
                                       dilE * (4 * t + col), 
                                       nb_ev, dilE)).adjoint() *
-                  vdaggerv.return_vdaggerv(op.id_VdaggerV, t_0);
+                  vdaggerv.return_vdaggerv(op.id_vdv, t_0);
               }
               else {
                 M.block(dilE * col, nb_ev * row, dilE, nb_ev) = 
                   (peram[rnd_i].block(nb_ev * (4 * t_0 + row), 
                                       dilE * (4 * t + col), 
                                       nb_ev, dilE)).adjoint() *
-                  // TODO: calculate V^daggerV Omega from op.flag_VdaggerV > 0
-                  // and multiply Omega from the left
+                  // TODO: calculate V^daggerV Omega from op.negative_momentum 
+                  // == false and multiply Omega from the left
                   // and then (V^daggerV Omega)^dagger * Omega
-                  (vdaggerv.return_vdaggerv(op.id_VdaggerV, t_0)).adjoint();
+                  (vdaggerv.return_vdaggerv(op.id_vdv, t_0)).adjoint();
               }  
 
               // gamma_5 trick. It changes the sign of the two upper right and two
@@ -382,7 +378,7 @@ void BasicOperator::init_operator(const char dilution,
 /******************************************************************************/
 size_t BasicOperator::order_dirac(const size_t index, size_t block) const {
 
-  const vec_pdg_Corr op_Corr = global_data->get_op_Corr();
+  const vec_pdg_Corr op_Corr = global_data->get_lookup_corr();
 
   for(const auto& dirac : op_Corr[index].gamma){
     if(dirac != 4){
@@ -398,7 +394,7 @@ size_t BasicOperator::order_dirac(const size_t index, size_t block) const {
 void BasicOperator::value_dirac(const size_t index, const size_t block, 
                                 cmplx& value) const{
 
-  const vec_pdg_Corr op_Corr = global_data->get_op_Corr();
+  const vec_pdg_Corr op_Corr = global_data->get_lookup_corr();
 
   for(const auto& dirac : op_Corr[index].gamma){
     if(dirac != 4){
@@ -415,7 +411,7 @@ void BasicOperator::mult_dirac(const Eigen::MatrixXcd& matrix,
                                Eigen::MatrixXcd& reordered, 
                                const size_t index) const {
 
-  const vec_pdg_Corr op_Corr = global_data->get_op_Corr();
+  const vec_pdg_Corr op_Corr = global_data->get_lookup_corr();
 
   const size_t rows = matrix.rows();
   const size_t cols = matrix.cols();

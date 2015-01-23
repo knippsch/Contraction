@@ -18,7 +18,7 @@
 #include <Eigen/Eigen>
 #include <unsupported/Eigen/MatrixFunctions>
 #include <array>
-#include "GlobalData.h"
+#include "global_data.h"
 
 // navigation through timeslice
 void hopping3d(int** iup, int** idown);

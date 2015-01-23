@@ -14,9 +14,9 @@ void LapH::Correlators::build_Corr(){
   const std::vector<quark> quarks = global_data->get_quarks();
   const int dilT = quarks[0].number_of_dilution_T;
 
-  const vec_pdg_C2 op_C2 = global_data->get_op_C2();
-  const vec_pdg_Corr op_Corr = global_data->get_op_Corr();
-  const indexlist_2 rnd_vec_index = global_data->get_rnd_vec_C2();
+  const vec_index_2pt op_C2 = global_data->get_lookup_2pt_trace();
+  const vec_pdg_Corr op_Corr = global_data->get_lookup_corr();
+  const indexlist_2 rnd_vec_index = global_data->get_rnd_vec_2pt();
   // TODO: must be changed in GlobalData {
   // TODO: }     Was ist das? - Markus
 
@@ -36,8 +36,10 @@ void LapH::Correlators::build_Corr(){
     #pragma omp single
     {
       for(const auto& op : op_C2){
+
+        size_t id_Q2 = op.index_Q2;
+        size_t id_Corr = op.index_Corr;
       #pragma omp task shared(op)
-      for(const auto& i : op.index){
     
         // TODO: A collpase of both random vectors might be better but
         //       must be done by hand because rnd2 starts from rnd1+1
@@ -46,14 +48,14 @@ void LapH::Correlators::build_Corr(){
           // Corr = tr(D_d^-1(t_sink) Gamma D_u^-1(t_source) Gamma)
           // TODO: Just a workaround
     
-          compute_meson_small_traces(i.second, basic.get_operator
-            (t_source, t_sink/dilT, 1, i.first, rnd_it.first, rnd_it.second),
-            //TODO: shouldn't that be op_Corr[i.second].id_rVdaggerVr?
-            vdaggerv.return_rvdaggervr(i.second, t_sink, rnd_it.second, rnd_it.first),
-            Corr[i.first][i.second][t_source][t_sink][rnd_it.first][rnd_it.second]);
+          compute_meson_small_traces(id_Corr, basic.get_operator
+            (t_source, t_sink/dilT, 1, id_Q2, rnd_it.first, rnd_it.second),
+            vdaggerv.return_rvdaggervr(op_Corr[id_Corr].id_rvdvr, t_sink, 
+                rnd_it.second, rnd_it.first),
+            Corr[id_Q2][id_Corr][t_source][t_sink]
+                [rnd_it.first][rnd_it.second]);
 
         } // Loop over random vectors ends here! 
-      }
 //      #pragma omp taskwait
       }//Loops over all Quantum numbers 
     
@@ -113,8 +115,9 @@ void LapH::Correlators::build_and_write_2pt(const size_t config_i){
   // global variables from input file needed here
   const int Lt = global_data->get_Lt();
 
-  const vec_pdg_C2 op_C2 = global_data->get_op_C2();
-  const indexlist_2 rnd_vec_index = global_data->get_rnd_vec_C2();
+  const vec_index_2pt op_C2 = global_data->get_lookup_2pt_trace();
+  const vec_index_IO_1 op_C2_IO = global_data->get_lookup_2pt_IO();
+  const indexlist_2 rnd_vec_index = global_data->get_rnd_vec_2pt();
 
   // compute the norm for 2pt functions
   int norm = rnd_vec_index.size();
@@ -132,11 +135,14 @@ void LapH::Correlators::build_and_write_2pt(const size_t config_i){
   for(int t_source = 0; t_source < Lt; ++t_source){
   for(int t_sink = 0; t_sink < Lt; ++t_sink){
 
-    for(const auto& op : op_C2) {
-    for(const auto& i : op.index) {
+    for(const auto& op : op_C2_IO) {
+    for(const auto& i : op.index_pt){
+      size_t id_Q2 = op_C2[i].index_Q2;
+      size_t id_Corr = op_C2[i].index_Corr;
+
       for(const auto& rnd : rnd_vec_index) {
-        C2_mes[op.id][abs((t_sink - t_source - Lt) % Lt)] += 
-           Corr[i.first][i.second][t_source][t_sink][rnd.first][rnd.second];
+        C2_mes[op.id][abs((t_sink - t_source - Lt) % Lt)] = 
+           Corr[id_Q2][id_Corr][t_source][t_sink][rnd.first][rnd.second];
       } //Loop over random vectors
     }}//Loops over all Quantum numbers
   }}//Loops over time
@@ -173,8 +179,10 @@ void LapH::Correlators::build_and_write_C4_1(const size_t config_i){
   // global variables from input file needed here
   const int Lt = global_data->get_Lt();
 
-  const vec_pdg_C4 op_C4 = global_data->get_op_C4();
-  const indexlist_4 rnd_vec_index = global_data->get_rnd_vec_C4();
+//  const vec_index_4pt op_C4 = global_data->get_lookup_4pt_trace();
+  const vec_index_2pt op_C2 = global_data->get_lookup_2pt_trace();
+  const vec_index_IO_2 op_C4_IO = global_data->get_lookup_4pt_1_IO();
+  const indexlist_4 rnd_vec_index = global_data->get_rnd_vec_4pt();
 
   // compute the norm for 4pt functions
   int norm = rnd_vec_index.size();
@@ -194,12 +202,17 @@ void LapH::Correlators::build_and_write_C4_1(const size_t config_i){
     int t_source_1 = (t_source + 1) % Lt;
     int t_sink_1 = (t_sink + 1) % Lt;
 
-    for(const auto& op : op_C4){
-    for(const auto& i : op.index){
+    for(const auto& op : op_C4_IO){
+    for(const auto& i : op.index_pt){
+      size_t id_Q2_0   = op_C2[i.first].index_Q2;
+      size_t id_Corr_0 = op_C2[i.first].index_Corr;
+      size_t id_Q2_1   = op_C2[i.second].index_Q2;
+      size_t id_Corr_1 = op_C2[i.second].index_Corr;
+
       for(const auto& rnd : rnd_vec_index) {
         C4_mes[op.id][abs((t_sink - t_source - Lt) % Lt)] +=
-          (Corr[i[0]][i[2]][t_source_1][t_sink_1][rnd[0]][rnd[2]]) *
-          (Corr[i[1]][i[3]][t_source][t_sink][rnd[1]][rnd[3]]);
+          (Corr[id_Q2_0][id_Corr_0][t_source_1][t_sink_1][rnd[0]][rnd[2]]) *
+          (Corr[id_Q2_1][id_Corr_1][t_source][t_sink][rnd[1]][rnd[3]]);
       } // loop over random vectors
     }}//loops operators
   }}// loops t_sink and t_source
@@ -230,8 +243,10 @@ void LapH::Correlators::build_and_write_C4_2(const size_t config_i){
   // global variables from input file needed here
   const int Lt = global_data->get_Lt();
 
-  const vec_pdg_C4 op_C4 = global_data->get_op_C4();
-  const indexlist_4 rnd_vec_index = global_data->get_rnd_vec_C4();
+//  const vec_index_4pt op_C4 = global_data->get_lookup_4pt_trace();
+  const vec_index_2pt op_C2 = global_data->get_lookup_2pt_trace();
+  const vec_index_IO_2 op_C4_IO = global_data->get_lookup_4pt_2_IO();
+  const indexlist_4 rnd_vec_index = global_data->get_rnd_vec_4pt();
 
  // compute the norm for 4pt functions
   int norm = rnd_vec_index.size();
@@ -250,12 +265,17 @@ void LapH::Correlators::build_and_write_C4_2(const size_t config_i){
     int t_source_1 = (t_source + 1) % Lt;
     int t_sink_1 = (t_sink + 1) % Lt;
 
-    for(const auto& op : op_C4){
-    for(const auto& i : op.index){
+    for(const auto& op : op_C4_IO){
+    for(const auto& i : op.index_pt){
+      size_t id_Q2_0   = op_C2[i.first].index_Q2;
+      size_t id_Corr_0 = op_C2[i.first].index_Corr;
+      size_t id_Q2_1   = op_C2[i.second].index_Q2;
+      size_t id_Corr_1 = op_C2[i.second].index_Corr;
+
       for(const auto& rnd : rnd_vec_index) {
         C4_mes[op.id][abs((t_sink - t_source - Lt) % Lt)] +=
-          (Corr[i[0]][i[2]][t_source_1][t_sink][rnd[0]][rnd[2]]) *
-          (Corr[i[1]][i[3]][t_source][t_sink_1][rnd[1]][rnd[3]]);
+          (Corr[id_Q2_0][id_Corr_0][t_source_1][t_sink][rnd[0]][rnd[2]]) *
+          (Corr[id_Q2_1][id_Corr_1][t_source][t_sink_1][rnd[1]][rnd[3]]);
       } // loop over random vectors
     }}//loops operators
   }}// loops t_source and t_sink

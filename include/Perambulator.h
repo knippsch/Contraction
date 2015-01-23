@@ -18,7 +18,7 @@
 
 #include "config_utils.h"
 #include "EigenVector.h"
-#include "GlobalData.h"
+#include "global_data.h"
 #include "io_utils.h"
 #include "propagator_io.h"
 #include "quark.h"

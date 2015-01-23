@@ -1,7 +1,7 @@
 #ifndef BASICOPERATOR_H_
 #define BASICOPERATOR_H_
 
-#include "GlobalData.h"
+#include "global_data.h"
 #include "Perambulator.h"
 #include "typedefs.h"
 #include "VdaggerV.h"

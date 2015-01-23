@@ -45,7 +45,7 @@ bool compare_tags(const Tag& tag1, const Tag& tag2){
 // Set the tag from two operator structures
 void set_tag(Tag& tag, const std::pair<size_t, size_t>& i){
 
-  const vec_pdg_Corr op_Corr = global_data->get_op_Corr();
+  const vec_pdg_Corr op_Corr = global_data->get_lookup_corr();
 
   tag.mom[0] = square_comp(op_Corr[i.first].p3, op_Corr[i.first].p3);
   tag.mom[1] = tag.mom[0];
@@ -64,7 +64,7 @@ void set_tag(Tag& tag, const std::pair<size_t, size_t>& i){
 // Set the tag from two operator structures
 void set_tag(Tag& tag, const std::array<size_t, 4>& i){
 
-  const vec_pdg_Corr op_Corr = global_data->get_op_Corr();
+  const vec_pdg_Corr op_Corr = global_data->get_lookup_corr();
 
   //TODO: use loops for that. I'm too tired
   std::array<int,3> cm_1 = add_mom(op_Corr[i[0]].p3, op_Corr[i[1]].p3);

@@ -1,3 +1,4 @@
+#if 0
 /*
  * GlobalData.h
  *
@@ -5,8 +6,8 @@
  *      Author: knippsch
  */
 
-#ifndef GLOBALDATA_H_
-#define GLOBALDATA_H_
+//#ifndef GLOBALDATA_H_
+//#define GLOBALDATA_H_
 
 #include <algorithm>
 #include <fstream>
@@ -260,4 +261,5 @@ protected:
 
 };
 
-#endif /* GLOBALDATA_H_ */
+//#endif /* GLOBALDATA_H_ */
+#endif

@@ -16,28 +16,22 @@ number_of_eigen_vec = 66
 path_eigenvectors   = /hiskp2/eigensystems/A40.20_L20_T48_beta190_mul0040_musig150_mudel190_kappa1632700/hyp_062_062_3/nev_120/
 name_eigenvectors   = eigenvectors
 # perambulator handling
-path_perambulators  = /hiskp2/knippsch/A40.20_new/
+path_perambulators  = /hiskp2/perambulators/A40.20/nev_66/up/
 name_perambulators  = perambulator
 # output path
 output_path = /hiskp2/werner/output
 lattice = A40.20
 
-# momentum handling:
-number_of_max_mom  = 1
-max_mom_in_one_dir = 1
-# dirac structure
-dirac_min = 5
-dirac_max = 5
-# displacements
-displ_min = 0
-displ_max = 0
-
+# quarks to be used
 [quarks]
 quark = u:4:TI:2:EI:6:DI:4
 
+# operators to be used
+[operator_lists]
+operator_list = g5.d0.p0,1
 
-
-
-
-
+# all correlation functions which will be computed !!MUST BE AT END OF FILE!!
+[correlator_lists]
+correlator_list = C2+:Q0:Op0:Q0:Op0
+correlator_list = C4I2+:Q0:Op0:Q0:Op0:Q0:Op0:Q0:Op0
 

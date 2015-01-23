@@ -8,7 +8,7 @@
 #include <typeinfo>
 #include <vector>
 
-#include "GlobalData.h"
+#include "global_data.h"
 #include "BasicOperator.h"
 #include "typedefs.h"
 #include "VdaggerV.h"

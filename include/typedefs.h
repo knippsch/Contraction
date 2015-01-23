@@ -47,8 +47,6 @@ typedef std::list<size_t> indexlist_1;
 typedef std::list<std::pair<size_t, size_t> > indexlist_2;
 typedef std::list<std::array<size_t, 3> > indexlist_3;
 typedef std::list<std::array<size_t, 4> > indexlist_4;
-typedef std::list<std::array<size_t, 5> > indexlist_5;
-typedef std::list<std::array<size_t, 6> > indexlist_6;
 
 // Operator typedefs
 
@@ -75,10 +73,11 @@ typedef std::list<std::array<size_t, 6> > indexlist_6;
     size_t id;
     std::array<int,3> p3;
     std::array<int,3> dis3;
-    std::array<size_t,4> gamma;
-    int id_VdaggerV;
-    int flag_VdaggerV;
-    size_t id_rVdaggerVr;
+    std::vector<int> gamma;
+    int id_vdv;
+    bool first_vdv;
+    bool negative_momentum;
+    size_t id_rvdvr;
   };
 
 // struct which contains all id's from pdg for which VdaggerV is not 
@@ -103,45 +102,34 @@ typedef std::list<std::array<size_t, 6> > indexlist_6;
     bool adjoint;
   };
 
-// struct which contains all id's from pdg which shall be used in the
-// 2pt function. 
-// index - pair of id's for source and sink
-// The following indices could also be calculated on the fly using the id and 
-// pdg. Saving them seperately is faster and easier for the output as same
-// quantum numbers are often summed over.
-// p_sq  - momentum squared. Identical for source/sink due to momentum 
-//         conservation
-// dg_so - combined dirac/gamma structure for the source
-// dg_si - combined dirac/gamma structure for the sink
-
-  struct pdg_C2 {
+  struct index_2pt {
     size_t id;
-    indexlist_2 index;
+    size_t index_Q2;
+    size_t index_Corr;
   };
 
-// struct which contains all id's from pdg which shall be used in the
-// 4pt function. 
-// index - quadruple of id's for source and sink
-// The following indices could also be calculated on the fly using the id and 
-// pdg
-// p_sq_cm - CM momentum. Identical for source/sink due to momentum. Choosing
-//         this quantity != 0 corresponds to moving frames
-// p_sq_so_1 - momentum squared of first source quark
-// p_sq_so_2 - momentum squared of second source quark
-// p_sq_si_3 - momentum squared of first sink quark
-// p_sq_si_4 - momentum squared of first sink quark
-// dg_so - combined dirac/gamma structure for the source
-// dg_si - combined dirac/gamma structure for the sink
-
-  struct pdg_C4 {
+  struct index_4pt {
     size_t id;
-    indexlist_4 index;
+    size_t index_Q2[2];
+    size_t index_Corr[2];
+  };
+
+  struct index_IO_1 {
+    size_t id;
+    indexlist_1 index_pt;
+  };
+
+  struct index_IO_2 {
+    size_t id;
+    indexlist_2 index_pt;
   };
 
 typedef std::vector<pdg> vec_pdg_Corr;  
 typedef std::vector<pd> vec_pd_VdaggerV;
 typedef std::vector<pd_r> vec_pd_rVdaggerVr;
-typedef std::vector<pdg_C2> vec_pdg_C2; 
-typedef std::vector<pdg_C4> vec_pdg_C4; 
+typedef std::vector<index_2pt> vec_index_2pt;
+typedef std::vector<index_4pt> vec_index_4pt;
+typedef std::vector<index_IO_1> vec_index_IO_1;
+typedef std::vector<index_IO_2> vec_index_IO_2;
 
 #endif // _TYPEDEFS_H_

@@ -9,9 +9,13 @@ static GlobalData * const global_data = GlobalData::Instance();
 LapH::Correlators::Correlators() : basic(), peram(), rnd_vec(), vdaggerv(),
                                    C4_mes(), C2_mes(), Corr()  {
 
-  const size_t nb_mom_sq = global_data->get_number_of_momentum_squared();
-  const size_t nb_op = global_data->get_number_of_operators();
-  const size_t nb_dg = global_data->get_number_of_displ_gamma();
+  const vec_index_2pt op_C2 = global_data->get_lookup_2pt_trace();
+  const size_t nb_op_2pt = op_C2.size();
+  const vec_index_4pt op_C4 = global_data->get_lookup_4pt_trace();
+  const size_t nb_op_4pt = op_C4.size();
+  const vec_pdg_Corr op_Corr = global_data->get_lookup_corr();
+  const size_t nb_op = op_Corr.size();
+//  const size_t nb_op = global_data->get_number_of_operators();
   const std::vector<quark> quarks = global_data->get_quarks();
   const size_t nb_rnd = quarks[0].number_of_rnd_vec;
 
@@ -23,9 +27,9 @@ LapH::Correlators::Correlators() : basic(), peram(), rnd_vec(), vdaggerv(),
 
   //TODO: size of C4_mes and C2_mes must be replaced by size of corresponding
   //operator lists. Momentary values are upper limit
-  C4_mes.resize(boost::extents[1*nb_mom_sq*nb_mom_sq*nb_dg*nb_dg][Lt]);
+  C4_mes.resize(boost::extents[nb_op_4pt][Lt]);
 //  C4_mes.resize(boost::extents[2][Lt]);
-  C2_mes.resize(boost::extents[nb_mom_sq*nb_dg*nb_dg][Lt]);
+  C2_mes.resize(boost::extents[nb_op_2pt][Lt]);
   Corr.resize(boost::extents[nb_op][nb_op][Lt][Lt][nb_rnd][nb_rnd]);
 }
 /******************************************************************************/

@@ -23,7 +23,7 @@ void convert_C2_mes_to_vec(const listvector& op_mes, array_cd_d2& C2_mes,
     // the copy constructor in assign()
     corr[op.id].assign(C2_mes[op.id].origin(), C2_mes[op.id].origin() + 
                        C2_mes[op.id].size());
-    set_tag(tags[op.id], op.index.front());
+//    set_tag(tags[op.id], op.index.front());
 
   }
 }
@@ -33,13 +33,13 @@ void convert_C2_mes_to_vec(const listvector& op_mes, array_cd_d2& C2_mes,
 ///////////////////////////////////////////////////////////////////////////////
 void export_corr_2pt(const char* filename, array_cd_d2& C2_mes){
   
-  const vec_pdg_C2 op_C2 = global_data->get_op_C2();
+  const vec_index_2pt op_C2 = global_data->get_lookup_2pt_trace();
 
   GlobalDat dat;
   std::vector<Tag> tags;
   std::vector<vec> corr;
 
-  convert_C2_mes_to_vec <vec_pdg_C2> (op_C2, C2_mes, tags, corr);
+  convert_C2_mes_to_vec <vec_index_2pt> (op_C2, C2_mes, tags, corr);
   if (file_exist(filename)){
     char filename_new [150];
     sprintf(filename_new,"_changed");
@@ -54,13 +54,13 @@ void export_corr_2pt(const char* filename, array_cd_d2& C2_mes){
 ///////////////////////////////////////////////////////////////////////////////
 void export_corr_4pt(const char* filename, array_cd_d2& C4_mes){
   
-  const vec_pdg_C4 op_C4 = global_data->get_op_C4();
+  const vec_index_4pt op_C4 = global_data->get_lookup_4pt_trace();
 
   GlobalDat dat;
   std::vector<Tag> tags;
   std::vector<vec> corr;
 
-  convert_C2_mes_to_vec <vec_pdg_C4> (op_C4, C4_mes, tags, corr);
+  convert_C2_mes_to_vec <vec_index_4pt> (op_C4, C4_mes, tags, corr);
 
   write_2pt_lime(filename, dat, tags, corr);
 

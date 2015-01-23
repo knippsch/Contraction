@@ -12,7 +12,7 @@
 #include "Eigen/Dense"
 
 #include "EigenVector.h"
-#include "GlobalData.h"
+#include "global_data.h"
 #include "RandomVector.h"
 
 namespace LapH {

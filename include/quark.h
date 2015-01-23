@@ -1,3 +1,4 @@
+#if 0
 /*
  * quark.h
  *
@@ -5,8 +6,8 @@
  *      Author: knippsch
  */
 
-#ifndef QUARK_H_
-#define QUARK_H_
+//#ifndef QUARK_H_
+//#define QUARK_H_
 
 // *****************************************************************************
 /// @brief quark type that contains all quark propagator informations
@@ -35,4 +36,5 @@ struct quark {
 	}
 };
 
-#endif /* QUARK_H_ */
+//#endif /* QUARK_H_ */
+#endif

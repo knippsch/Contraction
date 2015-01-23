@@ -12,7 +12,7 @@
 
 #include "CorrelatorIo2pt.h"
 #include "CrossOperator.h" 
-#include "GlobalData.h"
+#include "global_data.h"
 #include "IoHelpers.h"
 #include "BasicOperator.h"
 #include "Perambulator.h"

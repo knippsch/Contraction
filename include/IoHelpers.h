@@ -8,7 +8,7 @@
 
 #include "boost/crc.hpp"
 
-#include "GlobalData.h"
+#include "global_data.h"
 #include "lime.h"
 #include "typedefs.h"
 ///////////////////////////////////////////////////////////////////////////////
