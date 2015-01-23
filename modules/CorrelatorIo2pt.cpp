@@ -189,13 +189,14 @@ void export_corr_IO (const char* filename, const vec_index_IO_1& op_IO,
     tag_strings.push_back(tag_string);
   }
 
-  if (file_exist(filename)){
-    char filename_new [150];
-    sprintf(filename_new,"_changed");
-    std::cout << "file already exists! Renaming to "
-      << filename_new << std::endl;
-    write_2pt_lime(filename_new, dat, tag_strings, corr);
-  }
+//  if (file_exist(filename)){
+//    char filename_new [150];
+//    sprintf(filename_new,"_changed");
+//    std::cout << "file already exists! Renaming to "
+//      << filename_new << std::endl;
+//  }
+  std::cout << "\twriting " << corr_type << " to " << filename << std::endl;
+  write_2pt_lime(filename, dat, tag_strings, corr);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -215,13 +216,14 @@ void export_corr_IO (const char* filename, const vec_index_IO_2& op_IO,
     tag_strings.push_back(tag_string);
   }
 
-  if (file_exist(filename)){
-    char filename_new [150];
-    sprintf(filename_new,"_changed");
-    std::cout << "file already exists! Renaming to "
-      << filename_new << std::endl;
-    write_2pt_lime(filename_new, dat, tag_strings, corr);
-  }
+//  if (file_exist(filename)){
+//    char filename_new [150];
+//    sprintf(filename_new,"_changed");
+//    std::cout << "file already exists! Renaming to "
+//      << filename_new << std::endl;
+//  }
+  std::cout << "\twriting " << corr_type << " to " << filename << std::endl;
+  write_2pt_lime(filename, dat, tag_strings, corr);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

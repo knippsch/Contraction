@@ -132,6 +132,9 @@ void LapH::Correlators::build_and_write_2pt(const size_t config_i){
   // setting the correlation function to zero
   std::fill(C2_mes.origin(), C2_mes.origin() + C2_mes.num_elements() , 
                                                             cmplx(0.0, 0.0));
+  if(op_C2_IO.size() == 0)
+    return;
+
   for(int t_source = 0; t_source < Lt; ++t_source){
   for(int t_sink = 0; t_sink < Lt; ++t_sink){
 
@@ -141,7 +144,7 @@ void LapH::Correlators::build_and_write_2pt(const size_t config_i){
       size_t id_Corr = op_C2[i].index_Corr;
 
       for(const auto& rnd : rnd_vec_index) {
-        C2_mes[op.id][abs((t_sink - t_source - Lt) % Lt)] = 
+        C2_mes[op.id][abs((t_sink - t_source - Lt) % Lt)] += 
            Corr[id_Q2][id_Corr][t_source][t_sink][rnd.first][rnd.second];
       } //Loop over random vectors
     }}//Loops over all Quantum numbers
@@ -193,6 +196,9 @@ void LapH::Correlators::build_and_write_C4_1(const size_t config_i){
   FILE *fp = NULL;
   std::string outpath = global_data->get_output_path() + "/" + 
       global_data->get_name_lattice();
+
+  if(op_C4_IO.size() == 0)
+    return;
 
   // setting the correlation function to zero
   std::fill(C4_mes.data(), C4_mes.data() + C4_mes.num_elements(), 
@@ -257,6 +263,10 @@ void LapH::Correlators::build_and_write_C4_2(const size_t config_i){
   FILE *fp = NULL;
   std::string outpath = global_data->get_output_path() + "/" + 
       global_data->get_name_lattice();
+
+  if(op_C4_IO.size() == 0)
+    return;
+
   // setting the correlation function to zero
   std::fill(C4_mes.data(), C4_mes.data() + C4_mes.num_elements(), 
                                                              cmplx(0.0, 0.0));

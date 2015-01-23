@@ -114,6 +114,9 @@ void LapH::Correlators::write_C4_3(const size_t config_i){
   const vec_index_4pt op_C4 = global_data->get_lookup_4pt_trace();
   const vec_index_IO_1 op_C4_IO = global_data->get_lookup_4pt_3_IO();
 
+  if(op_C4_IO.size() == 0)
+    return;
+
   // normalisation
   for(auto i = C4_mes.data(); i < (C4_mes.data()+C4_mes.num_elements()); i++)
     *i /= norm1;
