@@ -159,7 +159,7 @@ void LapH::Correlators::build_and_write_2pt(const size_t config_i){
   // correlators - vector of correlators
 
   sprintf(outfile, "%s/C2_pi+-_conf%04d.dat", outpath.c_str(), (int)config_i);
-  export_corr_2pt(outfile, C2_mes);
+  export_corr_IO(outfile, op_C2_IO, "C2+", C2_mes);
 
   time = clock() - time;
   std::cout << "\t\tSUCCESS - " << ((float) time)/CLOCKS_PER_SEC 
@@ -225,7 +225,7 @@ void LapH::Correlators::build_and_write_C4_1(const size_t config_i){
   // C4_mes  - boost structure containing all correlators
 
   sprintf(outfile, "%s/C4_1_conf%04d.dat", outpath.c_str(), (int)config_i);
-  export_corr_4pt(outfile, C4_mes);
+  export_corr_IO(outfile, op_C4_IO, "C4I2+_1", C4_mes);
 
   time = clock() - time;
   printf("\t\tSUCCESS - %.1f seconds\n", ((float) time)/CLOCKS_PER_SEC);
@@ -289,7 +289,7 @@ void LapH::Correlators::build_and_write_C4_2(const size_t config_i){
   // C4_mes  - boost structure containing all correlators
 
   sprintf(outfile, "%s/C4_2_conf%04d.dat", outpath.c_str(), (int)config_i);
-  export_corr_4pt(outfile, C4_mes);
+  export_corr_IO(outfile, op_C4_IO, "C4I2+_2", C4_mes);
 
   time = clock() - time;
   printf("\t\tSUCCESS - %.1f seconds\n", ((float) time)/CLOCKS_PER_SEC);

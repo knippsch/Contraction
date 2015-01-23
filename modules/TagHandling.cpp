@@ -226,50 +226,6 @@ void zero_vec_tag(const size_t pts, std::vector<Tag> attr){
   for (auto& el : attr) zero_tag(pts, el);
 }
 
- //TODO: functions need to be adjusted to new tag structure 
-// Set the tag from two operator structures
-//void set_tag(Tag& tag, const std::pair<size_t, size_t>& i){
-//
-//  const vec_pdg_Corr op_Corr = global_data->get_op_Corr();
-//
-//  tag.mom[0] = square_comp(op_Corr[i.first].p3, op_Corr[i.first].p3);
-//  tag.mom[1] = tag.mom[0];
-//    for(size_t c = 0; c < 3; ++c){
-//      tag.dis[0][c] =op_Corr[i.first].dis3[c]; 
-//    }
-//    for(size_t c = 0; c < 3; ++c){
-//      tag.dis[1][c] =op_Corr[i.second].dis3[c]; 
-//    }
-//
-//  tag.gam[0][0] = op_Corr[i.first].gamma[0];
-//  tag.gam[1][0] = op_Corr[i.second].gamma[0];
-//
-//}
-//
-//// Set the tag from two operator structures
-//void set_tag(Tag& tag, const std::array<size_t, 4>& i){
-//
-//  const vec_pdg_Corr op_Corr = global_data->get_op_Corr();
-//
-//  //TODO: use loops for that. I'm too tired
-//  std::array<int,3> cm_1 = add_mom(op_Corr[i[0]].p3, op_Corr[i[1]].p3);
-//  tag.mom_cm = square_comp(cm_1, cm_1);
-//  tag.mom[0] = square_comp(op_Corr[i[0]].p3, op_Corr[i[0]].p3);
-//  tag.mom[1] = square_comp(op_Corr[i[1]].p3, op_Corr[i[1]].p3);
-//  tag.mom[2] = square_comp(op_Corr[i[2]].p3, op_Corr[i[2]].p3);
-//  tag.mom[3] = square_comp(op_Corr[i[3]].p3, op_Corr[i[3]].p3);
-//
-//  for(size_t q = 0; q < 4; ++q){
-//    for (size_t c = 0; c < 3; ++c){
-//      tag.dis[q][c] = op_Corr[i[q]].dis3[c];
-//    }
-//    for (size_t c = 0; c < 4; ++c){
-//      tag.gam[q][c] = op_Corr[i[q]].gamma[c];
-//    }
-//  }
-//
-//}
-
 
 
 

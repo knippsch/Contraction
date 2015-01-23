@@ -21,8 +21,14 @@
 
 // converts a boost multiarray correlator to std::vector<vec> and sets tags
 // to be used in write_2pt_lime()
-void export_corr_2pt(const char* filename, array_cd_d2& C2_mes);
-void export_corr_4pt(const char* filename, array_cd_d2& C4_mes);
+void export_corr_IO (const char* filename, const vec_index_IO_1& op_IO,
+                     const std::string& corr_type, const array_cd_d2& C2_mes);
+void export_corr_IO (const char* filename, const vec_index_IO_2& op_IO,
+                     const std::string& corr_type, const array_cd_d2& C2_mes);
+
+//void convert_hadron_to_vec(const vec_index_IO_2& op_io, array_cd_d2& C2_mes,
+//                           const std::string& corr_type, std::vector<Tag>& tags,
+//                           std::vector<vec>& corr){
 
 // Writes a vector of 2pt correlation functions and their tags to a file with
 // filename
@@ -42,4 +48,5 @@ void get_2pt_lime(const char* filename, const size_t num_corrs,
 // Dump ASCII version of correlator on screen 
  void ASCII_dump_corr(const char* filename, const char* infile, const size_t Lt,
                      const size_t num_corrs);
+
 #endif //IO_2PT_H_

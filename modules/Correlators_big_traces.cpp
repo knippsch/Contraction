@@ -53,13 +53,14 @@ void LapH::Correlators::compute_meson_4pt_cross_trace(LapH::CrossOperator& X) {
         // different quantum number combinations denoted by the index i may be 
         // handled by different tasks. Their results are summed up in the end.
         // TODO: Further speedup by different parallelisation might be possible
-        #pragma omp task shared(op)
         for(const auto& i : op.index_pt){
 
           size_t i_0 = op_C4[i].index_Q2[0];
           size_t i_1 = op_C4[i].index_Corr[0];
           size_t i_2 = op_C4[i].index_Q2[1];
           size_t i_3 = op_C4[i].index_Corr[1];
+          #pragma omp task shared(op, i, i_0, i_1, i_2, i_3)
+          {
           // complete diagramm. combine X and Y to four-trace
           // C4_mes = tr(D_u^-1(t_source     | t_sink      ) Gamma 
           //             D_d^-1(t_sink       | t_source + 1) Gamma 
@@ -80,6 +81,7 @@ void LapH::Correlators::compute_meson_4pt_cross_trace(LapH::CrossOperator& X) {
           #pragma omp critical
           {
             C4_mes[op.id][abs((t_sink - t_source) - Lt) % Lt] += priv_C4;
+          }
           }
       }}//loops operators
       } // end parallel region
@@ -110,6 +112,7 @@ void LapH::Correlators::write_C4_3(const size_t config_i){
   const size_t norm1 = Lt*rnd_vec_index.size();
 
   const vec_index_4pt op_C4 = global_data->get_lookup_4pt_trace();
+  const vec_index_IO_1 op_C4_IO = global_data->get_lookup_4pt_3_IO();
 
   // normalisation
   for(auto i = C4_mes.data(); i < (C4_mes.data()+C4_mes.num_elements()); i++)
@@ -120,7 +123,7 @@ void LapH::Correlators::write_C4_3(const size_t config_i){
   // C4_mes  - boost structure containing all correlators
 
   sprintf(outfile, "%s/C4_3_conf%04d.dat", outpath.c_str(), (int)config_i);
-  export_corr_4pt(outfile, C4_mes);
+  export_corr_IO(outfile, op_C4_IO, "C4I2+_3", C4_mes);
 
 }
 

@@ -100,7 +100,8 @@ void init_lookup_corr(const Correlator_list& correlator_list,
       break;
     }
 
- for(auto a : lookup_corr){
+  std::cout << "lookup_corr" << std::endl;
+  for(auto a : lookup_corr){
     std::cout << a.id;
     for(auto b : a.gamma)
     std::cout << " " << b;
@@ -108,11 +109,8 @@ void init_lookup_corr(const Correlator_list& correlator_list,
       std::cout << " " << b;
     for(auto b : a.p3)
       std::cout << " " << b;
-    std::cout << "\t" << a.id_vdv;
-    std::cout << " " << a.first_vdv;
-    std::cout << " " << a.negative_momentum;
-    std::cout << " " << a.id_rvdvr;
-    std::cout << std::endl;
+    std::cout << "\t" << a.id_vdv << " " << a.first_vdv << " " 
+              << a.negative_momentum << " " << a.id_rvdvr << std::endl;
   }
 
 }
@@ -172,7 +170,7 @@ void init_lookup_2pt(const Correlator_list& correlator_list,
     op.id = counter++;
   }
 
-  std::cout << std::endl;
+  std::cout << "lookup_2pt" << std::endl;
   for(const auto& a : lookup_2pt){
     std::cout << a.id << "\t" << a.index_Q2 << "\t" << a.index_Corr<< std::endl;
   }
@@ -229,7 +227,7 @@ void init_lookup_C2plus_IO(const Correlator_list& correlator_list,
     counter++;
   }
 
-  std::cout << std::endl;
+  std::cout << "lookup_2pt_IO" << std::endl;
   for(const auto& a : lookup_2pt_IO){
     for(const auto& b : a.index_pt)
       std::cout << b << std::endl;
@@ -318,7 +316,7 @@ void init_lookup_C4I2plus_IO(const Correlator_list& correlator_list,
     counter++;
   }
 
-  std::cout << std::endl;
+  std::cout << "lookup_4pt_1_IO" << std::endl;
   for(const auto& a : lookup_4pt_1_IO){
     for(const auto& b : a.index_pt)
       std::cout << b.first << "\t" << b.second << std::endl;
@@ -374,7 +372,7 @@ void init_lookup_4pt(const Correlator_list& correlator_list,
     op.id = counter++;
   }
 
-  std::cout << std::endl;
+  std::cout << "lookup_4pt" << std::endl;
   for(auto a : lookup_4pt){
     std::cout << a.id << "\t" << a.index_Q2[0] << "\t" << a.index_Corr[0] 
               << "\t" << a.index_Q2[1] << "\t" << a.index_Corr[1] << std::endl;
@@ -407,10 +405,15 @@ void init_lookup_4pt(const Correlator_list& correlator_list,
     }
   }
 
-  std::cout << std::endl;
+  counter = 0;
+  for(auto& op : lookup_4pt_3_IO){
+    op.id = counter++;
+  }
+
+  std::cout << "lookup_4pt_3_IO" << std::endl;
   for(const auto& a : lookup_4pt_3_IO){
     for(const auto& b : a.index_pt)
-      std::cout << b << std::endl;
+      std::cout << a.id << b << std::endl;
     std::cout << std::endl;
   }
 

@@ -53,7 +53,7 @@ LIBPATH = /usr/local/lib /hiskp2/werner/libraries/boost_1_55_0/stage/lib/ $(LIME
 
 # scheduling and optimization options
 CFLAGS = -Wall -pedantic -std=c++0x -fopenmp -O2 -march=native -Wno-unused-variable \
-         -Wno-unused-local-typedefs -Wno-sign-compare 
+         -Wno-unused-local-typedefs -Wno-sign-compare -g
 ############################## do not change ###################################
 
 SHELL=/bin/bash

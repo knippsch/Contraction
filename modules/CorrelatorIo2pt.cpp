@@ -8,74 +8,227 @@ static GlobalData * const global_data = GlobalData::Instance();
 
 // convert multiarray 2pt correlator to vector to match write_2pt_lime
 
-//template <typename listvector> 
-//void convert_C2_mes_to_vec(const listvector& op_mes, array_cd_d2& C2_mes, 
-//                           std::vector<Tag>& tags, std::vector<vec>& corr){
-//
-//  const size_t Lt = global_data->get_Lt();
-//
-//  corr.resize(op_mes.size());
-//  for(auto& c : corr)
-//    c.resize(Lt);
-//  tags.resize(op_mes.size());
-//
-//  for(const auto& op : op_mes){
-//    //TODO: solve the copying of C2_mes (boost) into corr (std::vec) without
-//    // the copy constructor in assign()
-//    corr[op.id].assign(C2_mes[op.id].origin(), C2_mes[op.id].origin() + 
-//                       C2_mes[op.id].size());
-//    set_tag(tags[op.id], op.index.front());
-//
-//  }
-//}
+ //TODO: functions need to be adjusted to new tag structure 
+// Set the tag from two operator structures
+
+
+void set_tag(Tag& tag, const std::pair<size_t, size_t>& i, const vec_index_2pt& corr_type){
+
+  const vec_pdg_Corr op_Corr = global_data->get_lookup_corr();
+  
+  tag.q_cont = "udud";
+
+  tag.mom.push_back(op_Corr[corr_type[i.first].index_Q2].p3);
+  tag.mom.push_back(op_Corr[corr_type[i.first].index_Corr].p3);
+  tag.mom.push_back(op_Corr[corr_type[i.second].index_Q2].p3);
+  tag.mom.push_back(op_Corr[corr_type[i.second].index_Corr].p3);
+  
+  tag.mom_cm = square_comp(add_mom(tag.mom[0], tag.mom[2]),
+                           add_mom(tag.mom[0], tag.mom[2]));
+
+  tag.dis.push_back(op_Corr[corr_type[i.first].index_Q2].dis3);
+  tag.dis.push_back(op_Corr[corr_type[i.first].index_Corr].dis3);
+  tag.dis.push_back(op_Corr[corr_type[i.second].index_Q2].dis3);
+  tag.dis.push_back(op_Corr[corr_type[i.second].index_Corr].dis3);
+
+  std::array<int, 4> tmp = {{0,0,0,0}};
+  for(size_t ind = 0; 
+      ind < op_Corr[corr_type[i.first].index_Q2].gamma.size(); ind++){
+    tmp[ind] = op_Corr[corr_type[i.first].index_Q2].gamma[ind];
+  }
+  tag.gam.push_back(tmp);
+  for(auto& el : tmp) el = 0;
+  for(size_t ind = 0; 
+      ind < op_Corr[corr_type[i.first].index_Corr].gamma.size(); ind++){
+    tmp[ind] = op_Corr[corr_type[i.first].index_Corr].gamma[ind];
+  }
+  tag.gam.push_back(tmp);
+  for(auto& el : tmp) el = 0;
+  for(size_t ind = 0; 
+      ind < op_Corr[corr_type[i.first].index_Q2].gamma.size(); ind++){
+    tmp[ind] = op_Corr[corr_type[i.second].index_Q2].gamma[ind];
+  }
+  tag.gam.push_back(tmp);
+  for(auto& el : tmp) el = 0;
+  for(size_t ind = 0; 
+      ind < op_Corr[corr_type[i.first].index_Corr].gamma.size(); ind++){
+    tmp[ind] = op_Corr[corr_type[i.second].index_Corr].gamma[ind];
+  }
+  tag.gam.push_back(tmp);
+
+}
+
+// Set the tag from two operator structures
+void set_tag(Tag& tag, const size_t i, const vec_index_4pt& corr_type){
+
+  const vec_pdg_Corr op_Corr = global_data->get_lookup_corr();
+  tag.q_cont = "udud";
+
+  tag.mom.push_back(op_Corr[corr_type[i].index_Q2[0]].p3);
+  tag.mom.push_back(op_Corr[corr_type[i].index_Corr[0]].p3);
+  tag.mom.push_back(op_Corr[corr_type[i].index_Q2[1]].p3);
+  tag.mom.push_back(op_Corr[corr_type[i].index_Corr[1]].p3);
+  
+  tag.mom_cm = square_comp(add_mom(tag.mom[0], tag.mom[2]),
+                           add_mom(tag.mom[0], tag.mom[2]));
+
+  tag.dis.push_back(op_Corr[corr_type[i].index_Q2[0]].dis3);
+  tag.dis.push_back(op_Corr[corr_type[i].index_Corr[0]].dis3);
+  tag.dis.push_back(op_Corr[corr_type[i].index_Q2[1]].dis3);
+  tag.dis.push_back(op_Corr[corr_type[i].index_Corr[1]].dis3);
+
+  std::array<int, 4> tmp = {{0,0,0,0}};
+  for(size_t ind = 0; 
+      ind < op_Corr[corr_type[i].index_Q2[0]].gamma.size(); ind++){
+    tmp[ind] = op_Corr[corr_type[i].index_Q2[0]].gamma[ind];
+  }
+  tag.gam.push_back(tmp);
+  for(auto& el : tmp) el = 0;
+  for(size_t ind = 0; 
+      ind < op_Corr[corr_type[i].index_Corr[0]].gamma.size(); ind++){
+    tmp[ind] = op_Corr[corr_type[i].index_Corr[0]].gamma[ind];
+  }
+  tag.gam.push_back(tmp);
+  for(auto& el : tmp) el = 0;
+  for(size_t ind = 0; 
+      ind < op_Corr[corr_type[i].index_Q2[1]].gamma.size(); ind++){
+    tmp[ind] = op_Corr[corr_type[i].index_Q2[1]].gamma[ind];
+  }
+  tag.gam.push_back(tmp);
+  for(auto& el : tmp) el = 0;
+  for(size_t ind = 0; 
+      ind < op_Corr[corr_type[i].index_Corr[1]].gamma.size(); ind++){
+    tmp[ind] = op_Corr[corr_type[i].index_Corr[1]].gamma[ind];
+  }
+  tag.gam.push_back(tmp);
+
+}
+
+// Set the tag from two operator structures
+void set_tag(Tag& tag, const size_t i, const vec_index_2pt& corr_type){
+
+  const vec_pdg_Corr op_Corr = global_data->get_lookup_corr();
+  tag.q_cont = "ud";
+
+  tag.mom.push_back(op_Corr[corr_type[i].index_Q2].p3);
+  tag.mom.push_back(op_Corr[corr_type[i].index_Corr].p3);
+  
+  tag.mom_cm = square_comp(tag.mom[0], tag.mom[0]);
+
+  tag.dis.push_back(op_Corr[corr_type[i].index_Q2].dis3);
+  tag.dis.push_back(op_Corr[corr_type[i].index_Corr].dis3);
+
+  std::array<int, 4> tmp = {{0,0,0,0}};
+  for(size_t ind = 0; 
+      ind < op_Corr[corr_type[i].index_Q2].gamma.size(); ind++){
+    tmp[ind] = op_Corr[corr_type[i].index_Q2].gamma[ind];
+  }
+  tag.gam.push_back(tmp);
+  for(auto& el : tmp) el = 0;
+  for(size_t ind = 0; 
+      ind < op_Corr[corr_type[i].index_Corr].gamma.size(); ind++){
+    tmp[ind] = op_Corr[corr_type[i].index_Corr].gamma[ind];
+  }
+  tag.gam.push_back(tmp);
+
+}
+
+void set_tag(Tag& tag, const std::pair<size_t, size_t>& i, 
+             const vec_index_4pt& corr_type){
+
+  //This should not be called
+  exit(0);
+}
+
+template <typename io_list> 
+void convert_hadron_to_vec(const io_list& op_io, const array_cd_d2& C2_mes,
+                           const std::string& corr_type, std::vector<Tag>& tags,
+                           std::vector<vec>& corr){
+
+  const size_t Lt = global_data->get_Lt();
+
+  vec_index_2pt lookup_2pt = global_data->get_lookup_2pt_trace(); 
+  vec_index_4pt lookup_4pt = global_data->get_lookup_4pt_trace();
+
+  corr.resize(op_io.size());
+  for(auto& c : corr)
+    c.resize(Lt);
+  tags.resize(op_io.size());
+
+  for(const auto& op : op_io){
+  for(const auto& i : op.index_pt){
+    //TODO: solve the copying of C2_mes (boost) into corr (std::vec) without
+    // the copy constructor in assign()
+    corr[op.id].assign(C2_mes[op.id].origin(), C2_mes[op.id].origin() + 
+        C2_mes[op.id].size());
+
+    if( (corr_type == "C2+") || (corr_type == "C4I2+_1") || (corr_type == "C4I2+_2") ){
+      set_tag(tags[op.id], i, lookup_2pt);
+    }
+    else if( corr_type == "C4I2+_3"){
+      set_tag(tags[op.id], i, lookup_4pt);
+    }
+  }}
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-//void export_corr_2pt(const char* filename, array_cd_d2& C2_mes){
-//  
-//  const vec_pdg_C2 op_C2 = global_data->get_op_C2();
-//
-//  GlobalDat dat;
-//  std::vector<Tag> tags;
-//  std::vector<vec> corr;
-//
-//  convert_C2_mes_to_vec <vec_pdg_C2> (op_C2, C2_mes, tags, corr);
-//  if (file_exist(filename)){
-//    char filename_new [150];
-//    sprintf(filename_new,"_changed");
-//    std::cout << "file already exists! Renaming to "
-//    << filename_new << std::endl;
-//    write_2pt_lime(filename_new, dat, tags, corr);
-//  }
-//}
+void export_corr_IO (const char* filename, const vec_index_IO_1& op_IO,
+                     const std::string& corr_type, const array_cd_d2& C2_mes){
+  GlobalDat dat;
+  std::vector<Tag> tags;
+  std::vector<std::string> tag_strings;
+  std::string tag_string;
+  std::vector<vec> corr;
+
+  convert_hadron_to_vec <vec_index_IO_1> (op_IO, C2_mes, corr_type, tags, corr);
+  for(const auto& tag : tags){
+    tag_to_string(tag, tag_string);
+    tag_strings.push_back(tag_string);
+  }
+
+  if (file_exist(filename)){
+    char filename_new [150];
+    sprintf(filename_new,"_changed");
+    std::cout << "file already exists! Renaming to "
+      << filename_new << std::endl;
+    write_2pt_lime(filename_new, dat, tag_strings, corr);
+  }
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-//void export_corr_4pt(const char* filename, array_cd_d2& C4_mes){
-//  
-//  const vec_pdg_C4 op_C4 = global_data->get_op_C4();
-//
-//  GlobalDat dat;
-//  std::vector<Tag> tags;
-//  std::vector<vec> corr;
-//
-//  convert_C2_mes_to_vec <vec_pdg_C4> (op_C4, C4_mes, tags, corr);
-//  if (file_exist(filename)){
-//    char filename_new [150];
-//    sprintf(filename_new,"_changed");
-//    std::cout << "file already exists! Renaming to "
-//    << filename_new << std::endl;
-//  }
-//  write_2pt_lime(filename, dat, tags, corr);
-//
-//}
+void export_corr_IO (const char* filename, const vec_index_IO_2& op_IO,
+                     const std::string& corr_type, const array_cd_d2& C2_mes){
+  GlobalDat dat;
+  std::vector<Tag> tags;
+  std::vector<std::string> tag_strings;
+  std::string tag_string;
+  std::vector<vec> corr;
+
+  convert_hadron_to_vec <vec_index_IO_2> (op_IO, C2_mes,corr_type, tags, corr);
+  for(const auto& tag : tags){
+    tag_to_string(tag, tag_string);
+    tag_strings.push_back(tag_string);
+  }
+
+  if (file_exist(filename)){
+    char filename_new [150];
+    sprintf(filename_new,"_changed");
+    std::cout << "file already exists! Renaming to "
+      << filename_new << std::endl;
+    write_2pt_lime(filename_new, dat, tag_strings, corr);
+  }
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // Write 2pt correlator ///////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 void write_2pt_lime(const char* filename, GlobalDat& dat, 
-                    std::vector<std::string>& tags, std::vector<vec>& corr){
+    std::vector<std::string>& tags, std::vector<vec>& corr){
 
   bool be = big_endian();
   if (be){
@@ -83,18 +236,18 @@ void write_2pt_lime(const char* filename, GlobalDat& dat,
     //swap_tag_vector(tags);
     dat = swap_glob_dat(dat);
   }
-    // calculate checksum of all correlators
+  // calculate checksum of all correlators
 
-    //concatenate all correlation functions in one vector
-    std::vector<cmplx> collect;
-    for(auto& c : corr)
-      for (auto& el : c) collect.push_back(el);
-    size_t glob_bytes = collect.size()*2*sizeof(double);
-    size_t global_chksum = checksum <std::vector<cmplx> > (collect,
-        glob_bytes);
-    std::cout << "Global Checksum is: " << global_chksum << std::endl;
-    if(be) global_chksum = swap_endian<size_t>(global_chksum);
-    write_1st_msg(filename, dat, global_chksum);
+  //concatenate all correlation functions in one vector
+  std::vector<cmplx> collect;
+  for(auto& c : corr)
+    for (auto& el : c) collect.push_back(el);
+  size_t glob_bytes = collect.size()*2*sizeof(double);
+  size_t global_chksum = checksum <std::vector<cmplx> > (collect,
+      glob_bytes);
+  std::cout << "Global Checksum is: " << global_chksum << std::endl;
+  if(be) global_chksum = swap_endian<size_t>(global_chksum);
+  write_1st_msg(filename, dat, global_chksum);
 
   // setup what is needed for output to lime
   FILE* fp;
@@ -119,7 +272,7 @@ void write_2pt_lime(const char* filename, GlobalDat& dat,
 // to be specified with the right size
 
 void read_2pt_lime(const char* filename, std::vector<std::string>& tags,
-                   std::vector<vec>& correlators){
+    std::vector<vec>& correlators){
   bool bigend = big_endian();
   if(tags.size() == correlators.size()){
     if(FILE* fp = fopen(filename, "r")){
@@ -154,14 +307,14 @@ void read_2pt_lime(const char* filename, std::vector<std::string>& tags,
         file_status = limeReaderNextRecord(r);
         MB_flag = limeReaderMBFlag(r);
         ME_flag = limeReaderMEFlag(r);
-//        std::cout << MB_flag << " " << ME_flag << std::endl;
+        //        std::cout << MB_flag << " " << ME_flag << std::endl;
         // read correlator checksum
         if(MB_flag == 1 && ME_flag == 0){
           size_t check = 0;
           act_status = limeReaderReadData(&check, &check_bytes, r);
           if (bigend) check = swap_endian<size_t>(check);
           checksums.at(cnt/3) = check;
-         // std::cout << check << std::endl;
+          // std::cout << check << std::endl;
         }
         // read correlator tag
         else if(MB_flag == 0 && ME_flag == 0){
@@ -209,7 +362,7 @@ void get_2pt_lime(const char* filename, const size_t num_corrs,
   size_t tmp_tag_ind;
   for(size_t ind = 0; ind < tmp_tags.size(); ++ind)
     if (tag == tmp_tags[ind]) tmp_tag_ind = ind;
-  
+
   // store correlation function in output data
   corr = tmp_correlators[tmp_tag_ind];
 
@@ -221,7 +374,7 @@ void get_2pt_lime(const char* filename, const size_t num_corrs,
 
 // Temporal extent has to be given
 void ASCII_dump_corr(const char* filename, const char* infile, const size_t Lt,
-                    const size_t num_corrs) {
+    const size_t num_corrs) {
   // Set up temporary structure as copy of incoming
   std::vector<vec> correlators(num_corrs);
   for (auto& corr : correlators) corr.resize(Lt);
@@ -244,25 +397,25 @@ void ASCII_dump_corr(const char* filename, const char* infile, const size_t Lt,
   // Append matching tags and correlators to vectors
   for(size_t n = 0; n < num_corrs; ++n){
     if(tags[n] == query_one){
-        tags_found.push_back(tags[n]);
-        corrs_found.push_back(correlators[n]);
-      }
+      tags_found.push_back(tags[n]);
+      corrs_found.push_back(correlators[n]);
     }
+  }
   size_t n = corrs_found.size();
   if( n == 0) std::cout << "No matching Correlators found!" <<
-                              std::endl;
+    std::endl;
   else{
     std::cout << "# " << n << " correlators read in from file: " <<
-              filename << std::endl;
+      filename << std::endl;
     std::cout << "# t real(C[t]) imag(C[t])" <<
-              std::endl;
-   for (size_t num = 0; num < n; ++num){
-    for (size_t t = 0; t < Lt; ++t){
-      std::cout << t << " " <<
-                std::scientific << corrs_found[num][t].real() << " " <<
-                corrs_found[num][t].imag() << std::endl;
+      std::endl;
+    for (size_t num = 0; num < n; ++num){
+      for (size_t t = 0; t < Lt; ++t){
+        std::cout << t << " " <<
+          std::scientific << corrs_found[num][t].real() << " " <<
+          corrs_found[num][t].imag() << std::endl;
+      }
     }
-   }
   }
 
 }
