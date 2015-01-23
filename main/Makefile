@@ -22,7 +22,7 @@ MAIN = LapHs
 
 GENERAL = BasicOperator Perambulator io_utils config_utils RandomVector \
           ranlxs EigenVector VdaggerV Correlators Correlators_small_traces \
-          Correlators_big_traces CrossOperator IoHelpers CorrelatorIo2pt \
+          Correlators_big_traces CrossOperator TagHandling IoHelpers CorrelatorIo2pt \
 	  global_data global_data_input_handling \
 	  global_data_input_handling_utils global_data_init_lookup_tables \
 	  global_data_init_lookup_tables_utils

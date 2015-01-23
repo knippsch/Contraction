@@ -4,6 +4,7 @@
 #include <array>
 #include <complex>
 #include <cstdlib>
+#include <string>
 #include <vector>
 
 #include "boost/crc.hpp"
@@ -15,15 +16,25 @@
 // Typedefs ///////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-// use a general tag for 2pt and 4pt functions
 struct Tag {
+  // The center of mass momentum squared
+  std::string q_cont;
   int mom_cm;
-  int mom[4];
-  int dis[4][3];
-  int gam[4][4];
+  // the momenta for 4 particles
+  std::vector<std::array<int, 3 > > mom;
+  // 4 displacement vectors
+  std::vector<std::array<int, 3 > > dis;
+  // 4 gamma 4 vectors
+  std::vector<std::array<int, 4 > > gam;
 };
+// use a general tag for n-pt functions
+// Each tag contains a string of participating quarks to be checked against with
+// on the search of a Tag
 
 
+// Global infos on the run should be stored here, no idea what that could be
+// IDEAS: Configuration number, channels, rnd seeds, number of input vectors,
+// Lattice size, ensemble used
 struct GlobalDat {
   std::vector<size_t> rnd_seeds;
   size_t nb_rnd_vecs;
@@ -31,7 +42,7 @@ struct GlobalDat {
 };
  void write_1st_msg(const char* filename, GlobalDat& dat,
                            size_t chksum);
- void append_msgs(const char* filename, std::vector<vec>& corr, std::vector<Tag>& tags,
+ void append_msgs(const char* filename, std::vector<vec>& corr, std::vector<std::string>& tags,
               LimeWriter* w, bool be);
    
 // Endianess ///////////////////////////////////////////////////////////////////
@@ -63,22 +74,17 @@ inline std::complex<double>  swap_complex(std::complex<double> val){
   return std::complex<double>(swap_endian<double>(std::real(val)),
                               swap_endian<double>(std::imag(val)));
 }
-
+  
 // swap endianess of one tag
-inline Tag swap_single_tag(const Tag& tag){
-  Tag le_tag;
-  le_tag.mom_cm = swap_endian<int>(tag.mom_cm);
-  for(size_t pos = 0; pos < 4; ++pos ){
-    le_tag.mom[pos] = swap_endian<int>(tag.mom[pos]);
-    for(size_t comp = 0; comp < 3; ++comp){
-      le_tag.dis[pos][comp] = swap_endian<int>(tag.dis[pos][comp]);
-    }
-    for(size_t comp = 0; comp < 4; ++comp){
-      le_tag.gam[pos][comp] = swap_endian<int>(tag.gam[pos][comp]);
-    }
-  }
-  return le_tag;
-}
+//inline Tag swap_single_tag(const Tag& tag){
+//  Tag le_tag;
+//  le_tag.mom_cm = swap_endian<int>(tag.mom_cm);
+//  for (auto& p : tag.mom) le_tag.mom.push_back(swap_endian<std::array<int, 3 > >(p));
+//  for (auto& d : tag.dis) le_tag.dis.push_back(swap_endian<std::array<int, 3 > >(d));
+//  for (auto& g : tag.gam) le_tag.gam.push_back(swap_endian<std::array<int, 4 > >(g));
+//
+//  return le_tag;
+//}
 
 // swap endianess of one correlation function
 inline std::vector<cmplx> swap_single_corr(const std::vector<cmplx>& corr){
@@ -91,7 +97,6 @@ inline std::vector<cmplx> swap_single_corr(const std::vector<cmplx>& corr){
   }
   return le;
 }
-
 
 
 // swap endaness of runinfo
@@ -123,20 +128,17 @@ inline bool file_exist(const char* name) {
   }   
 }
 
-// set the tag for the second message for a 2pt function given the indexpair
-// of quantum numbers in op_Corr for source and sink
- void set_tag(Tag& tag, const std::pair<size_t, size_t>& i);
+// Map configurations of an infile to a tag
+// Tag map_input(const char* infile);
 
-// set the tag for the second message for a 4pt function given the 
-// indexquadruple of quantum numbers in op_Corr for source and sink
-void set_tag(Tag& tag, const std::array<size_t, 4>& i);
+// Copy over array to std::array<int, 3>
+std::array<int, 3> std_arr(int* arr);
+// The other way round
 
 // Convert ascii labels to correlation tag
 Tag id(size_t g_so, size_t g_si, size_t p_so, size_t p_si, size_t dis_so, 
        size_t dis_si);
 
-// Compare two tags of correlation functions
-bool compare_tags(const Tag& tag1, const Tag& tag2);
 
 // add two three momenta
 std::array<int, 3 > add_mom(const std::array<int,3> p1 , const std::array<int,3> p2);
@@ -150,12 +152,12 @@ inline void swap_correlators(std::vector<vec>& corr){
   }
 }
 
-// swap vector of all tags
-inline void swap_tag_vector(std::vector<Tag>& tags){
-  for (auto& label : tags){
-    label = swap_single_tag(label);
-  }
-}
+// swap vector of all 
+//inline void swap_tag_vector(std::vector<Tag>& tags){
+//  for (auto& label : tags){
+//    label = swap_single_tag(label);
+//  }
+//}
 
 // Check checksums
 void file_check(const size_t glob_check,
