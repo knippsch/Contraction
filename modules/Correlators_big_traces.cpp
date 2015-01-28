@@ -30,24 +30,27 @@ void LapH::Correlators::compute_meson_4pt_cross_trace(LapH::CrossOperator& X) {
       if(t_source != 0){
         if(t_source%2 == 0){
           X.swap(1, 0);
-          X.construct(basic, vdaggerv, 1, t_source_1, t_sink, 1);
+          X.construct(basic, vdaggerv, 1, t_source_1, t_sink, 0);
         }
         else{
           X.swap(0, 1);
-          X.construct(basic, vdaggerv, 1, t_source_1, t_sink, 0);
+          X.construct(basic, vdaggerv, 1, t_source_1, t_sink, 1);
         }
       }
       else{
-        X.construct(basic, vdaggerv, 0, t_source,   t_sink, 0);
-        X.construct(basic, vdaggerv, 1, t_source_1, t_sink, 1);
+          X.construct(basic, vdaggerv, 0, t_source,   t_sink, 1);
+          X.construct(basic, vdaggerv, 1, t_source_1, t_sink, 0);
       }
+
+      // Might be more efficient to start loop at t_sink+1 and completely skip
+      // t_source == t_sink
       if(t_source == t_sink)
         continue;
-    
+
       // The parallelisation is not done with #pragma omp for because it is 
       // incompatible with auto loops
-      #pragma omp parallel
-      #pragma omp single
+//      #pragma omp parallel
+//      #pragma omp single
       {
       for(const auto& op : op_C4_IO){
         // different quantum number combinations denoted by the index i may be 
@@ -59,7 +62,7 @@ void LapH::Correlators::compute_meson_4pt_cross_trace(LapH::CrossOperator& X) {
           size_t i_1 = op_C4[i].index_Corr[0];
           size_t i_2 = op_C4[i].index_Q2[1];
           size_t i_3 = op_C4[i].index_Corr[1];
-          #pragma omp task shared(op, i, i_0, i_1, i_2, i_3)
+//          #pragma omp task shared(op, i, i_0, i_1, i_2, i_3)
           {
           // complete diagramm. combine X and Y to four-trace
           // C4_mes = tr(D_u^-1(t_source     | t_sink      ) Gamma 
@@ -71,14 +74,14 @@ void LapH::Correlators::compute_meson_4pt_cross_trace(LapH::CrossOperator& X) {
 
             if(t_source%2 == 0)
 
-              priv_C4 += (X(0, i_2, i_1, rnd_it[2], rnd_it[1], rnd_it[3]) *
-                          X(1, i_3, i_0, rnd_it[3], rnd_it[0], rnd_it[2])).trace();
+              priv_C4 += (X(1, i_0, i_1, rnd_it[3], rnd_it[0], rnd_it[1]) *
+                          X(0, i_2, i_3, rnd_it[1], rnd_it[2], rnd_it[3])).trace();
             else
               priv_C4 += std::conj(
-                         (X(0, i_2, i_1, rnd_it[2], rnd_it[1], rnd_it[3]) *
-                          X(1, i_3, i_0, rnd_it[3], rnd_it[0], rnd_it[2])).trace());
+                         (X(1, i_0, i_1, rnd_it[3], rnd_it[0], rnd_it[1]) *
+                          X(0, i_2, i_3, rnd_it[1], rnd_it[2], rnd_it[3])).trace());
           }
-          #pragma omp critical
+//          #pragma omp critical
           {
             C4_mes[op.id][abs((t_sink - t_source) - Lt) % Lt] += priv_C4;
           }
@@ -111,7 +114,6 @@ void LapH::Correlators::write_C4_3(const size_t config_i){
   const indexlist_4 rnd_vec_index = global_data->get_rnd_vec_4pt();
   const size_t norm1 = Lt*rnd_vec_index.size();
 
-  const vec_index_4pt op_C4 = global_data->get_lookup_4pt_trace();
   const vec_index_IO_1 op_C4_IO = global_data->get_lookup_4pt_3_IO();
 
   if(op_C4_IO.size() == 0)

@@ -138,6 +138,7 @@ void LapH::VdaggerV::build_vdaggerv (const int config_i) {
         // zero momentum 
         (vdaggerv[op.id][t]) = Eigen::MatrixXcd::Identity(nb_ev, nb_ev);
       }
+
     }
 
 //    }} // loop over momentum and displacement
@@ -146,6 +147,7 @@ void LapH::VdaggerV::build_vdaggerv (const int config_i) {
 
   // set flag that vdaggerv is set
   is_vdaggerv_set = true;
+
 
   t2 = clock() - t2;
   std::cout << std::setprecision(1) << "\t\t\tSUCCESS - " << std::fixed 
@@ -249,6 +251,7 @@ void LapH::VdaggerV::build_rvdaggervr(const int config_i,
                               .block(0, block*dilE, dilE, dilE)).adjoint();
         }
       }}}// loops over rnd vecs
+
     }
   }
 

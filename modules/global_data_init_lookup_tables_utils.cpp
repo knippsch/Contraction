@@ -16,6 +16,25 @@ static void copy_quantum_numbers(const pdg& in, std::array<int, 6>& out){
   out[5] = in.p3[2];
 }
 
+std::array<int, 3> add_p3(const pdg& in1, const pdg& in2){
+
+  std::array<int, 3> result;
+  for(size_t i = 0; i < 3; i++){
+    result[i] = in1.p3[i] + in2.p3[i];
+  }
+
+  return result;
+}
+
+int abs_p3(const pdg& in){
+
+  int result = 0;
+  for(size_t i = 0; i < 3; i++){
+    result += in.p3[i] * in.p3[i];
+  }
+
+  return result;
+}
 
 } // end of unnamed namespace
 
@@ -153,7 +172,7 @@ void set_index_corr(vec_pdg_Corr& lookup_corr, vec_pd_VdaggerV& lookup_vdv,
       // ######################################################################
       // check if quantum numbers are already stored in vdaggerv_qu_nb
       bool is_known_vdv = false;
-      op.first_vdv = false;
+      op.first_vdv = true;
       op.negative_momentum = false;
       size_t fast_counter_vdv = 0;// this gives the Op id if QN are duplicate
       // first check for duplicate quantum numbers
@@ -175,6 +194,7 @@ void set_index_corr(vec_pdg_Corr& lookup_corr, vec_pd_VdaggerV& lookup_vdv,
           }
           fast_counter_vdv++;
         }
+        // undo the signchange of momentum
         for(size_t i = 3; i < 6; i++)
           write[i] *= -1;
 
@@ -184,11 +204,18 @@ void set_index_corr(vec_pdg_Corr& lookup_corr, vec_pd_VdaggerV& lookup_vdv,
           op.id_vdv = counter_vdv;
           vdaggerv_qu_nb.push_back(write);
           counter_vdv++;
-          op.first_vdv = true;
+//          op.first_vdv = true;
         }
         // case quantum numbers are unknown, but opposite momente exist. 
         // VdaggerV can be obtained from the negative momentum.
         else{
+          for(const auto& op2 : lookup_corr){
+            if( (op2.negative_momentum == true) && (op2.id_vdv == fast_counter_vdv) ){
+              op.first_vdv = false;
+              break;
+            }
+          }
+
           op.negative_momentum = true;
           op.id_vdv = fast_counter_vdv;
         }
@@ -198,6 +225,7 @@ void set_index_corr(vec_pdg_Corr& lookup_corr, vec_pd_VdaggerV& lookup_vdv,
       else{
         op.negative_momentum = lookup_corr[fast_counter_vdv].negative_momentum;
         op.id_vdv = fast_counter_vdv;
+        op.first_vdv = false;
       }
     }
     else{ // setting the very first entry
@@ -217,32 +245,41 @@ void set_index_corr(vec_pdg_Corr& lookup_corr, vec_pd_VdaggerV& lookup_vdv,
   lookup_vdv.resize(vdaggerv_qu_nb.size());
   lookup_rvdvr.resize(rvdaggervr_qu_nb.size());
 
-  size_t index = 0;
+  size_t counter = 0;
   for(auto& op_vdv : lookup_vdv){
-    op_vdv.id = index;
+    op_vdv.id = counter;
     for(const auto& op : lookup_corr){
-      if(index == op.id_vdv)
+      if((counter == op.id_vdv) && (op.first_vdv == true) )
         op_vdv.index = op.id;
     }
-    index++;
+    counter++;
   }
 
-  index = 0;
+  for(const auto& op_vdv : lookup_vdv)
+    std::cout << "\t" << op_vdv.id << "\t" << op_vdv.index << std::endl;
+
+  counter = 0;
   for(auto& op_rvdvr : lookup_rvdvr){
-    op_rvdvr.id = index;
+    op_rvdvr.id = counter;
     for(const auto& op : lookup_corr){
-      if(index == op.id_vdv){
+      if(counter == op.id_rvdvr){
         op_rvdvr.index = op.id;
         // if the momentum was only build for the negative in VdaggerV, the 
         // adjoint has been taken
-        if(op.negative_momentum == true)
+        if(op.negative_momentum == true){
           op_rvdvr.adjoint = true;
-        else
+          op_rvdvr.id_adjoint = op.id_vdv;
+        }
+        else{
           op_rvdvr.adjoint = false;
+        }
       }
     }
-    index++;
+    counter++;
   }
+
+  for(const auto& op_rvdvr : lookup_rvdvr)
+    std::cout << "\t" << op_rvdvr.id << "\t" << op_rvdvr.adjoint << "\t" << op_rvdvr.id_adjoint << "\t" << op_rvdvr.index << std::endl;
 
 }
 // *****************************************************************************
@@ -252,15 +289,21 @@ void set_index_2pt(const Operators& in1, const Operators& in2,
                    const vec_pdg_Corr& lookup_corr, vec_index_2pt& lookup_2pt) {
 
   index_2pt write;
+  std::array<int, 3> zero = {{0, 0, 0}};
 
   for(const auto& op1 : lookup_corr){
   if(compare_quantum_numbers_of_pdg(op1, in1)){
     for(const auto& op2 : lookup_corr){
     if(compare_quantum_numbers_of_pdg(op2, in2)){
-      write.index_Q2 = op1.id;
-      write.index_Corr = op2.id;
-
-      lookup_2pt.push_back(write);
+      // momentum conservation in case of 2pt function including momentum turning
+      // due to gamma_5 trick
+//      if(op1.p3 == op2.p3){
+      if(add_p3(op1, op2) == zero){
+        write.index_Q2 = op1.id;
+        write.index_Corr = op2.id;
+  
+        lookup_2pt.push_back(write);
+      }
     }} //loops over sink end here
   }} //loops over source end here
 
@@ -274,6 +317,7 @@ void set_index_4pt(const Operators& in1, const Operators& in2,
                    const vec_pdg_Corr& lookup_corr, vec_index_4pt& lookup_4pt) {
 
   index_4pt write;
+  std::array<int, 3> zero = {{0, 0, 0}};
 
   for(const auto& op1 : lookup_corr){
   if(compare_quantum_numbers_of_pdg(op1, in1)){
@@ -283,12 +327,17 @@ void set_index_4pt(const Operators& in1, const Operators& in2,
       if(compare_quantum_numbers_of_pdg(op3, in3)){
         for(const auto& op4 : lookup_corr){
         if(compare_quantum_numbers_of_pdg(op4, in4)){
-          write.index_Q2[0]   = op1.id;
-          write.index_Corr[0] = op2.id;
-          write.index_Q2[1]   = op3.id;
-          write.index_Corr[1] = op4.id;
+          // enforce cm momentum conservation
+          if( (add_p3(op1, op3) == zero) && (add_p3(op2, op4) == zero) ){
+          // only diagonal entries of the GEVP
+          if( abs_p3(op1) == abs_p3(op2) ){
+            write.index_Q2[0]   = op1.id;
+            write.index_Corr[0] = op2.id;
+            write.index_Q2[1]   = op3.id;
+            write.index_Corr[1] = op4.id;
 
-          lookup_4pt.push_back(write);
+            lookup_4pt.push_back(write);
+          }}
         }}
       }} //loops over sink end here
     }}

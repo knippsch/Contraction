@@ -39,15 +39,15 @@ void LapH::Correlators::build_Corr(){
 
         size_t id_Q2 = op.index_Q2;
         size_t id_Corr = op.index_Corr;
+
       #pragma omp task shared(op)
-    
         // TODO: A collpase of both random vectors might be better but
         //       must be done by hand because rnd2 starts from rnd1+1
         for(const auto& rnd_it : rnd_vec_index) {
           // build all 2pt traces leading to C2_mes
           // Corr = tr(D_d^-1(t_sink) Gamma D_u^-1(t_source) Gamma)
           // TODO: Just a workaround
-    
+          
           compute_meson_small_traces(id_Corr, basic.get_operator
             (t_source, t_sink/dilT, 1, id_Q2, rnd_it.first, rnd_it.second),
             vdaggerv.return_rvdaggervr(op_Corr[id_Corr].id_rvdvr, t_sink, 

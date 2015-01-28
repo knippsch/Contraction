@@ -230,7 +230,7 @@ void init_lookup_C2plus_IO(const Correlator_list& correlator_list,
   std::cout << "lookup_2pt_IO" << std::endl;
   for(const auto& a : lookup_2pt_IO){
     for(const auto& b : a.index_pt)
-      std::cout << b << std::endl;
+      std::cout << a.id << "\t" << b << std::endl;
     std::cout << std::endl;
   }
 }
@@ -262,7 +262,6 @@ void init_lookup_C4I2plus_IO(const Correlator_list& correlator_list,
                                               op3_from_list)){
             if(compare_quantum_numbers_of_pdg(lookup_corr[op2.index_Corr], 
                                               op4_from_list)){
-
               index_IO_2 write;
               write.index_pt.emplace_back
                   (std::pair<size_t, size_t>(op.id, op2.id));
@@ -382,7 +381,6 @@ void init_lookup_4pt(const Correlator_list& correlator_list,
   for(const auto& corr : correlator_list){
 
     if(corr.type.compare(0,5,"C4I2+") == 0){
-      index_IO_1 write;
       for(const auto& op1_from_list : operator_list[corr.operator_numbers[0]]){
       for(const auto& op2_from_list : operator_list[corr.operator_numbers[1]]){
       for(const auto& op3_from_list : operator_list[corr.operator_numbers[2]]){
@@ -397,11 +395,12 @@ void init_lookup_4pt(const Correlator_list& correlator_list,
                                             op3_from_list)){
           if(compare_quantum_numbers_of_pdg(lookup_corr[op.index_Corr[1]], 
                                             op4_from_list)){
+            index_IO_1 write;
             write.index_pt.emplace_back(op.id);
+            lookup_4pt_3_IO.push_back(write);
           }}}}
         }
       }}}}
-      lookup_4pt_3_IO.push_back(write);
     }
   }
 
@@ -413,7 +412,7 @@ void init_lookup_4pt(const Correlator_list& correlator_list,
   std::cout << "lookup_4pt_3_IO" << std::endl;
   for(const auto& a : lookup_4pt_3_IO){
     for(const auto& b : a.index_pt)
-      std::cout << a.id << b << std::endl;
+      std::cout << "\t" << a.id << "\t" << b << std::endl;
     std::cout << std::endl;
   }
 
