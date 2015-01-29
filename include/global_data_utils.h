@@ -16,6 +16,8 @@ namespace global_data_utils {
   Operator_list make_operator_list(const std::string& operator_string);
 
   // functions for lookup tables
+  std::array<int, 3> add_p3(const pdg& in1, const pdg& in2);
+  int abs_p3(const pdg& in);
   bool compare_quantum_numbers_of_pdg(const pdg& in1, const pdg& in2);
   bool compare_mom_dis_of_pdg(const pdg& in1, const pdg& in2);
   bool compare_index_list(index_IO_1& in1, index_IO_1& in2);
