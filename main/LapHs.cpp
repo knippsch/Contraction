@@ -9,7 +9,7 @@
 #include <iostream>
 
 #include "Correlators.h"
-#include "GlobalData.h"
+#include "global_data.h"
 
 #include "omp.h"
 
