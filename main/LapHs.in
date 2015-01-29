@@ -24,7 +24,7 @@ lattice = A40.20
 
 # quarks to be used
 [quarks]
-quark = u:4:TI:2:EI:6:DI:4
+quark = u:5:TI:2:EI:6:DI:4
 
 # operators to be used
 [operator_lists]

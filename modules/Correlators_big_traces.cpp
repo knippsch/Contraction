@@ -49,26 +49,27 @@ void LapH::Correlators::compute_meson_4pt_cross_trace(LapH::CrossOperator& X) {
 
       // The parallelisation is not done with #pragma omp for because it is 
       // incompatible with auto loops
-//      #pragma omp parallel
-//      #pragma omp single
+      #pragma omp parallel
+      #pragma omp single
       {
       for(const auto& op : op_C4_IO){
         // different quantum number combinations denoted by the index i may be 
         // handled by different tasks. Their results are summed up in the end.
         // TODO: Further speedup by different parallelisation might be possible
+//        #pragma omp task shared(op.id, i, i_0, i_1, i_2, i_3)
         for(const auto& i : op.index_pt){
 
           size_t i_0 = op_C4[i].index_Q2[0];
           size_t i_1 = op_C4[i].index_Corr[0];
           size_t i_2 = op_C4[i].index_Q2[1];
           size_t i_3 = op_C4[i].index_Corr[1];
-//          #pragma omp task shared(op, i, i_0, i_1, i_2, i_3)
-          {
           // complete diagramm. combine X and Y to four-trace
           // C4_mes = tr(D_u^-1(t_source     | t_sink      ) Gamma 
           //             D_d^-1(t_sink       | t_source + 1) Gamma 
           //             D_u^-1(t_source + 1 | t_sink + 1  ) Gamma 
           //             D_d^-1(t_sink + 1   | t_source    ) Gamma)
+          #pragma omp task shared(op, i)
+          {
           cmplx priv_C4(0.0,0.0);
           for(const auto& rnd_it : rnd_vec_index) {
 
@@ -81,7 +82,7 @@ void LapH::Correlators::compute_meson_4pt_cross_trace(LapH::CrossOperator& X) {
                          (X(1, i_0, i_1, rnd_it[3], rnd_it[0], rnd_it[1]) *
                           X(0, i_2, i_3, rnd_it[1], rnd_it[2], rnd_it[3])).trace());
           }
-//          #pragma omp critical
+          #pragma omp critical
           {
             C4_mes[op.id][abs((t_sink - t_source) - Lt) % Lt] += priv_C4;
           }

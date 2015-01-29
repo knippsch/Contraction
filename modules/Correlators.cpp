@@ -56,9 +56,9 @@ void LapH::Correlators::compute_correlators(const size_t config_i){
 
   // computing the meson 4pt big cross trace
   // TODO: if condition that at least four random vectos are needed
-  compute_meson_4pt_cross_trace(X);
-
-  write_C4_3(config_i);
+//  compute_meson_4pt_cross_trace(X);
+//
+//  write_C4_3(config_i);
   build_and_write_2pt(config_i);
   build_and_write_C4_1(config_i);
   build_and_write_C4_2(config_i);
