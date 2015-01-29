@@ -28,7 +28,6 @@ LapH::Correlators::Correlators() : basic(), peram(), rnd_vec(), vdaggerv(),
   //TODO: size of C4_mes and C2_mes must be replaced by size of corresponding
   //operator lists. Momentary values are upper limit
   C4_mes.resize(boost::extents[nb_op_4pt][Lt]);
-//  C4_mes.resize(boost::extents[2][Lt]);
   C2_mes.resize(boost::extents[nb_op_2pt][Lt]);
   Corr.resize(boost::extents[nb_op][nb_op][Lt][Lt][nb_rnd][nb_rnd]);
 }
@@ -61,8 +60,8 @@ void LapH::Correlators::compute_correlators(const size_t config_i){
 
   write_C4_3(config_i);
   build_and_write_2pt(config_i);
-//  build_and_write_C4_1(config_i);
-//  build_and_write_C4_2(config_i);
+  build_and_write_C4_1(config_i);
+  build_and_write_C4_2(config_i);
 
 }
 /******************************************************************************/
