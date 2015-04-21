@@ -23,9 +23,9 @@ MAIN = LapHs
 GENERAL = BasicOperator Perambulator io_utils config_utils RandomVector \
           ranlxs EigenVector VdaggerV Correlators Correlators_small_traces \
           Correlators_big_traces CrossOperator TagHandling IoHelpers CorrelatorIo2pt \
-	  global_data global_data_input_handling \
-	  global_data_input_handling_utils global_data_init_lookup_tables \
-	  global_data_init_lookup_tables_utils
+      	  global_data global_data_input_handling \
+	        global_data_input_handling_utils global_data_init_lookup_tables \
+	        global_data_init_lookup_tables_utils
 
 
 MODULES = $(GENERAL)
@@ -37,23 +37,23 @@ VPATH = .:$(MDIR)
 # Logging option (-mpilog or -mpitrace or -mpianim)
 LOGOPTION =
 
-LIMEPATH = /hiskp2/jost/code/lime #/hiskp2/werner/libraries/lime-1.3.2
+LIMEPATH = /home/knippsch/ExternLibraries/lime
 
 # additional include directories
-INCPATH = /hiskp2/werner/libraries/eigen-eigen-1306d75b4a21 \
-          /hiskp2/werner/libraries/boost_1_55_0 \
+INCPATH = /home/knippsch/ExternLibraries/eigen-3.2.1 \
+          /home/knippsch/ExternLibraries/boost_1_55_0 \
           $(LIMEPATH)/include/ ../include 
 
 # additional libraries
 
 LIBS = boost_program_options lime 
 
-LIBPATH = /usr/local/lib /hiskp2/werner/libraries/boost_1_55_0/stage/lib/ $(LIMEPATH)/lib 
+LIBPATH = /usr/local/lib /home/knippsch/ExternLibraries/boost_1_55_0/stage/lib/ $(LIMEPATH)/lib 
 
 
 # scheduling and optimization options
-CFLAGS = -Wall -pedantic -std=c++0x -fopenmp -O2 -march=native -Wno-unused-variable \
-         -Wno-unused-local-typedefs -Wno-sign-compare -g
+CFLAGS = -Wall -pedantic -std=c++11 -fopenmp -O2 -march=native -Wno-unused-variable \
+         -Wno-unused-local-typedefs -Wno-sign-compare
 ############################## do not change ###################################
 
 SHELL=/bin/bash
