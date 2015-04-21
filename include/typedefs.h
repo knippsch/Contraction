@@ -30,6 +30,11 @@ typedef boost::multi_array<cmplx, 8> array_cd_d8;
 typedef boost::multi_array<cmplx, 9> array_cd_d9;
 typedef boost::multi_array<cmplx, 10> array_cd_d10;
 
+// special type for Corr and Q2
+typedef boost::multi_array<std::vector<std::vector<cmplx> >, 4> array_corr;
+typedef boost::multi_array<std::vector<std::vector<Eigen::MatrixXcd> >, 4> 
+                                                                       array_q2;
+
 // Eigen typedefs
 typedef std::vector<Eigen::MatrixXcd> vec_Xcd_eigen;
 typedef boost::multi_array<Eigen::MatrixXcd, 2> array_Xcd_d2_eigen;

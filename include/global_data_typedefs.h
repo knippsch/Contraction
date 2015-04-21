@@ -24,16 +24,19 @@ struct quark {
 	int number_of_dilution_E;
 	std::string dilution_D;
 	int number_of_dilution_D;
+  size_t id;
+  std::string path;
 
 	/// @brief Constructor.
 	quark (std::string type, int number_of_rnd_vec, std::string dilution_T,
 			int number_of_dilution_T, std::string dilution_E,
 			int number_of_dilution_E, std::string dilution_D,
-			int number_of_dilution_D) :
+			int number_of_dilution_D, int id, std::string path) :
 			    type(type), number_of_rnd_vec(number_of_rnd_vec), 
           dilution_T(dilution_T), number_of_dilution_T(number_of_dilution_T), 
           dilution_E(dilution_E), number_of_dilution_E(number_of_dilution_E), 
-          dilution_D(dilution_D), number_of_dilution_D(number_of_dilution_D) {}
+          dilution_D(dilution_D), number_of_dilution_D(number_of_dilution_D),
+          id(id), path(path) {}
 };
 // *****************************************************************************
 // *****************************************************************************

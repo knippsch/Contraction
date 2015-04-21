@@ -94,7 +94,7 @@ quark make_quark (const std::string& quark_string) {
 
   // If the split did not result in exactly 8 tokens, then the value
   // is formatted wrong.
-  if(8 != tokens.size()){
+  if(9 != tokens.size()){
     using boost::program_options::validation_error;
     throw validation_error(validation_error::invalid_option_value,
         "quarks.quark", quark_string);
@@ -104,7 +104,7 @@ quark make_quark (const std::string& quark_string) {
   return quark(tokens[0], boost::lexical_cast<int>(tokens[1]), tokens[2],
       boost::lexical_cast<int>(tokens[3]), tokens[4],
       boost::lexical_cast<int>(tokens[5]), tokens[6],
-      boost::lexical_cast<int>(tokens[7]));
+      boost::lexical_cast<int>(tokens[7]), 0, tokens[8]);
 }
 
 // *****************************************************************************

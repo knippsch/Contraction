@@ -156,8 +156,10 @@ void LapH::VdaggerV::build_vdaggerv (const int config_i) {
 /******************************************************************************/
 /******************************************************************************/
 /******************************************************************************/
+//void laph::vdaggerv::build_rvdaggervr(const int config_i,
+//                     const boost::multi_array<laph::randomvector, 2>& rnd_vec) {
 void LapH::VdaggerV::build_rvdaggervr(const int config_i,
-                               const std::vector<LapH::RandomVector>& rnd_vec) {
+                     const std::vector<std::vector<LapH::RandomVector> >& rnd_vec) {
 
   // check of vdaggerv is already build
   if(not is_vdaggerv_set){
@@ -206,7 +208,7 @@ void LapH::VdaggerV::build_rvdaggervr(const int config_i,
           
           M.block(0, vec_i%dilE + dilE*block, nb_ev, 1) += 
                vdaggerv[id_VdaggerV][t].col(vec_i) * 
-               rnd_vec[rnd_i][blk_i];
+               rnd_vec[1][rnd_i][blk_i];
         }}// end of dilution
         for(size_t rnd_j = 0; rnd_j < nb_rnd; ++rnd_j){
         if(rnd_i != rnd_j){
@@ -217,7 +219,7 @@ void LapH::VdaggerV::build_rvdaggervr(const int config_i,
             rvdaggervr[op.id][t][rnd_j][rnd_i]
                           .block(vec_j%dilE, dilE*block , 1, dilE) +=
                 M.block(vec_j, dilE*block, 1, dilE) * 
-                std::conj(rnd_vec[rnd_j][blk_j]);
+                std::conj(rnd_vec[1][rnd_j][blk_j]);
           }}// end of dilution
         }}// rnd_j loop ends here
       }// rnd_i loop ends here

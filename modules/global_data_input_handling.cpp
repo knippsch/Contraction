@@ -106,6 +106,12 @@ void quark_input_data_handling (
     // inserting each object into the quark vector.
     std::transform(quark_configs.begin(), quark_configs.end(),
         std::back_inserter(quarks), make_quark);
+    // setting id's in quarks
+    size_t quark_counter = 0;
+    for(auto&q: quarks){
+      q.id = quark_counter;
+      quark_counter++;
+    }
     // checking the contents for correctness
     std::for_each(quarks.begin(), quarks.end(), quark_check);
   }

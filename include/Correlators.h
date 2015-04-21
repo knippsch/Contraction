@@ -20,6 +20,8 @@
 
 #include "omp.h"
 
+#include "boost/multi_array.hpp"
+
 namespace LapH {
 
 class Correlators{
@@ -33,11 +35,11 @@ public:
 private:
   BasicOperator basic;
   LapH::Perambulator peram;
-  std::vector<LapH::RandomVector> rnd_vec;
+  std::vector<std::vector<LapH::RandomVector> > rnd_vec;
   LapH::VdaggerV vdaggerv;
   array_cd_d2 C4_mes;
   array_cd_d2 C2_mes;
-  array_cd_d6 Corr;
+  array_corr Corr;
 
   void set_corr(const size_t config){
     read_rnd_vectors_from_file(config);

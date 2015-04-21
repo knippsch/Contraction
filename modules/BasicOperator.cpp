@@ -242,9 +242,22 @@ BasicOperator::BasicOperator() : gamma(), Q2() {
   for(int i = 0; i < 16; ++i)
     create_gamma(gamma, i);
 
-  Q2.resize(boost::extents[Lt][Lt/dilT][3][nb_op][nb_rnd][nb_rnd]);
-  std::fill(Q2.data(), Q2.data() + Q2.num_elements(), 
-                    Eigen::MatrixXcd::Zero(Q2_size, Q2_size));
+  // TODO: dilT is quark dependent so it must be changed in the future. Right
+  //       now it is assumed that the dilution in time is always the same
+  //       for all quarks.
+  Q2.resize(boost::extents[Lt][Lt/dilT][3][nb_op]);
+  for(size_t t1 = 0; t1 < Lt; t1++)
+  for(size_t t2 = 0; t2 < Lt/dilT; t2++)
+  for(size_t t3 = 0; t3 < 3; t3++)
+  for(size_t op = 0; op < nb_op; op++){
+    Q2[t1][t2][t3][op].resize(nb_rnd);
+    for(size_t rnd1 = 0; rnd1 < nb_rnd; rnd1++){
+      Q2[t1][t2][t3][op][rnd1].resize(nb_rnd);
+      for(size_t rnd2 = 0; rnd2 < nb_rnd; rnd2++)
+        Q2[t1][t2][t3][op][rnd1][rnd2] = 
+                                      Eigen::MatrixXcd::Zero(Q2_size, Q2_size);
+    }
+  }
 
   std::cout << "\tallocated memory in BasicOperator" << std::endl;
 }
@@ -293,14 +306,14 @@ void BasicOperator::init_operator(const char dilution,
             for(size_t row = 0; row < 4; ++row) {
               if(op.negative_momentum == false){
                 M.block(dilE * col, nb_ev * row, dilE, nb_ev) = 
-                  (peram[rnd_i].block(nb_ev * (4 * t_0 + row), 
+                  (peram(1, rnd_i).block(nb_ev * (4 * t_0 + row), 
                                       dilE * (4 * t + col), 
                                       nb_ev, dilE)).adjoint() *
                   vdaggerv.return_vdaggerv(op.id_vdv, t_0);
               }
               else {
                 M.block(dilE * col, nb_ev * row, dilE, nb_ev) = 
-                  (peram[rnd_i].block(nb_ev * (4 * t_0 + row), 
+                  (peram(1, rnd_i).block(nb_ev * (4 * t_0 + row), 
                                       dilE * (4 * t + col), 
                                       nb_ev, dilE)).adjoint() *
                   // TODO: calculate V^daggerV Omega from op.negative_momentum 
@@ -333,7 +346,7 @@ void BasicOperator::init_operator(const char dilution,
                     Q2[t_0][t][ti][op.id][rnd_i][rnd_j]
                         .block(row*dilE, col*dilE, dilE, dilE) += value * 
                       M.block(row*dilE, block_dil* nb_ev, dilE, nb_ev) * 
-                      peram[rnd_j]
+                      peram(1, rnd_j)
                         .block(4*nb_ev*t_0 + order_dirac(op.id, block_dil)*nb_ev, 
                           Q2_size*tend + col*dilE, nb_ev, dilE);
 

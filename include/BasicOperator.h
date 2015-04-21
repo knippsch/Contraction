@@ -44,7 +44,7 @@ public:
   std::vector<struct lookup>  gamma;
 
 private:
-  array_Xcd_d6_eigen Q2;
+  array_q2 Q2;
 
 };
 

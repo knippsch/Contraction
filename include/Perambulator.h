@@ -34,12 +34,13 @@ public:
   void read_perambulators_from_file (const int config_i);
 
   // [] operator to directly access the elements of perambulator
-  inline const Eigen::MatrixXcd& operator[](size_t rnd_id) const {
-    return perambulator[rnd_id];
+  inline const Eigen::MatrixXcd& operator()(const size_t quark_id, 
+                                            const size_t rnd_id) const {
+    return perambulator[quark_id][rnd_id];
   }
 
 protected:
-  vec_Xcd_eigen perambulator;
+  array_Xcd_d2_eigen perambulator;
 
 };
 

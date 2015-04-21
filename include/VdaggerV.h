@@ -40,8 +40,10 @@ public:
   ~VdaggerV () {};
 
   void build_vdaggerv(const int config_i);
+//  void build_rvdaggervr(const int config_i, 
+//                      const boost::multi_array<LapH::RandomVector, 2>& rnd_vec);
   void build_rvdaggervr(const int config_i, 
-                        const std::vector<LapH::RandomVector>& rnd_vec);
+                      const std::vector<std::vector<LapH::RandomVector> >& rnd_vec);
 
   // return reference on vdaggerv
   inline const Eigen::MatrixXcd& return_vdaggerv(const size_t index,
