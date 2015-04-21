@@ -24,12 +24,13 @@ lattice = A40.24
 
 # quarks to be used
 [quarks]
-quark = s:5:TI:2:EI:6:DI:4:/data/LapHs/contraction_Markus/test_data/peram/strange
 quark = u:5:TI:2:EI:6:DI:4:/data/LapHs/contraction_Markus/test_data/peram/up
+quark = s:5:TI:2:EI:6:DI:4:/data/LapHs/contraction_Markus/test_data/peram/strange
 
 # operators to be used
 [operator_lists]
 operator_list = g5.d0.p0
+operator_list = g3.d0.p0
 
 # all correlation functions which will be computed !!MUST BE AT END OF FILE!!
 [correlator_lists]
